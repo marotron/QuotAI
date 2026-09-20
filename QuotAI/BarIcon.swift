@@ -18,6 +18,8 @@ enum BarIcon {
         var remaining: String?
         /// Parallel to `fills`; nil → use foreground ink.
         var barColors: [NSColor?]
+        /// Pace tint for the avatar (light); nil → foreground ink. Dual Cursor may animate this.
+        var avatarColor: NSColor?
         /// 0–100 period elapsed; nil → no timeline track under the progress bars.
         var timeline: Double?
     }
@@ -77,7 +79,11 @@ enum BarIcon {
             for (index, row) in rows.enumerated() {
                 let midY = (CGFloat(index) + 0.5) * m.rowHeight
                 if showAvatars {
-                    drawAvatar(row.avatar, in: NSRect(x: 0, y: midY - m.avatar / 2, width: m.avatar, height: m.avatar), ink: ink)
+                    drawAvatar(
+                        row.avatar,
+                        in: NSRect(x: 0, y: midY - m.avatar / 2, width: m.avatar, height: m.avatar),
+                        ink: row.avatarColor ?? ink
+                    )
                 }
                 drawBars(row: row, metrics: m, midY: midY, barX: avatarCol, ink: ink)
                 if showPercent {

@@ -21,7 +21,6 @@
 		8F53C68CC8303EDA7842DF5B /* QuotaResponseParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */; };
 		988E8D070DE68CEB9D4DBB9A /* RemainingTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100900970A7EB9E28EF6C831 /* RemainingTime.swift */; };
 		BBEABA081CA2F226610DB285 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */; };
-		C016CA63CC015AAEE5C2E08C /* PaceSampleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA65B4C1B973C2C11FB5CD1D /* PaceSampleStore.swift */; };
 		D0A82923EF1EA1BFA9361ED0 /* MenuPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0248EF36AED12752B7A8D9 /* MenuPresentation.swift */; };
 		D83D8CB5C694C04497BDF2AC /* CursorConnectClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE812ED1CB4BE4CF91A26E25 /* CursorConnectClient.swift */; };
 		DC5676AEC84F8C26CB786FAB /* RemainingTimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F0F40FD1FE615DF92CCF71 /* RemainingTimeTests.swift */; };
@@ -90,7 +89,6 @@
 		9A0248EF36AED12752B7A8D9 /* MenuPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPresentation.swift; sourceTree = "<group>"; };
 		A1B666266F381CBC367A25A8 /* QuotAIKeychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotAIKeychain.swift; sourceTree = "<group>"; };
 		A474AF98F62D2275255057D5 /* BarIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarIcon.swift; sourceTree = "<group>"; };
-		AA65B4C1B973C2C11FB5CD1D /* PaceSampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceSampleStore.swift; sourceTree = "<group>"; };
 		B38E8042E5851CC0AACB82BC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B4D5560D8CAD91D26D28FC1C /* QuotaResponseParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaResponseParser.swift; sourceTree = "<group>"; };
 		C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorVscdbImporter.swift; sourceTree = "<group>"; };
@@ -170,7 +168,6 @@
 				DE812ED1CB4BE4CF91A26E25 /* CursorConnectClient.swift */,
 				C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */,
 				2D65735D0AC0BD39999794D7 /* KeychainStore.swift */,
-				AA65B4C1B973C2C11FB5CD1D /* PaceSampleStore.swift */,
 				8A84478A2DFA344FC905215F /* QuotAIApp.swift */,
 				C7A145FDCDD83F3F7243FAD8 /* QuotaStore.swift */,
 			);
@@ -340,7 +337,6 @@
 				D83D8CB5C694C04497BDF2AC /* CursorConnectClient.swift in Sources */,
 				3498F01BB3B5BCDC98192BAE /* CursorVscdbImporter.swift in Sources */,
 				EA0F18D359C87E60676BC492 /* KeychainStore.swift in Sources */,
-				C016CA63CC015AAEE5C2E08C /* PaceSampleStore.swift in Sources */,
 				821C73A1D04EF95FDAF632E2 /* QuotAIApp.swift in Sources */,
 				7807B1E1EEC18A885C4FE5B1 /* QuotaStore.swift in Sources */,
 			);

@@ -93,9 +93,9 @@ final class QuotaStore: ObservableObject {
             let credentials = try await resolveCredentials(forceReimport: forceReimport)
             let result = try await CursorConnectClient.fetchMeters(credentials: credentials)
             try KeychainStore.save(result.credentials)
-            cursorModels = PaceSampleStore.resolvePace(for: result.cursorModels, key: .cursorModels)
-            otherModels = PaceSampleStore.resolvePace(for: result.otherModels, key: .otherModels)
-            grokBot = PaceSampleStore.resolvePace(for: result.grokBot, key: .grokBot)
+            cursorModels = result.cursorModels
+            otherModels = result.otherModels
+            grokBot = result.grokBot
             authError = nil
             didAttemptAuthFailureReimport = false
             lastRefreshed = Date()

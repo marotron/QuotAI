@@ -85,9 +85,14 @@ public enum MenuPresenter {
         otherModels: QuotaMeter? = nil,
         grokBot: QuotaMeter,
         mode: BarDisplayMode,
-        authError: String? = nil
+        authError: String? = nil,
+        now: Date = Date()
     ) -> MenuPresentation {
-        var rows = [row(cursorModels), otherModels.map(row), row(grokBot)].compactMap { $0 }
+        var rows = [
+            row(cursorModels, now: now),
+            otherModels.map { row($0, now: now) },
+            row(grokBot, now: now),
+        ].compactMap { $0 }
         if let authError, !authError.isEmpty {
             rows.insert(authError, at: 0)
         }
@@ -154,17 +159,41 @@ public enum MenuPresenter {
         return "gauge.with.dots.needle.\(nearest)percent"
     }
 
-    private static func row(_ m: QuotaMeter) -> String {
+    private static func row(_ m: QuotaMeter, now: Date = Date()) -> String {
         if m.isUnavailable {
             return "\(m.name): unavailable"
         }
         guard let pct = m.percentUsed else {
             return "\(m.name): —"
         }
-        // Menu: raw API % + detailed reset clock; bar keeps ceiled whole % via BarIcon.
         let remaining = m.secondsRemaining.map(RemainingTime.formatDetailed(seconds:)) ?? "—"
+        let used = QuotaPercent.precise(pct)
+
+        // Live used ÷ elapsed so the printed pace matches the numbers beside it.
+        if let elapsed = m.periodElapsedPercent(now: now) {
+            let elapsedPct = Int(elapsed.rounded())
+            var head = "\(used) used / \(elapsedPct)% elapsed → \(paceArrow(m.pace))"
+            if let hint = earlyDepletionHint(m.pace) {
+                head += " · \(hint)"
+            }
+            return "\(m.name): \(head) · \(remaining)"
+        }
+
         let pace = m.pace?.label ?? "Pace n/a"
-        return "\(m.name): \(QuotaPercent.precise(pct)) · \(remaining) · \(pace)"
+        return "\(m.name): \(used) used · \(remaining) · \(pace)"
+    }
+
+    /// `82% pace`, `Exhausted`, or `Pace n/a`.
+    private static func paceArrow(_ pace: PaceResult?) -> String {
+        guard let pace else { return "Pace n/a" }
+        if pace.daysToExhaustion == 0 { return "Exhausted" }
+        guard let r = pace.ratio else { return pace.label.isEmpty ? "Pace n/a" : pace.label }
+        return "\(Int((r * 100).rounded()))% pace"
+    }
+
+    private static func earlyDepletionHint(_ pace: PaceResult?) -> String? {
+        guard let pace, pace.isEarly, let d = pace.daysToExhaustion, d > 0 else { return nil }
+        return "empties in ~\(RemainingTime.format(days: d))"
     }
 
     private static func glanceUsed(_ a: QuotaMeter, _ b: QuotaMeter) -> String {

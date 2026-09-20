@@ -38,4 +38,30 @@ final class PaceCalculatorTests: XCTestCase {
         XCTAssertTrue(result.label.contains("empties in"), result.label)
         XCTAssertTrue(result.label.contains("h"), result.label)
     }
+
+    func testSignificantOutsideWideBand() {
+        XCTAssertFalse(PaceCalculator.isSignificant(pace: nil))
+        XCTAssertFalse(PaceCalculator.isSignificant(pace: PaceResult(ratio: 1.0, label: "", isEarly: false, daysToExhaustion: nil)))
+        // Mild under/over (inside significant band, outside green) → not significant.
+        XCTAssertFalse(PaceCalculator.isSignificant(pace: PaceResult(ratio: 0.85, label: "", isEarly: false, daysToExhaustion: nil)))
+        XCTAssertFalse(PaceCalculator.isSignificant(pace: PaceResult(ratio: 1.20, label: "", isEarly: false, daysToExhaustion: nil)))
+        // Far under / over.
+        XCTAssertTrue(PaceCalculator.isSignificant(pace: PaceResult(ratio: 0.70, label: "", isEarly: false, daysToExhaustion: nil)))
+        XCTAssertTrue(PaceCalculator.isSignificant(pace: PaceResult(ratio: 1.40, label: "", isEarly: false, daysToExhaustion: nil)))
+        XCTAssertTrue(PaceCalculator.isSignificant(pace: PaceResult(ratio: nil, label: "Exhausted", isEarly: false, daysToExhaustion: 0)))
+    }
+
+    func testSignificantUsesCustomThresholds() {
+        let mildUnder = PaceResult(ratio: 0.85, label: "", isEarly: false, daysToExhaustion: nil)
+        let mildOver = PaceResult(ratio: 1.20, label: "", isEarly: false, daysToExhaustion: nil)
+        // Tighter band → mild deviations become significant.
+        XCTAssertTrue(PaceCalculator.isSignificant(pace: mildUnder, under: 0.90, over: 1.10))
+        XCTAssertTrue(PaceCalculator.isSignificant(pace: mildOver, under: 0.90, over: 1.10))
+        // Wider band → 0.70 is still inside.
+        XCTAssertFalse(PaceCalculator.isSignificant(
+            pace: PaceResult(ratio: 0.70, label: "", isEarly: false, daysToExhaustion: nil),
+            under: 0.60,
+            over: 1.50
+        ))
+    }
 }

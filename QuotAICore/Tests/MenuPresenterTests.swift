@@ -27,11 +27,63 @@ final class MenuPresenterTests: XCTestCase {
         )
         let grok = QuotaMeter(name: "Grok Bot", percentUsed: 46.4, secondsRemaining: 5 * 86_400)
         let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok, mode: .usedAndDays)
-        XCTAssertTrue(view.rows[0].contains("0.32%"), view.rows[0])
+        XCTAssertTrue(view.rows[0].contains("0.32% used"), view.rows[0])
         XCTAssertTrue(view.rows[0].contains("29d 14h"), view.rows[0])
-        XCTAssertTrue(view.rows[1].contains("46.4%"), view.rows[1])
+        XCTAssertTrue(view.rows[1].contains("46.4% used"), view.rows[1])
         // Bar glance stays ceiled whole %.
         XCTAssertTrue(view.barTitle.contains("1%"))
+    }
+
+    func testMenuRowShowsUsedOverElapsedArrowPace() {
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let end = start.addingTimeInterval(100 * 86_400)
+        let now = start.addingTimeInterval(2 * 86_400) // 2% through period
+        let pace = PaceCalculator.pace(percentUsed: 1.64, periodStart: start, periodEnd: end, now: now)
+        XCTAssertEqual(Int((pace.ratio! * 100).rounded()), 82)
+        let cursor = QuotaMeter(
+            name: "Cursor Models",
+            percentUsed: 1.64,
+            secondsRemaining: 98 * 86_400,
+            pace: pace,
+            periodStart: start,
+            periodEnd: end
+        )
+        let view = MenuPresenter.present(
+            cursorModels: cursor,
+            grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
+            mode: .usedAndDays,
+            now: now
+        )
+        XCTAssertEqual(
+            view.rows[0],
+            "Cursor Models: 1.64% used / 2% elapsed → 82% pace · 98d"
+        )
+    }
+
+    func testMenuRowShowsElapsedPercentBesideUsed() {
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let end = start.addingTimeInterval(10 * 86_400)
+        let now = start.addingTimeInterval(4 * 86_400) // 40% through period
+        let pace = PaceCalculator.pace(percentUsed: 25, periodStart: start, periodEnd: end, now: now)
+        let cursor = QuotaMeter(
+            name: "Cursor Models",
+            percentUsed: 25,
+            secondsRemaining: 6 * 86_400,
+            pace: pace,
+            periodStart: start,
+            periodEnd: end
+        )
+        let view = MenuPresenter.present(
+            cursorModels: cursor,
+            grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
+            mode: .usedAndDays,
+            now: now
+        )
+        // 25 / 40 = 0.625 → 62% or 63% pace
+        XCTAssertEqual(
+            view.rows[0],
+            "Cursor Models: 25% used / 40% elapsed → \(Int((pace.ratio! * 100).rounded()))% pace · 6d"
+        )
     }
 
     func testUnavailableGrok() {

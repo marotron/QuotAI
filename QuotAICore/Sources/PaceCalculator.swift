@@ -18,6 +18,23 @@ public struct PaceResult: Equatable, Sendable {
 public enum PaceCalculator {
     public static let greenLo = 0.90
     public static let greenHi = 1.10
+    /// Clear of the green band — default menu-bar blink alert thresholds (ratios).
+    public static let significantLo = 0.75
+    public static let significantHi = 1.30
+
+    /// Exhausted, or ratio outside the configured under/over band.
+    public static func isSignificant(
+        pace: PaceResult?,
+        under: Double = significantLo,
+        over: Double = significantHi
+    ) -> Bool {
+        guard let pace else { return false }
+        if pace.daysToExhaustion == 0 { return true }
+        guard let r = pace.ratio else { return false }
+        let lo = min(under, over)
+        let hi = max(under, over)
+        return r < lo || r > hi
+    }
 
     public static func pace(
         percentUsed: Double,
