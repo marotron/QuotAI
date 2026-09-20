@@ -23,9 +23,10 @@ enum BarIcon {
     private struct Metrics {
         let rowHeight: CGFloat = 11
         var avatar: CGFloat { rowHeight }
-        var singleBarHeight: CGFloat { 5 }
         var dualBarHeight: CGFloat { 3 }
         var dualGap: CGFloat { 1 }
+        /// Match dual stack outer height so Cursor (2 tracks) and Grok (1) read the same thickness.
+        var singleBarHeight: CGFloat { dualBarHeight * 2 + dualGap }
         var font: NSFont { .monospacedDigitSystemFont(ofSize: 8, weight: .semibold) }
         var height: CGFloat { rowHeight * 2 }
     }
@@ -97,21 +98,42 @@ enum BarIcon {
             drawBar(
                 fill: fill,
                 color: color,
-                in: NSRect(x: x, y: midY - m.singleBarHeight / 2, width: barWidth, height: m.singleBarHeight)
+                ink: ink,
+                in: NSRect(x: x, y: midY - m.singleBarHeight / 2, width: barWidth, height: m.singleBarHeight),
+                stroke: true
             )
             return
         }
+        // One shared outline for the Cursor stack — avoids a double border in the gap.
         let stack = m.dualBarHeight * 2 + m.dualGap
-        let topY = midY - stack / 2
+        let outer = NSRect(x: x, y: midY - stack / 2, width: barWidth, height: stack)
+        let pad = barStroke / 2
+        let content = outer.insetBy(dx: pad, dy: pad)
+        let rowH = (content.height - m.dualGap) / 2
         for (i, fill) in row.fills.prefix(2).enumerated() {
             let color = (i < row.barColors.count ? row.barColors[i] : nil) ?? ink
-            let y = topY + CGFloat(i) * (m.dualBarHeight + m.dualGap)
+            let y = content.minY + CGFloat(i) * (rowH + m.dualGap)
             drawBar(
                 fill: fill,
                 color: color,
-                in: NSRect(x: x, y: y, width: barWidth, height: m.dualBarHeight)
+                ink: ink,
+                in: NSRect(x: content.minX, y: y, width: content.width, height: rowH),
+                stroke: false
             )
         }
+        let radius = outer.height / 2
+        let outline = NSBezierPath(roundedRect: outer, xRadius: min(radius, m.dualBarHeight), yRadius: min(radius, m.dualBarHeight))
+        ink.withAlphaComponent(0.55).setStroke()
+        outline.lineWidth = barStroke
+        outline.stroke()
+        // Single hairline between the two fills.
+        let sepY = content.minY + rowH + m.dualGap / 2
+        let sep = NSBezierPath()
+        sep.move(to: NSPoint(x: content.minX + 1, y: sepY))
+        sep.line(to: NSPoint(x: content.maxX - 1, y: sepY))
+        ink.withAlphaComponent(0.4).setStroke()
+        sep.lineWidth = 0.5
+        sep.stroke()
     }
 
     private static func drawAvatar(_ avatar: Avatar, in box: NSRect, ink: NSColor) {
@@ -137,22 +159,41 @@ enum BarIcon {
             .withSymbolConfiguration(.init(pointSize: size, weight: .regular))
     }
 
-    private static func drawBar(fill: Double?, color: NSColor, in track: NSRect) {
-        let radius = track.height / 2
-        let trackPath = NSBezierPath(roundedRect: track, xRadius: radius, yRadius: radius)
-        color.withAlphaComponent(fill == nil ? 0.15 : 0.3).setFill()
-        trackPath.fill()
+    private static let barStroke: CGFloat = 1
+
+    private static func drawBar(fill: Double?, color: NSColor, ink: NSColor, in track: NSRect, stroke: Bool) {
+        let pad = stroke ? barStroke / 2 : 0
+        let inner = track.insetBy(dx: pad, dy: pad)
+        guard inner.width > 0, inner.height > 0 else { return }
+        let innerRadius = inner.height / 2
+        let innerPath = NSBezierPath(roundedRect: inner, xRadius: innerRadius, yRadius: innerRadius)
+
+        // Light tint of the pace color for the empty track.
+        color.withAlphaComponent(fill == nil ? 0.12 : 0.28).setFill()
+        innerPath.fill()
+
         // Same whole-% as the label (Spending UI). 0% → empty track; 1% → visible stub pill.
-        guard let fill else { return }
-        let pct = QuotaPercent.display(fill)
-        guard pct > 0 else { return }
-        let exact = track.width * CGFloat(pct) / 100
-        let width = max(exact, track.height) // circle stub so 1% reads like Spending
-        NSGraphicsContext.saveGraphicsState()
-        trackPath.addClip()
-        color.setFill()
-        NSRect(x: track.minX, y: track.minY, width: width, height: track.height).fill()
-        NSGraphicsContext.restoreGraphicsState()
+        if let fill {
+            let pct = QuotaPercent.display(fill)
+            if pct > 0 {
+                let exact = inner.width * CGFloat(pct) / 100
+                let width = max(exact, inner.height) // circle stub so 1% reads like Spending
+                NSGraphicsContext.saveGraphicsState()
+                innerPath.addClip()
+                color.setFill()
+                NSRect(x: inner.minX, y: inner.minY, width: width, height: inner.height).fill()
+                NSGraphicsContext.restoreGraphicsState()
+            }
+        }
+
+        // Stroke last so the fill never covers the outline.
+        if stroke {
+            let outerRadius = track.height / 2
+            let outline = NSBezierPath(roundedRect: track, xRadius: outerRadius, yRadius: outerRadius)
+            ink.withAlphaComponent(0.55).setStroke()
+            outline.lineWidth = barStroke
+            outline.stroke()
+        }
     }
 
     /// Column width = widest string, so nothing clips (`100/100%`, `14m`).
