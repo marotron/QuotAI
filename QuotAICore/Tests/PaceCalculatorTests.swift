@@ -64,4 +64,16 @@ final class PaceCalculatorTests: XCTestCase {
             over: 1.50
         ))
     }
+
+    func testIsOnPaceDeadZone() {
+        XCTAssertTrue(PaceCalculator.isOnPace(1.0))
+        XCTAssertTrue(PaceCalculator.isOnPace(0.90))
+        XCTAssertTrue(PaceCalculator.isOnPace(1.10))
+        XCTAssertTrue(PaceCalculator.isOnPace(1.03))
+        XCTAssertFalse(PaceCalculator.isOnPace(0.89))
+        XCTAssertFalse(PaceCalculator.isOnPace(1.11))
+        // Custom tight band.
+        XCTAssertFalse(PaceCalculator.isOnPace(1.08, lo: 0.95, hi: 1.05))
+        XCTAssertTrue(PaceCalculator.isOnPace(1.08, lo: 0.80, hi: 1.20))
+    }
 }

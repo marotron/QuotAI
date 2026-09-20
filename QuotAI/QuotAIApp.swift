@@ -5,7 +5,6 @@ import QuotAICore
 @main
 struct QuotAIApp: App {
     @StateObject private var store = QuotaStore()
-    @State private var mode: BarDisplayMode = .usedAndDays
     @AppStorage("iconColorMode") private var iconColorMode: IconColorMode = .monochrome
     @AppStorage("showRemaining") private var showRemaining = false
     @AppStorage("showPercent") private var showPercent = true
@@ -16,17 +15,32 @@ struct QuotAIApp: App {
     @AppStorage("blinkUnderPercent") private var blinkUnderPercent = 75
     /// Pace ratio % above which blink fires when enabled (default 130%).
     @AppStorage("blinkOverPercent") private var blinkOverPercent = 130
+    /// On-pace dead zone low % (inclusive). Default 90 → ±10% band.
+    @AppStorage("paceOnLoPercent") private var paceOnLoPercent = 90
+    /// On-pace dead zone high % (inclusive). Default 110 → ±10% band.
+    @AppStorage("paceOnHiPercent") private var paceOnHiPercent = 110
 
     private static let blinkUnderChoices = [50, 60, 70, 75, 80, 85]
     private static let blinkOverChoices = [115, 120, 125, 130, 140, 150]
+    /// Presets: tight ±5%, standard ±10% (default), loose ±15%, wide ±20%.
+    private static let deadZonePresets: [(lo: Int, hi: Int)] = [
+        (95, 105),
+        (90, 110),
+        (85, 115),
+        (80, 120),
+    ]
+
+    private var onPaceLo: Double { Double(min(paceOnLoPercent, paceOnHiPercent)) / 100 }
+    private var onPaceHi: Double { Double(max(paceOnLoPercent, paceOnHiPercent)) / 100 }
 
     private var presentation: MenuPresentation {
         MenuPresenter.present(
             cursorModels: store.cursorModels,
             otherModels: showOtherModels ? store.otherModels : nil,
             grokBot: store.grokBot,
-            mode: mode,
-            authError: store.authError
+            authError: store.authError,
+            onPaceLo: onPaceLo,
+            onPaceHi: onPaceHi
         )
     }
 
@@ -46,7 +60,7 @@ struct QuotAIApp: App {
             }
             ForEach(presentation.meters) { meter in
                 Text(MeterInfoRow.title(for: meter))
-                if let note = meter.note {
+                if let note = MeterInfoRow.note(for: meter) {
                     // Separate item — NSMenu strips newlines inside a single title.
                     Text(note)
                 }
@@ -68,13 +82,14 @@ struct QuotAIApp: App {
                 NSWorkspace.shared.open(MenuPresenter.spendingURL)
             }
             Divider()
-            Picker("Bar mode", selection: $mode) {
-                Text("Used + days").tag(BarDisplayMode.usedAndDays)
-                Text("Pace").tag(BarDisplayMode.pace)
-            }
             Picker("Color mode", selection: $iconColorMode) {
                 Text("Monochrome").tag(IconColorMode.monochrome)
                 Text("By pace").tag(IconColorMode.byLevel)
+            }
+            Picker("On-pace band", selection: deadZoneSelection) {
+                ForEach(Self.deadZonePresets, id: \.lo) { preset in
+                    Text("\(preset.lo)–\(preset.hi)%").tag(deadZoneTag(lo: preset.lo, hi: preset.hi))
+                }
             }
             Picker("Refresh every", selection: $store.pollIntervalMinutes) {
                 ForEach(QuotaStore.pollIntervalChoices, id: \.self) { minutes in
@@ -106,7 +121,6 @@ struct QuotAIApp: App {
             // Own view + state so icon animation ticks do not rebuild the menu (which dismisses Pickers).
             MenuBarIconLabel(
                 store: store,
-                mode: mode,
                 iconColorMode: iconColorMode,
                 showRemaining: showRemaining,
                 showPercent: showPercent,
@@ -114,10 +128,27 @@ struct QuotAIApp: App {
                 showOtherModels: showOtherModels,
                 blinkSignificantPace: blinkSignificantPace,
                 blinkUnderPercent: blinkUnderPercent,
-                blinkOverPercent: blinkOverPercent
+                blinkOverPercent: blinkOverPercent,
+                onPaceLo: onPaceLo,
+                onPaceHi: onPaceHi
             )
         }
         .menuBarExtraStyle(.menu)
+    }
+
+    private func deadZoneTag(lo: Int, hi: Int) -> String { "\(lo)-\(hi)" }
+
+    /// Bridges two AppStorage ints to one Picker selection.
+    private var deadZoneSelection: Binding<String> {
+        Binding(
+            get: { deadZoneTag(lo: paceOnLoPercent, hi: paceOnHiPercent) },
+            set: { tag in
+                let parts = tag.split(separator: "-").compactMap { Int($0) }
+                guard parts.count == 2 else { return }
+                paceOnLoPercent = parts[0]
+                paceOnHiPercent = parts[1]
+            }
+        )
     }
 
     private func promptPasteToken() {
@@ -147,6 +178,12 @@ private enum MeterInfoRow {
         "\(bandMark(for: meter.band))\(meter.title)"
     }
 
+    /// Indented secondary line under the meter title (native menu has no nested indent API).
+    static func note(for meter: MenuMeterRow) -> String? {
+        guard let note = meter.note else { return nil }
+        return "    \(note)"
+    }
+
     /// Colored emoji survives NSMenu vibrancy; SF Symbol Labels often do not.
     static func bandMark(for band: PaceBand) -> String {
         switch band {
@@ -161,7 +198,6 @@ private enum MeterInfoRow {
 /// Status-item label. Animation state lives here so timer ticks do not invalidate MenuBarExtra content.
 private struct MenuBarIconLabel: View {
     @ObservedObject var store: QuotaStore
-    let mode: BarDisplayMode
     let iconColorMode: IconColorMode
     let showRemaining: Bool
     let showPercent: Bool
@@ -170,6 +206,8 @@ private struct MenuBarIconLabel: View {
     let blinkSignificantPace: Bool
     let blinkUnderPercent: Int
     let blinkOverPercent: Int
+    let onPaceLo: Double
+    let onPaceHi: Double
 
     @State private var iconAnimDate = Date()
     private let iconAnimTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
@@ -182,14 +220,15 @@ private struct MenuBarIconLabel: View {
             cursorModels: store.cursorModels,
             otherModels: showOtherModels ? store.otherModels : nil,
             grokBot: store.grokBot,
-            mode: mode,
-            authError: store.authError
+            authError: store.authError,
+            onPaceLo: onPaceLo,
+            onPaceHi: onPaceHi
         )
     }
 
     var body: some View {
         Group {
-            if mode == .usedAndDays, store.authError == nil {
+            if store.authError == nil {
                 Image(nsImage: compactIcon(at: iconAnimDate))
                     .renderingMode(iconColorMode == .monochrome ? .template : .original)
             } else {
@@ -324,7 +363,7 @@ private struct MenuBarIconLabel: View {
 
     private func paceTint(_ meter: QuotaMeter) -> SymbolTint? {
         guard iconColorMode == .byLevel, !meter.isUnavailable else { return nil }
-        let tint = MenuPresenter.tint(pace: meter.pace)
+        let tint = MenuPresenter.tint(pace: meter.pace, onPaceLo: onPaceLo, onPaceHi: onPaceHi)
         return tint == .neutral ? nil : tint
     }
 

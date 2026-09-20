@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 — 2026-09-20
+
+### Added
+
+- Structured menu meter rows with ice/fire/on-pace band marks
+- Secondary pace notes: projected unused quota, or empties-in / idle-days when over pace
+
+### Changed
+
+- Menu presentation returns `meters` + `notices` instead of plain string rows
+- Native `.menu` style; notes rendered as separate NSMenu items so they are not stripped
+- Menu bar always uses used + days; removed Bar mode picker / pace glance mode
+
 ## 0.2.0 — 2026-09-20
 
 ### Added

@@ -2,10 +2,10 @@ import XCTest
 @testable import QuotAICore
 
 final class MenuPresenterTests: XCTestCase {
-    func testUsedAndDaysBar() {
+    func testBarTitleUsedAndDays() {
         let cursor = QuotaMeter(name: "Cursor Models", percentUsed: 70, secondsRemaining: 1 * 86_400)
         let grok = QuotaMeter(name: "Grok Bot", percentUsed: 47, secondsRemaining: 5 * 86_400)
-        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok, mode: .usedAndDays)
+        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok)
         XCTAssertEqual(view.barTitle, "Cur 70%/1d · Grok 47%/5d")
         XCTAssertEqual(view.spendingURL.absoluteString, "https://cursor.com/dashboard/spending")
         XCTAssertEqual(view.meters.count, 2)
@@ -14,7 +14,7 @@ final class MenuPresenterTests: XCTestCase {
     func testBarUsesHoursWhenUnderOneDay() {
         let cursor = QuotaMeter(name: "Cursor Models", percentUsed: 71, secondsRemaining: 5 * 3_600)
         let grok = QuotaMeter(name: "Grok Bot", percentUsed: 47, secondsRemaining: 5 * 86_400)
-        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok, mode: .usedAndDays)
+        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok)
         XCTAssertEqual(view.barTitle, "Cur 71%/5h · Grok 47%/5d")
         XCTAssertTrue(view.meters[0].title.contains("5h"))
     }
@@ -26,7 +26,7 @@ final class MenuPresenterTests: XCTestCase {
             secondsRemaining: 29 * 86_400 + 14 * 3_600
         )
         let grok = QuotaMeter(name: "Grok Bot", percentUsed: 46.4, secondsRemaining: 5 * 86_400)
-        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok, mode: .usedAndDays)
+        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok)
         XCTAssertTrue(view.meters[0].title.contains("0.32% used"), view.meters[0].title)
         XCTAssertTrue(view.meters[0].title.contains("29d 14h"), view.meters[0].title)
         XCTAssertTrue(view.meters[1].title.contains("46.4% used"), view.meters[1].title)
@@ -51,8 +51,7 @@ final class MenuPresenterTests: XCTestCase {
         let view = MenuPresenter.present(
             cursorModels: cursor,
             grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
-            mode: .usedAndDays,
-            now: now
+                        now: now
         )
         XCTAssertEqual(
             view.meters[0].title,
@@ -79,8 +78,7 @@ final class MenuPresenterTests: XCTestCase {
         let view = MenuPresenter.present(
             cursorModels: cursor,
             grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
-            mode: .usedAndDays,
-            now: now
+                        now: now
         )
         let pacePct = Int((pace.ratio! * 100).rounded())
         XCTAssertEqual(
@@ -105,7 +103,6 @@ final class MenuPresenterTests: XCTestCase {
         let view = MenuPresenter.present(
             cursorModels: cursor,
             grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
-            mode: .usedAndDays
         )
         XCTAssertEqual(view.meters[0].band, .under)
         XCTAssertEqual(view.meters[0].symbolName, "snowflake")
@@ -124,7 +121,6 @@ final class MenuPresenterTests: XCTestCase {
         let view = MenuPresenter.present(
             cursorModels: cursor,
             grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
-            mode: .usedAndDays
         )
         XCTAssertEqual(view.meters[0].band, .on)
         XCTAssertEqual(view.meters[0].symbolName, "checkmark.circle.fill")
@@ -142,7 +138,6 @@ final class MenuPresenterTests: XCTestCase {
         let view = MenuPresenter.present(
             cursorModels: QuotaMeter(name: "Cursor Models", isUnavailable: true),
             grokBot: cursor,
-            mode: .usedAndDays
         )
         XCTAssertEqual(view.meters[1].band, .over)
         XCTAssertEqual(view.meters[1].symbolName, "flame.fill")
@@ -153,17 +148,16 @@ final class MenuPresenterTests: XCTestCase {
     func testUnavailableGrok() {
         let cursor = QuotaMeter(name: "Cursor Models", percentUsed: 10, secondsRemaining: 20 * 86_400)
         let grok = QuotaMeter(name: "Grok Bot", isUnavailable: true)
-        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok, mode: .usedAndDays)
+        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok)
         XCTAssertTrue(view.meters[1].title.contains("unavailable"))
         XCTAssertEqual(view.barTitle, "Cur 10%/20d")
     }
 
     func testSymbolTracksWorstMeter() {
-        func symbol(_ cur: Double?, _ grok: Double?, mode: BarDisplayMode = .usedAndDays) -> String {
+        func symbol(_ cur: Double?, _ grok: Double?) -> String {
             MenuPresenter.present(
                 cursorModels: QuotaMeter(name: "Cursor Models", percentUsed: cur),
-                grokBot: QuotaMeter(name: "Grok Bot", percentUsed: grok),
-                mode: mode
+                grokBot: QuotaMeter(name: "Grok Bot", percentUsed: grok)
             ).symbolName
         }
         XCTAssertEqual(symbol(5, 10), "gauge.with.dots.needle.0percent")
@@ -174,21 +168,13 @@ final class MenuPresenterTests: XCTestCase {
         XCTAssertEqual(symbol(nil, nil), "gauge.with.dots.needle.0percent")
     }
 
-    func testSymbolUsesPaceInPaceMode() {
-        var cursor = QuotaMeter(name: "Cursor Models", percentUsed: 20)
-        cursor.pace = PaceResult(ratio: 1.4, label: "", isEarly: true, daysToExhaustion: nil)
-        let grok = QuotaMeter(name: "Grok Bot", isUnavailable: true)
-        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok, mode: .pace)
-        XCTAssertEqual(view.symbolName, "gauge.with.dots.needle.100percent")
-    }
 
     func testTintFollowsLevel() {
         func tint(_ cur: Double?, authError: String? = nil) -> SymbolTint {
             MenuPresenter.present(
                 cursorModels: QuotaMeter(name: "Cursor Models", percentUsed: cur),
                 grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
-                mode: .usedAndDays,
-                authError: authError
+                                authError: authError
             ).tint
         }
         XCTAssertEqual(tint(nil), .neutral)
@@ -214,15 +200,56 @@ final class MenuPresenterTests: XCTestCase {
         XCTAssertEqual(paceTint(ratio: 0.5), .under)
         XCTAssertEqual(paceTint(ratio: 1.0), .ok)
         XCTAssertEqual(paceTint(ratio: 0.95), .ok)
+        XCTAssertEqual(paceTint(ratio: 1.03), .ok) // inside ±10% dead zone
         XCTAssertEqual(paceTint(ratio: 1.2), .critical)
         XCTAssertEqual(paceTint(ratio: nil, exhausted: true), .critical)
+    }
+
+    func testEarlyInsideDeadZoneIsOnNotOver() {
+        // Slightly over 100% → isEarly, but still inside 90–110% → on (not fire).
+        let pace = PaceResult(ratio: 1.03, label: "", isEarly: true, daysToExhaustion: 29)
+        let view = MenuPresenter.present(
+            cursorModels: QuotaMeter(
+                name: "Cursor Models",
+                percentUsed: 2.06,
+                secondsRemaining: 29 * 86_400,
+                pace: pace
+            ),
+            grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
+        )
+        XCTAssertEqual(view.meters[0].band, .on)
+        XCTAssertEqual(view.meters[0].symbolName, "checkmark.circle.fill")
+        XCTAssertNil(view.meters[0].note)
+        XCTAssertEqual(MenuPresenter.tint(pace: pace), .ok)
+    }
+
+    func testCustomDeadZoneSharedByBandAndTint() {
+        let pace = PaceResult(ratio: 1.08, label: "", isEarly: true, daysToExhaustion: 25)
+        // Tight ±5% → 108% is over.
+        let tight = MenuPresenter.present(
+            cursorModels: QuotaMeter(name: "Cursor Models", percentUsed: 50, pace: pace),
+            grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
+            onPaceLo: 0.95,
+            onPaceHi: 1.05
+        )
+        XCTAssertEqual(tight.meters[0].band, .over)
+        XCTAssertEqual(MenuPresenter.tint(pace: pace, onPaceLo: 0.95, onPaceHi: 1.05), .critical)
+
+        // Wide ±20% → 108% is on.
+        let wide = MenuPresenter.present(
+            cursorModels: QuotaMeter(name: "Cursor Models", percentUsed: 50, pace: pace),
+            grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
+            onPaceLo: 0.80,
+            onPaceHi: 1.20
+        )
+        XCTAssertEqual(wide.meters[0].band, .on)
+        XCTAssertEqual(MenuPresenter.tint(pace: pace, onPaceLo: 0.80, onPaceHi: 1.20), .ok)
     }
 
     func testAuthErrorSymbol() {
         let view = MenuPresenter.present(
             cursorModels: QuotaMeter(name: "Cursor Models"),
             grokBot: QuotaMeter(name: "Grok Bot"),
-            mode: .usedAndDays,
             authError: "Auth error"
         )
         XCTAssertEqual(view.symbolName, "exclamationmark.triangle")
@@ -234,7 +261,6 @@ final class MenuPresenterTests: XCTestCase {
         let view = MenuPresenter.present(
             cursorModels: cursor,
             grokBot: grok,
-            mode: .usedAndDays,
             authError: "Auth error — re-auth or paste token"
         )
         XCTAssertEqual(view.notices.first, "Auth error — re-auth or paste token")

@@ -37,11 +37,6 @@ public struct QuotaMeter: Equatable, Sendable {
     }
 }
 
-public enum BarDisplayMode: String, CaseIterable, Hashable, Sendable {
-    case usedAndDays
-    case pace
-}
-
 /// User setting: how the menu bar icon is colored.
 public enum IconColorMode: String, CaseIterable, Hashable, Sendable {
     case monochrome
@@ -145,15 +140,18 @@ public enum MenuPresenter {
         cursorModels: QuotaMeter,
         otherModels: QuotaMeter? = nil,
         grokBot: QuotaMeter,
-        mode: BarDisplayMode,
         authError: String? = nil,
-        now: Date = Date()
+        now: Date = Date(),
+        onPaceLo: Double = PaceCalculator.greenLo,
+        onPaceHi: Double = PaceCalculator.greenHi
     ) -> MenuPresentation {
-        var meters = [meterRow(cursorModels, now: now)]
+        let lo = min(onPaceLo, onPaceHi)
+        let hi = max(onPaceLo, onPaceHi)
+        var meters = [meterRow(cursorModels, now: now, onPaceLo: lo, onPaceHi: hi)]
         if let otherModels {
-            meters.append(meterRow(otherModels, now: now))
+            meters.append(meterRow(otherModels, now: now, onPaceLo: lo, onPaceHi: hi))
         }
-        meters.append(meterRow(grokBot, now: now))
+        meters.append(meterRow(grokBot, now: now, onPaceLo: lo, onPaceHi: hi))
         var notices: [String] = []
         if let authError, !authError.isEmpty {
             notices.append(authError)
@@ -166,15 +164,8 @@ public enum MenuPresenter {
             symbolName = "exclamationmark.triangle"
             tint = .critical
         } else {
-            let level: Double?
-            switch mode {
-            case .usedAndDays:
-                barTitle = glanceUsed(cursorModels, grokBot)
-                level = worstPercentUsed(cursorModels, grokBot)
-            case .pace:
-                barTitle = glancePace(cursorModels, grokBot)
-                level = worstPaceRatio(cursorModels, grokBot).map { $0 * 100 }
-            }
+            barTitle = glanceUsed(cursorModels, grokBot)
+            let level = worstPercentUsed(cursorModels, grokBot)
             symbolName = gaugeSymbol(level: level)
             tint = Self.tint(level: level)
         }
@@ -196,22 +187,24 @@ public enum MenuPresenter {
         return .ok
     }
 
-    /// Pace ratio → Under / On / Over colors (locked formula green band 0.90…1.10).
-    public static func tint(pace: PaceResult?) -> SymbolTint {
+    /// Pace ratio → Under / On / Over colors. Same dead zone as dropdown bands.
+    public static func tint(
+        pace: PaceResult?,
+        onPaceLo: Double = PaceCalculator.greenLo,
+        onPaceHi: Double = PaceCalculator.greenHi
+    ) -> SymbolTint {
         guard let pace else { return .neutral }
         if pace.daysToExhaustion == 0 { return .critical } // Exhausted
         guard let r = pace.ratio else { return .neutral }
-        if r < PaceCalculator.greenLo { return .under }
-        if r > PaceCalculator.greenHi { return .critical }
-        return .ok
+        let lo = min(onPaceLo, onPaceHi)
+        let hi = max(onPaceLo, onPaceHi)
+        if PaceCalculator.isOnPace(r, lo: lo, hi: hi) { return .ok }
+        if r < lo { return .under }
+        return .critical
     }
 
     private static func worstPercentUsed(_ a: QuotaMeter, _ b: QuotaMeter) -> Double? {
         [a, b].compactMap { $0.isUnavailable ? nil : $0.percentUsed }.max()
-    }
-
-    private static func worstPaceRatio(_ a: QuotaMeter, _ b: QuotaMeter) -> Double? {
-        [a, b].compactMap { $0.isUnavailable ? nil : $0.pace?.ratio }.max()
     }
 
     /// Snaps 0–100 to the nearest available `gauge.with.dots.needle.*percent` symbol.
@@ -222,7 +215,12 @@ public enum MenuPresenter {
         return "gauge.with.dots.needle.\(nearest)percent"
     }
 
-    private static func meterRow(_ m: QuotaMeter, now: Date) -> MenuMeterRow {
+    private static func meterRow(
+        _ m: QuotaMeter,
+        now: Date,
+        onPaceLo: Double,
+        onPaceHi: Double
+    ) -> MenuMeterRow {
         if m.isUnavailable {
             return MenuMeterRow(
                 name: m.name,
@@ -245,7 +243,12 @@ public enum MenuPresenter {
             title = "\(m.name): \(used) used · \(remaining) · \(pace)"
         }
 
-        let style = paceStyle(m.pace, secondsRemaining: m.secondsRemaining)
+        let style = paceStyle(
+            m.pace,
+            secondsRemaining: m.secondsRemaining,
+            onPaceLo: onPaceLo,
+            onPaceHi: onPaceHi
+        )
         return MenuMeterRow(
             name: m.name,
             title: title,
@@ -263,7 +266,12 @@ public enum MenuPresenter {
         var note: String?
     }
 
-    private static func paceStyle(_ pace: PaceResult?, secondsRemaining: TimeInterval?) -> PaceStyle {
+    private static func paceStyle(
+        _ pace: PaceResult?,
+        secondsRemaining: TimeInterval?,
+        onPaceLo: Double,
+        onPaceHi: Double
+    ) -> PaceStyle {
         guard let pace else {
             return PaceStyle(band: .neutral, shade: .none, symbolName: nil, note: nil)
         }
@@ -279,7 +287,17 @@ public enum MenuPresenter {
             return PaceStyle(band: .neutral, shade: .none, symbolName: nil, note: nil)
         }
 
-        if r < PaceCalculator.greenLo {
+        // Dead zone alone decides under / on / over (ignore isEarly for band/tint).
+        if PaceCalculator.isOnPace(r, lo: onPaceLo, hi: onPaceHi) {
+            return PaceStyle(
+                band: .on,
+                shade: .none,
+                symbolName: "checkmark.circle.fill",
+                note: nil
+            )
+        }
+
+        if r < onPaceLo {
             let waste = max(0, (1 - r) * 100)
             let wastePct = Int(waste.rounded())
             return PaceStyle(
@@ -290,20 +308,11 @@ public enum MenuPresenter {
             )
         }
 
-        if r > PaceCalculator.greenHi || pace.isEarly {
-            return PaceStyle(
-                band: .over,
-                shade: overShade(r, early: pace.isEarly),
-                symbolName: "flame.fill",
-                note: overNote(pace: pace, secondsRemaining: secondsRemaining)
-            )
-        }
-
         return PaceStyle(
-            band: .on,
-            shade: .none,
-            symbolName: "checkmark.circle.fill",
-            note: nil
+            band: .over,
+            shade: overShade(r, onPaceHi: onPaceHi),
+            symbolName: "flame.fill",
+            note: overNote(pace: pace, secondsRemaining: secondsRemaining)
         )
     }
 
@@ -314,12 +323,11 @@ public enum MenuPresenter {
         return .mild
     }
 
-    private static func overShade(_ r: Double, early: Bool) -> PaceShade {
+    private static func overShade(_ r: Double, onPaceHi: Double) -> PaceShade {
         if r > 1.50 { return .strong }
         if r > PaceCalculator.significantHi { return .medium }
-        if r > PaceCalculator.greenHi { return .mild }
-        // Inside green but early depletion → mild fire.
-        return early ? .mild : .none
+        if r > onPaceHi { return .mild }
+        return .none
     }
 
     private static func overNote(pace: PaceResult, secondsRemaining: TimeInterval?) -> String? {
@@ -353,12 +361,6 @@ public enum MenuPresenter {
             return "\(short(m.name)) \(formatPct(pct))/\(remaining)"
         }
         return parts.isEmpty ? "QuotAI" : parts.joined(separator: " · ")
-    }
-
-    private static func glancePace(_ a: QuotaMeter, _ b: QuotaMeter) -> String {
-        guard let worst = worstPaceRatio(a, b) else { return "QuotAI" }
-        let pct = Int((worst * 100).rounded())
-        return "Pace \(pct)%"
     }
 
     private static func short(_ name: String) -> String {
