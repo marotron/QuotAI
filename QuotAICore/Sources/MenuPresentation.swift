@@ -86,7 +86,7 @@ public struct MenuMeterRow: Equatable, Identifiable, Sendable {
     public var note: String?
     public var band: PaceBand
     public var shade: PaceShade
-    /// SF Symbol: `snowflake` / `checkmark.circle.fill` / `flame.fill` / nil.
+    /// SF Symbol: `snowflake` / `checkmark` / `flame.fill` / nil.
     public var symbolName: String?
 
     public init(
@@ -292,7 +292,7 @@ public enum MenuPresenter {
             return PaceStyle(
                 band: .on,
                 shade: .none,
-                symbolName: "checkmark.circle.fill",
+                symbolName: "checkmark",
                 note: nil
             )
         }

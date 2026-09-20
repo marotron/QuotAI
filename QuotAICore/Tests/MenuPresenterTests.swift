@@ -123,7 +123,7 @@ final class MenuPresenterTests: XCTestCase {
             grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
         )
         XCTAssertEqual(view.meters[0].band, .on)
-        XCTAssertEqual(view.meters[0].symbolName, "checkmark.circle.fill")
+        XCTAssertEqual(view.meters[0].symbolName, "checkmark")
         XCTAssertNil(view.meters[0].note)
     }
 
@@ -218,7 +218,7 @@ final class MenuPresenterTests: XCTestCase {
             grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
         )
         XCTAssertEqual(view.meters[0].band, .on)
-        XCTAssertEqual(view.meters[0].symbolName, "checkmark.circle.fill")
+        XCTAssertEqual(view.meters[0].symbolName, "checkmark")
         XCTAssertNil(view.meters[0].note)
         XCTAssertEqual(MenuPresenter.tint(pace: pace), .ok)
     }

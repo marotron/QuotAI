@@ -34,7 +34,7 @@ struct QuotAIApp: App {
     private var onPaceHi: Double { Double(max(paceOnLoPercent, paceOnHiPercent)) / 100 }
 
     private var presentation: MenuPresentation {
-        MenuPresenter.present(
+        let presented = MenuPresenter.present(
             cursorModels: store.cursorModels,
             otherModels: showOtherModels ? store.otherModels : nil,
             grokBot: store.grokBot,
@@ -42,6 +42,12 @@ struct QuotAIApp: App {
             onPaceLo: onPaceLo,
             onPaceHi: onPaceHi
         )
+        MeterMenuBadges.shared.meters = presented.meters
+        return presented
+    }
+
+    init() {
+        MeterMenuBadges.shared.install()
     }
 
     var body: some Scene {
@@ -59,10 +65,13 @@ struct QuotAIApp: App {
                 Text(notice)
             }
             ForEach(presentation.meters) { meter in
-                Text(MeterInfoRow.title(for: meter))
-                if let note = MeterInfoRow.note(for: meter) {
+                // Button (not Text) → enabled NSMenuItem so marks/title are not dimmed.
+                // Colors still painted via MeterMenuBadges on open.
+                Button(MeterMenuBadges.titleWithFallbackMark(for: meter)) {}
+                if let note = MeterMenuBadges.noteWithIndent(for: meter) {
                     // Separate item — NSMenu strips newlines inside a single title.
-                    Text(note)
+                    // Same leading mark width as the title row so copy lines up.
+                    Button(note) {}
                 }
             }
             Divider()
@@ -171,26 +180,162 @@ struct QuotAIApp: App {
     }
 }
 
-/// Builds the main meter title for a native menu row (emoji + copy).
-/// Notes are rendered as a following menu item so NSMenu does not drop them.
-private enum MeterInfoRow {
-    static func title(for meter: MenuMeterRow) -> String {
-        "\(bandMark(for: meter.band))\(meter.title)"
+/// Pace marks live in the title as unicode (❄ ✓ ♨). Colors are applied through
+/// `NSMenuItem.attributedTitle` on menu open — SwiftUI foreground styles are washed out by NSMenu.
+private final class MeterMenuBadges: NSObject {
+    static let shared = MeterMenuBadges()
+
+    /// Text presentation (VS15) so `foregroundColor` can tint the glyph.
+    private static let textStyle = "\u{FE0E}"
+
+    var meters: [MenuMeterRow] = []
+    private var installed = false
+
+    func install() {
+        guard !installed else { return }
+        installed = true
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(menuDidBeginTracking(_:)),
+            name: NSMenu.didBeginTrackingNotification,
+            object: nil
+        )
     }
 
-    /// Indented secondary line under the meter title (native menu has no nested indent API).
-    static func note(for meter: MenuMeterRow) -> String? {
+    /// Mark + title. Survives NSMenu; color is painted in `apply(to:)`.
+    static func titleWithFallbackMark(for meter: MenuMeterRow) -> String {
+        "\(fallbackMark(for: meter)) \(meter.title)"
+    }
+
+    /// Note prefixed with the same mark column as the title (invisible in AppKit apply).
+    static func noteWithIndent(for meter: MenuMeterRow) -> String? {
         guard let note = meter.note else { return nil }
-        return "    \(note)"
+        return "\(fallbackMark(for: meter)) \(note)"
     }
 
-    /// Colored emoji survives NSMenu vibrancy; SF Symbol Labels often do not.
-    static func bandMark(for band: PaceBand) -> String {
+    private static func fallbackMark(for meter: MenuMeterRow) -> String {
+        switch meter.band {
+        case .under: return "❄\(textStyle)"
+        case .on: return "✓\(textStyle)"
+        case .over, .exhausted: return "♨\(textStyle)"
+        case .unavailable, .neutral: return "○"
+        }
+    }
+
+    @objc private func menuDidBeginTracking(_ note: Notification) {
+        guard let menu = note.object as? NSMenu else { return }
+        apply(to: menu)
+    }
+
+    private func apply(to menu: NSMenu) {
+        let meters = meters
+        guard !meters.isEmpty else { return }
+        guard menu.items.contains(where: {
+            meter(forTitle: $0.title, meters: meters) != nil
+                || meter(forNoteTitle: $0.title, meters: meters) != nil
+        }) else {
+            return
+        }
+
+        let menuFont = NSFont.menuFont(ofSize: 0)
+        let noteFont = NSFont.menuFont(ofSize: NSFont.smallSystemFontSize)
+        for item in menu.items {
+            if let meter = meter(forTitle: item.title, meters: meters) {
+                item.isEnabled = true
+                item.image = nil
+                item.attributedTitle = Self.coloredTitle(for: meter, font: menuFont)
+            } else if let meter = meter(forNoteTitle: item.title, meters: meters),
+                      let note = meter.note {
+                item.isEnabled = true
+                item.image = nil
+                item.attributedTitle = Self.indentedNote(note, matching: meter, font: noteFont)
+            }
+        }
+    }
+
+    private func meter(forTitle title: String, meters: [MenuMeterRow]) -> MenuMeterRow? {
+        if let exact = meters.first(where: { $0.title == title }) { return exact }
+        // "❄︎ <title>" from SwiftUI before attributedTitle rewrite.
+        return meters.first { meter in
+            guard title.hasSuffix(meter.title), title != meter.title else { return false }
+            // Note rows also end with text after a mark — exclude those.
+            if let note = meter.note, title.hasSuffix(note) { return false }
+            return true
+        }
+    }
+
+    private func meter(forNoteTitle title: String, meters: [MenuMeterRow]) -> MenuMeterRow? {
+        meters.first { meter in
+            guard let note = meter.note else { return false }
+            return title == note || title.hasSuffix(note)
+        }
+    }
+
+    private static func coloredTitle(for meter: MenuMeterRow, font: NSFont) -> NSAttributedString {
+        let mark = fallbackMark(for: meter)
+        let markFont = NSFont.menuFont(ofSize: font.pointSize + 1)
+        let ns = NSMutableAttributedString(
+            string: "\(mark) ",
+            attributes: [
+                .font: markFont,
+                .foregroundColor: markColor(band: meter.band, shade: meter.shade),
+            ]
+        )
+        ns.append(NSAttributedString(
+            string: meter.title,
+            attributes: [
+                .font: font,
+                .foregroundColor: NSColor.labelColor,
+            ]
+        ))
+        return ns
+    }
+
+    /// Same mark column as the title row, drawn clear so note text lines up under the title.
+    private static func indentedNote(_ note: String, matching meter: MenuMeterRow, font: NSFont) -> NSAttributedString {
+        let mark = fallbackMark(for: meter)
+        let markFont = NSFont.menuFont(ofSize: NSFont.menuFont(ofSize: 0).pointSize + 1)
+        let ns = NSMutableAttributedString(
+            string: "\(mark) ",
+            attributes: [
+                .font: markFont,
+                .foregroundColor: NSColor.clear,
+            ]
+        )
+        ns.append(NSAttributedString(
+            string: note,
+            attributes: [
+                .font: font,
+                .foregroundColor: NSColor.secondaryLabelColor,
+            ]
+        ))
+        return ns
+    }
+
+    /// Saturated marks — must read clearly on light menu chrome.
+    private static func markColor(band: PaceBand, shade: PaceShade) -> NSColor {
         switch band {
-        case .under: return "❄️ "
-        case .on: return "✅ "
-        case .over, .exhausted: return "🔥 "
-        case .unavailable, .neutral: return ""
+        case .under:
+            return NSColor(calibratedRed: 0.00, green: 0.42, blue: 0.98, alpha: 1)
+        case .on:
+            return NSColor(calibratedRed: 0.00, green: 0.62, blue: 0.28, alpha: 1)
+        case .over:
+            return overColor(shade: shade)
+        case .exhausted:
+            return NSColor(calibratedRed: 0.92, green: 0.08, blue: 0.18, alpha: 1)
+        case .unavailable, .neutral:
+            return NSColor.secondaryLabelColor
+        }
+    }
+
+    private static func overColor(shade: PaceShade) -> NSColor {
+        switch shade {
+        case .none, .mild:
+            return NSColor(calibratedRed: 0.95, green: 0.48, blue: 0.00, alpha: 1)
+        case .medium:
+            return NSColor(calibratedRed: 0.95, green: 0.32, blue: 0.05, alpha: 1)
+        case .strong:
+            return NSColor(calibratedRed: 0.92, green: 0.08, blue: 0.18, alpha: 1)
         }
     }
 }
@@ -210,7 +355,8 @@ private struct MenuBarIconLabel: View {
     let onPaceHi: Double
 
     @State private var iconAnimDate = Date()
-    private let iconAnimTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+    /// Half-cycle for blink / dual-avatar pulse (~2s full period).
+    private let iconAnimTimer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
 
     private var blinkUnderRatio: Double { Double(blinkUnderPercent) / 100 }
     private var blinkOverRatio: Double { Double(blinkOverPercent) / 100 }
@@ -382,9 +528,9 @@ private struct MenuBarIconLabel: View {
         )
     }
 
-    /// ~1s hard on/off for significant under/over fills (matches 0.5s TimelineView tick).
+    /// ~2s hard on/off for significant under/over fills (1s half-cycle).
     private func blinkLit(at date: Date) -> Bool {
-        Int(date.timeIntervalSinceReferenceDate / 0.5) % 2 == 0
+        Int(date.timeIntervalSinceReferenceDate / 1.0) % 2 == 0
     }
 
     private func blinkedBarColor(_ base: NSColor?, meter: QuotaMeter, at date: Date) -> NSColor? {
@@ -402,7 +548,7 @@ private struct MenuBarIconLabel: View {
         return NSColor.white.withAlphaComponent(0.4)
     }
 
-    /// Avatar tint: light mix toward white. Dual distinct colors → alternate on the same 0.5s tick.
+    /// Avatar tint: light mix toward white. Dual distinct colors → alternate on the same 1s tick.
     private func lightAvatarColor(from barColors: [NSColor?], at date: Date) -> NSColor? {
         let colors = barColors.compactMap { $0 }
         guard let first = colors.first else { return nil }

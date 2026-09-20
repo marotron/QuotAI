@@ -12,6 +12,8 @@
 - Menu presentation returns `meters` + `notices` instead of plain string rows
 - Native `.menu` style; notes rendered as separate NSMenu items so they are not stripped
 - Menu bar always uses used + days; removed Bar mode picker / pace glance mode
+- Dropdown pace marks: ❄ / ✓ / ♨ with pace colors via `NSMenuItem.attributedTitle`
+- Significant-pace blink half-cycle slowed to 1s (~2s full period)
 
 ## 0.2.0 — 2026-09-20
 
