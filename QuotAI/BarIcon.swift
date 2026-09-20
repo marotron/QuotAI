@@ -1,4 +1,5 @@
 import AppKit
+import QuotAICore
 
 /// Multi-row menu bar glyph: avatar · bar(s) · percent · time to reset.
 /// One composed image: MenuBarExtra labels only render a single image.
@@ -20,37 +21,47 @@ enum BarIcon {
 
     /// Two layout rows (Cursor slot + Grok); Other Models stacks inside the Cursor slot.
     private struct Metrics {
-        let rowHeight: CGFloat = 10
+        let rowHeight: CGFloat = 11
         var avatar: CGFloat { rowHeight }
-        var singleBarHeight: CGFloat { 4 }
-        var dualBarHeight: CGFloat { 2 }
+        var singleBarHeight: CGFloat { 5 }
+        var dualBarHeight: CGFloat { 3 }
         var dualGap: CGFloat { 1 }
         var font: NSFont { .monospacedDigitSystemFont(ofSize: 8, weight: .semibold) }
         var height: CGFloat { rowHeight * 2 }
     }
 
-    private static let barWidth: CGFloat = 22
+    /// Track width in points (~44px @2x). Wider = clearer % steps in the menu bar.
+    private static let barWidth: CGFloat = 28
     private static let gap: CGFloat = 4
 
     /// Avatars/text use `foreground`; bars use `row.barColors` (nil → `foreground`).
-    static func image(rows: [Row], showPercent: Bool, showRemaining: Bool, foreground ink: NSColor) -> NSImage {
+    static func image(
+        rows: [Row],
+        showAvatars: Bool,
+        showPercent: Bool,
+        showRemaining: Bool,
+        foreground ink: NSColor
+    ) -> NSImage {
         precondition(rows.count == 2, "BarIcon expects Cursor + Grok layout rows")
         let m = Metrics()
         let percents = rows.map(percentLabel)
         let remainings = rows.map { $0.remaining ?? "—" }
+        let avatarCol = showAvatars ? m.avatar + gap : 0
         let percentWidth = showPercent ? textWidth(percents, font: m.font) : 0
         let remainingWidth = showRemaining ? textWidth(remainings, font: m.font) : 0
-        let percentX = m.avatar + gap + barWidth + gap
+        let percentX = avatarCol + barWidth + gap
         let remainingX = showPercent ? percentX + percentWidth + gap : percentX
-        var width = m.avatar + gap + barWidth
+        var width = avatarCol + barWidth
         if showPercent { width += gap + percentWidth }
         if showRemaining { width += gap + remainingWidth }
 
         let image = NSImage(size: NSSize(width: width, height: m.height), flipped: true) { _ in
             for (index, row) in rows.enumerated() {
                 let midY = (CGFloat(index) + 0.5) * m.rowHeight
-                drawAvatar(row.avatar, in: NSRect(x: 0, y: midY - m.avatar / 2, width: m.avatar, height: m.avatar), ink: ink)
-                drawBars(row: row, metrics: m, midY: midY, ink: ink)
+                if showAvatars {
+                    drawAvatar(row.avatar, in: NSRect(x: 0, y: midY - m.avatar / 2, width: m.avatar, height: m.avatar), ink: ink)
+                }
+                drawBars(row: row, metrics: m, midY: midY, barX: avatarCol, ink: ink)
                 if showPercent {
                     drawText(percents[index], x: percentX, midY: midY, font: m.font, ink: ink)
                 }
@@ -66,10 +77,10 @@ enum BarIcon {
 
     // MARK: - Labels
 
-    /// Single → `23%`; dual → `23/2%` (one `%` at the end).
+    /// Single → `23%`; dual → `23/2%` (one `%` at the end). Ceil matches Spending UI.
     static func percentLabel(_ row: Row) -> String {
         let parts = row.fills.map { fill -> String in
-            fill.map { String(format: "%.0f", $0) } ?? "—"
+            fill.map { String(QuotaPercent.display($0)) } ?? "—"
         }
         guard parts.count > 1 else {
             return parts.first.map { $0 == "—" ? "—" : "\($0)%" } ?? "—"
@@ -79,8 +90,7 @@ enum BarIcon {
 
     // MARK: - Drawing
 
-    private static func drawBars(row: Row, metrics m: Metrics, midY: CGFloat, ink: NSColor) {
-        let x = m.avatar + gap
+    private static func drawBars(row: Row, metrics m: Metrics, midY: CGFloat, barX x: CGFloat, ink: NSColor) {
         if row.fills.count <= 1 {
             let fill = row.fills.first ?? nil
             let color = (row.barColors.first ?? nil) ?? ink
@@ -129,13 +139,20 @@ enum BarIcon {
 
     private static func drawBar(fill: Double?, color: NSColor, in track: NSRect) {
         let radius = track.height / 2
+        let trackPath = NSBezierPath(roundedRect: track, xRadius: radius, yRadius: radius)
         color.withAlphaComponent(fill == nil ? 0.15 : 0.3).setFill()
-        NSBezierPath(roundedRect: track, xRadius: radius, yRadius: radius).fill()
+        trackPath.fill()
+        // Same whole-% as the label (Spending UI). 0% → empty track; 1% → visible stub pill.
         guard let fill else { return }
-        var filled = track
-        filled.size.width = max(track.height, track.width * CGFloat(min(100, max(0, fill)) / 100))
+        let pct = QuotaPercent.display(fill)
+        guard pct > 0 else { return }
+        let exact = track.width * CGFloat(pct) / 100
+        let width = max(exact, track.height) // circle stub so 1% reads like Spending
+        NSGraphicsContext.saveGraphicsState()
+        trackPath.addClip()
         color.setFill()
-        NSBezierPath(roundedRect: filled, xRadius: radius, yRadius: radius).fill()
+        NSRect(x: track.minX, y: track.minY, width: width, height: track.height).fill()
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     /// Column width = widest string, so nothing clips (`100/100%`, `14m`).

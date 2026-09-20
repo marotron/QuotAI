@@ -26,7 +26,11 @@ enum PaceSampleStore {
             return meter
         }
 
-        if let existing = load(key), calendar.isDate(existing.sampledAt, inSameDayAs: now) {
+        // Same local day only; drop the sample when the billing period rolls over mid-day.
+        if let existing = load(key),
+           calendar.isDate(existing.sampledAt, inSameDayAs: now),
+           existing.periodStart == start,
+           existing.periodEnd == end {
             var updated = meter
             updated.pace = PaceCalculator.pace(
                 percentUsed: existing.percentUsed,

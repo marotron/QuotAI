@@ -24,4 +24,12 @@ final class RemainingTimeTests: XCTestCase {
         XCTAssertEqual(RemainingTime.format(days: 3), "3d")
         XCTAssertEqual(RemainingTime.format(days: 0.5), "12h")
     }
+
+    func testDetailedCombinesUnits() {
+        XCTAssertEqual(RemainingTime.formatDetailed(seconds: 29 * 86_400 + 14 * 3_600), "29d 14h")
+        XCTAssertEqual(RemainingTime.formatDetailed(seconds: 5 * 86_400), "5d")
+        XCTAssertEqual(RemainingTime.formatDetailed(seconds: 5 * 3_600 + 12 * 60), "5h 12m")
+        XCTAssertEqual(RemainingTime.formatDetailed(seconds: 4 * 60), "4m")
+        XCTAssertEqual(RemainingTime.formatDetailed(seconds: 0), "0m")
+    }
 }

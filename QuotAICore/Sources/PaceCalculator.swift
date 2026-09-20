@@ -58,7 +58,8 @@ public enum PaceCalculator {
             label = "On pace · \(pct)% pace"
         }
         if early, let d = daysToExhaustion {
-            label += " · ~\(RemainingTime.format(days: d)) left"
+            // Days until quota hits 100% at current burn — not days until period reset.
+            label += " · empties in ~\(RemainingTime.format(days: d))"
         }
 
         return PaceResult(ratio: r, label: label, isEarly: early, daysToExhaustion: daysToExhaustion)

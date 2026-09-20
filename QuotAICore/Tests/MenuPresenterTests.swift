@@ -19,6 +19,21 @@ final class MenuPresenterTests: XCTestCase {
         XCTAssertTrue(view.rows[0].contains("5h"))
     }
 
+    func testMenuRowShowsPrecisePercentAndDetailedTime() {
+        let cursor = QuotaMeter(
+            name: "Cursor Models",
+            percentUsed: 0.31777777777777777,
+            secondsRemaining: 29 * 86_400 + 14 * 3_600
+        )
+        let grok = QuotaMeter(name: "Grok Bot", percentUsed: 46.4, secondsRemaining: 5 * 86_400)
+        let view = MenuPresenter.present(cursorModels: cursor, grokBot: grok, mode: .usedAndDays)
+        XCTAssertTrue(view.rows[0].contains("0.32%"), view.rows[0])
+        XCTAssertTrue(view.rows[0].contains("29d 14h"), view.rows[0])
+        XCTAssertTrue(view.rows[1].contains("46.4%"), view.rows[1])
+        // Bar glance stays ceiled whole %.
+        XCTAssertTrue(view.barTitle.contains("1%"))
+    }
+
     func testUnavailableGrok() {
         let cursor = QuotaMeter(name: "Cursor Models", percentUsed: 10, secondsRemaining: 20 * 86_400)
         let grok = QuotaMeter(name: "Grok Bot", isUnavailable: true)
@@ -65,6 +80,26 @@ final class MenuPresenterTests: XCTestCase {
         XCTAssertEqual(tint(50), .warning)
         XCTAssertEqual(tint(80), .critical)
         XCTAssertEqual(tint(20, authError: "Auth error"), .critical)
+    }
+
+    func testPaceTintFollowsGreenBand() {
+        func paceTint(ratio: Double?, exhausted: Bool = false) -> SymbolTint {
+            let pace: PaceResult?
+            if exhausted {
+                pace = PaceResult(ratio: nil, label: "Exhausted", isEarly: false, daysToExhaustion: 0)
+            } else if let ratio {
+                pace = PaceResult(ratio: ratio, label: "", isEarly: false, daysToExhaustion: nil)
+            } else {
+                pace = nil
+            }
+            return MenuPresenter.tint(pace: pace)
+        }
+        XCTAssertEqual(paceTint(ratio: nil), .neutral)
+        XCTAssertEqual(paceTint(ratio: 0.5), .under)
+        XCTAssertEqual(paceTint(ratio: 1.0), .ok)
+        XCTAssertEqual(paceTint(ratio: 0.95), .ok)
+        XCTAssertEqual(paceTint(ratio: 1.2), .critical)
+        XCTAssertEqual(paceTint(ratio: nil, exhausted: true), .critical)
     }
 
     func testAuthErrorSymbol() {

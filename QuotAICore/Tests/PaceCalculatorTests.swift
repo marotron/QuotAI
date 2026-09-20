@@ -35,6 +35,7 @@ final class PaceCalculatorTests: XCTestCase {
         // 90% used after 1 day → ~0.11d to exhaust → hours in label
         let result = PaceCalculator.pace(percentUsed: 90, periodStart: start, periodEnd: end, now: now)
         XCTAssertTrue(result.isEarly)
-        XCTAssertTrue(result.label.contains("h left"), result.label)
+        XCTAssertTrue(result.label.contains("empties in"), result.label)
+        XCTAssertTrue(result.label.contains("h"), result.label)
     }
 }

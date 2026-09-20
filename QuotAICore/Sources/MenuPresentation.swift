@@ -43,8 +43,12 @@ public enum IconColorMode: String, CaseIterable, Hashable, Sendable {
 /// Semantic tint for the icon; the app maps this to actual colors.
 public enum SymbolTint: Equatable, Sendable {
     case neutral
+    /// Under pace (`r < 0.90`) → blue.
+    case under
+    /// On pace / healthy usage → green.
     case ok
     case warning
+    /// Over pace / critical usage / exhausted → red.
     case critical
 }
 
@@ -116,6 +120,16 @@ public enum MenuPresenter {
         return .ok
     }
 
+    /// Pace ratio → Under / On / Over colors (locked formula green band 0.90…1.10).
+    public static func tint(pace: PaceResult?) -> SymbolTint {
+        guard let pace else { return .neutral }
+        if pace.daysToExhaustion == 0 { return .critical } // Exhausted
+        guard let r = pace.ratio else { return .neutral }
+        if r < PaceCalculator.greenLo { return .under }
+        if r > PaceCalculator.greenHi { return .critical }
+        return .ok
+    }
+
     private static func worstPercentUsed(_ a: QuotaMeter, _ b: QuotaMeter) -> Double? {
         [a, b].compactMap { $0.isUnavailable ? nil : $0.percentUsed }.max()
     }
@@ -139,9 +153,10 @@ public enum MenuPresenter {
         guard let pct = m.percentUsed else {
             return "\(m.name): —"
         }
-        let remaining = m.secondsRemaining.map(RemainingTime.format(seconds:)) ?? "—"
+        // Menu: raw API % + detailed reset clock; bar keeps ceiled whole % via BarIcon.
+        let remaining = m.secondsRemaining.map(RemainingTime.formatDetailed(seconds:)) ?? "—"
         let pace = m.pace?.label ?? "Pace n/a"
-        return "\(m.name): \(formatPct(pct)) · \(remaining) · \(pace)"
+        return "\(m.name): \(QuotaPercent.precise(pct)) · \(remaining) · \(pace)"
     }
 
     private static func glanceUsed(_ a: QuotaMeter, _ b: QuotaMeter) -> String {
@@ -164,6 +179,6 @@ public enum MenuPresenter {
     }
 
     private static func formatPct(_ value: Double) -> String {
-        String(format: "%.0f%%", value)
+        QuotaPercent.format(value)
     }
 }

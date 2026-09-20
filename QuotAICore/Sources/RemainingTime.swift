@@ -17,6 +17,21 @@ public enum RemainingTime {
         return "\(Int(ceil(remaining / minute)))m"
     }
 
+    /// Expanded menu: `29d 14h`, `5h 12m`, `4m`.
+    public static func formatDetailed(seconds: TimeInterval) -> String {
+        let remaining = max(0, seconds)
+        let days = Int(remaining / day)
+        let hours = Int(remaining.truncatingRemainder(dividingBy: day) / hour)
+        let mins = Int(remaining.truncatingRemainder(dividingBy: hour) / minute)
+        if days > 0 {
+            return hours > 0 ? "\(days)d \(hours)h" : "\(days)d"
+        }
+        if hours > 0 {
+            return mins > 0 ? "\(hours)h \(mins)m" : "\(hours)h"
+        }
+        return "\(mins)m"
+    }
+
     /// Pace early-depletion uses fractional days.
     public static func format(days: Double) -> String {
         format(seconds: days * day)

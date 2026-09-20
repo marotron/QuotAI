@@ -9,6 +9,7 @@ struct QuotAIApp: App {
     @AppStorage("iconColorMode") private var iconColorMode: IconColorMode = .monochrome
     @AppStorage("showRemaining") private var showRemaining = false
     @AppStorage("showPercent") private var showPercent = true
+    @AppStorage("showAvatars") private var showAvatars = true
     @AppStorage("showOtherModels") private var showOtherModels = false
 
     private var presentation: MenuPresentation {
@@ -57,7 +58,7 @@ struct QuotAIApp: App {
             }
             Picker("Icon color", selection: $iconColorMode) {
                 Text("Monochrome").tag(IconColorMode.monochrome)
-                Text("By level").tag(IconColorMode.byLevel)
+                Text("By pace").tag(IconColorMode.byLevel)
             }
             Picker("Refresh every", selection: $store.pollIntervalMinutes) {
                 ForEach(QuotaStore.pollIntervalChoices, id: \.self) { minutes in
@@ -65,6 +66,7 @@ struct QuotAIApp: App {
                 }
             }
             Toggle("Show Other Models", isOn: $showOtherModels)
+            Toggle("Show icons", isOn: $showAvatars)
             Toggle("Show percentage", isOn: $showPercent)
             Toggle("Show time to reset", isOn: $showRemaining)
             Divider()
@@ -98,13 +100,13 @@ struct QuotAIApp: App {
             let b = other.isUnavailable ? nil : other.percentUsed
             cursorFills = [a, b]
             cursorColors = [
-                iconColorMode == .byLevel ? tintColor(MenuPresenter.tint(level: a)) : nil,
-                iconColorMode == .byLevel ? tintColor(MenuPresenter.tint(level: b)) : nil,
+                paceBarColor(cursor),
+                paceBarColor(other),
             ]
         } else {
             let a = cursor.isUnavailable ? nil : cursor.percentUsed
             cursorFills = [a]
-            cursorColors = [iconColorMode == .byLevel ? tintColor(MenuPresenter.tint(level: a)) : nil]
+            cursorColors = [paceBarColor(cursor)]
         }
 
         // Same billing cycle for Cursor Models + Other Models → one shared remaining label.
@@ -121,10 +123,16 @@ struct QuotAIApp: App {
                 avatar: .grok,
                 fills: [grokFill],
                 remaining: grok.isUnavailable ? nil : grok.secondsRemaining.map(RemainingTime.format(seconds:)),
-                barColors: [iconColorMode == .byLevel ? tintColor(MenuPresenter.tint(level: grokFill)) : nil]
+                barColors: [paceBarColor(grok)]
             ),
         ]
-        return BarIcon.image(rows: rows, showPercent: showPercent, showRemaining: showRemaining, foreground: .white)
+        return BarIcon.image(
+            rows: rows,
+            showAvatars: showAvatars,
+            showPercent: showPercent,
+            showRemaining: showRemaining,
+            foreground: .white
+        )
     }
 
     /// Template (monochrome) or palette-tinted symbol; NSImage so the status item honors the color.
@@ -146,10 +154,19 @@ struct QuotAIApp: App {
     private func tintColor(_ tint: SymbolTint) -> NSColor {
         switch tint {
         case .neutral: return .labelColor
+        case .under: return .systemBlue
         case .ok: return .systemGreen
         case .warning: return .systemOrange
         case .critical: return .systemRed
         }
+    }
+
+    /// Bars follow pace: blue under / green on / red over (nil when monochrome or unknown).
+    private func paceBarColor(_ meter: QuotaMeter) -> NSColor? {
+        guard iconColorMode == .byLevel, !meter.isUnavailable else { return nil }
+        let tint = MenuPresenter.tint(pace: meter.pace)
+        guard tint != .neutral else { return nil }
+        return tintColor(tint)
     }
 
     private func promptPasteToken() {

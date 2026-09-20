@@ -8,8 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		0892FE50EFCD8B19A5562708 /* PaceCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */; };
+		258406DDBA6376123299D5BF /* QuotaPercentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */; };
 		28B3DD16EFBC515D41661A4C /* QuotAICore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; };
 		3498F01BB3B5BCDC98192BAE /* CursorVscdbImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */; };
+		3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65831D21C9C2B6C291737D22 /* QuotaPercent.swift */; };
 		3F5777DF22D0C5E36DCED8D9 /* MenuPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACFFF12333707318644EED0 /* MenuPresenterTests.swift */; };
 		53AC03AF4844D781A5C76CAE /* QuotAICore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		64994325D781B5E4ABF70296 /* BarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A474AF98F62D2275255057D5 /* BarIcon.swift */; };
@@ -79,6 +81,8 @@
 		2D65735D0AC0BD39999794D7 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		4AAFD417E417B50DE713398C /* PaceCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceCalculatorTests.swift; sourceTree = "<group>"; };
 		5BCD6BD67F062EB51D2E62F2 /* QuotAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		65831D21C9C2B6C291737D22 /* QuotaPercent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaPercent.swift; sourceTree = "<group>"; };
+		7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaPercentTests.swift; sourceTree = "<group>"; };
 		782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaResponseParserTests.swift; sourceTree = "<group>"; };
 		787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		8A84478A2DFA344FC905215F /* QuotAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotAIApp.swift; sourceTree = "<group>"; };
@@ -143,6 +147,7 @@
 			children = (
 				DACFFF12333707318644EED0 /* MenuPresenterTests.swift */,
 				4AAFD417E417B50DE713398C /* PaceCalculatorTests.swift */,
+				7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */,
 				782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */,
 				22F0F40FD1FE615DF92CCF71 /* RemainingTimeTests.swift */,
 			);
@@ -178,6 +183,7 @@
 				9A0248EF36AED12752B7A8D9 /* MenuPresentation.swift */,
 				E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */,
 				A1B666266F381CBC367A25A8 /* QuotAIKeychain.swift */,
+				65831D21C9C2B6C291737D22 /* QuotaPercent.swift */,
 				B4D5560D8CAD91D26D28FC1C /* QuotaResponseParser.swift */,
 				100900970A7EB9E28EF6C831 /* RemainingTime.swift */,
 			);
@@ -308,6 +314,7 @@
 				D0A82923EF1EA1BFA9361ED0 /* MenuPresentation.swift in Sources */,
 				0892FE50EFCD8B19A5562708 /* PaceCalculator.swift in Sources */,
 				DCE51FCCEA2E00D48A69D5DF /* QuotAIKeychain.swift in Sources */,
+				3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */,
 				FD24C4805DBDBBB0AFC5BA3F /* QuotaResponseParser.swift in Sources */,
 				988E8D070DE68CEB9D4DBB9A /* RemainingTime.swift in Sources */,
 			);
@@ -319,6 +326,7 @@
 			files = (
 				3F5777DF22D0C5E36DCED8D9 /* MenuPresenterTests.swift in Sources */,
 				F6B16EE2F78F625179F0AD15 /* PaceCalculatorTests.swift in Sources */,
+				258406DDBA6376123299D5BF /* QuotaPercentTests.swift in Sources */,
 				8F53C68CC8303EDA7842DF5B /* QuotaResponseParserTests.swift in Sources */,
 				DC5676AEC84F8C26CB786FAB /* RemainingTimeTests.swift in Sources */,
 			);
