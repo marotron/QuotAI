@@ -1,5 +1,17 @@
 .DS_Store
-*.xcuserdata
+tmp/
+
+# Xcode / Swift
+build/
 DerivedData/
 .build/
-tmp/
+xcuserdata/
+*.xcuserstate
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Optional IDE / tooling
+.idea/
