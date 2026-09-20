@@ -60,19 +60,80 @@ public enum SymbolTint: Equatable, Sendable {
     case critical
 }
 
+/// How far off the green band a meter’s pace sits (drives ice/fire shade).
+public enum PaceShade: Int, Equatable, Sendable, Comparable {
+    case none = 0
+    case mild = 1
+    case medium = 2
+    case strong = 3
+
+    public static func < (lhs: PaceShade, rhs: PaceShade) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
+public enum PaceBand: Equatable, Sendable {
+    case unavailable
+    case neutral
+    case under
+    case on
+    case over
+    case exhausted
+}
+
+/// One dropdown meter block: main line + optional smaller note + pace styling.
+public struct MenuMeterRow: Equatable, Identifiable, Sendable {
+    public var id: String { name }
+    public var name: String
+    /// e.g. `1.64% used / 2% elapsed → 82% pace · 29d 10h`
+    public var title: String
+    /// Smaller secondary line (waste % or early-empty / idle days).
+    public var note: String?
+    public var band: PaceBand
+    public var shade: PaceShade
+    /// SF Symbol: `snowflake` / `checkmark.circle.fill` / `flame.fill` / nil.
+    public var symbolName: String?
+
+    public init(
+        name: String,
+        title: String,
+        note: String? = nil,
+        band: PaceBand = .neutral,
+        shade: PaceShade = .none,
+        symbolName: String? = nil
+    ) {
+        self.name = name
+        self.title = title
+        self.note = note
+        self.band = band
+        self.shade = shade
+        self.symbolName = symbolName
+    }
+}
+
 public struct MenuPresentation: Equatable, Sendable {
     public var barTitle: String
     /// SF Symbol for the menu bar icon; tracks the worst meter (or pace in pace mode).
     public var symbolName: String
     public var tint: SymbolTint
-    public var rows: [String]
+    public var meters: [MenuMeterRow]
+    /// Auth / other plain lines above the meters.
+    public var notices: [String]
     public var spendingURL: URL
 
-    public init(barTitle: String, symbolName: String, tint: SymbolTint, rows: [String], spendingURL: URL) {
+    public init(
+        barTitle: String,
+        symbolName: String,
+        tint: SymbolTint,
+        meters: [MenuMeterRow],
+        notices: [String] = [],
+        spendingURL: URL
+    ) {
         self.barTitle = barTitle
         self.symbolName = symbolName
         self.tint = tint
-        self.rows = rows
+        self.meters = meters
+        self.notices = notices
         self.spendingURL = spendingURL
     }
 }
@@ -88,13 +149,14 @@ public enum MenuPresenter {
         authError: String? = nil,
         now: Date = Date()
     ) -> MenuPresentation {
-        var rows = [
-            row(cursorModels, now: now),
-            otherModels.map { row($0, now: now) },
-            row(grokBot, now: now),
-        ].compactMap { $0 }
+        var meters = [meterRow(cursorModels, now: now)]
+        if let otherModels {
+            meters.append(meterRow(otherModels, now: now))
+        }
+        meters.append(meterRow(grokBot, now: now))
+        var notices: [String] = []
         if let authError, !authError.isEmpty {
-            rows.insert(authError, at: 0)
+            notices.append(authError)
         }
         let barTitle: String
         let symbolName: String
@@ -120,7 +182,8 @@ public enum MenuPresenter {
             barTitle: barTitle,
             symbolName: symbolName,
             tint: tint,
-            rows: rows,
+            meters: meters,
+            notices: notices,
             spendingURL: spendingURL
         )
     }
@@ -159,28 +222,120 @@ public enum MenuPresenter {
         return "gauge.with.dots.needle.\(nearest)percent"
     }
 
-    private static func row(_ m: QuotaMeter, now: Date = Date()) -> String {
+    private static func meterRow(_ m: QuotaMeter, now: Date) -> MenuMeterRow {
         if m.isUnavailable {
-            return "\(m.name): unavailable"
+            return MenuMeterRow(
+                name: m.name,
+                title: "\(m.name): unavailable",
+                band: .unavailable
+            )
         }
         guard let pct = m.percentUsed else {
-            return "\(m.name): —"
+            return MenuMeterRow(name: m.name, title: "\(m.name): —")
         }
+
         let remaining = m.secondsRemaining.map(RemainingTime.formatDetailed(seconds:)) ?? "—"
         let used = QuotaPercent.precise(pct)
-
-        // Live used ÷ elapsed so the printed pace matches the numbers beside it.
+        let title: String
         if let elapsed = m.periodElapsedPercent(now: now) {
             let elapsedPct = Int(elapsed.rounded())
-            var head = "\(used) used / \(elapsedPct)% elapsed → \(paceArrow(m.pace))"
-            if let hint = earlyDepletionHint(m.pace) {
-                head += " · \(hint)"
-            }
-            return "\(m.name): \(head) · \(remaining)"
+            title = "\(m.name): \(used) used / \(elapsedPct)% elapsed → \(paceArrow(m.pace)) · \(remaining)"
+        } else {
+            let pace = m.pace?.label ?? "Pace n/a"
+            title = "\(m.name): \(used) used · \(remaining) · \(pace)"
         }
 
-        let pace = m.pace?.label ?? "Pace n/a"
-        return "\(m.name): \(used) used · \(remaining) · \(pace)"
+        let style = paceStyle(m.pace, secondsRemaining: m.secondsRemaining)
+        return MenuMeterRow(
+            name: m.name,
+            title: title,
+            note: style.note,
+            band: style.band,
+            shade: style.shade,
+            symbolName: style.symbolName
+        )
+    }
+
+    private struct PaceStyle {
+        var band: PaceBand
+        var shade: PaceShade
+        var symbolName: String?
+        var note: String?
+    }
+
+    private static func paceStyle(_ pace: PaceResult?, secondsRemaining: TimeInterval?) -> PaceStyle {
+        guard let pace else {
+            return PaceStyle(band: .neutral, shade: .none, symbolName: nil, note: nil)
+        }
+        if pace.daysToExhaustion == 0 {
+            return PaceStyle(
+                band: .exhausted,
+                shade: .strong,
+                symbolName: "flame.fill",
+                note: "Quota exhausted"
+            )
+        }
+        guard let r = pace.ratio else {
+            return PaceStyle(band: .neutral, shade: .none, symbolName: nil, note: nil)
+        }
+
+        if r < PaceCalculator.greenLo {
+            let waste = max(0, (1 - r) * 100)
+            let wastePct = Int(waste.rounded())
+            return PaceStyle(
+                band: .under,
+                shade: underShade(r),
+                symbolName: "snowflake",
+                note: "At this pace ~\(wastePct)% of quota unused by reset"
+            )
+        }
+
+        if r > PaceCalculator.greenHi || pace.isEarly {
+            return PaceStyle(
+                band: .over,
+                shade: overShade(r, early: pace.isEarly),
+                symbolName: "flame.fill",
+                note: overNote(pace: pace, secondsRemaining: secondsRemaining)
+            )
+        }
+
+        return PaceStyle(
+            band: .on,
+            shade: .none,
+            symbolName: "checkmark.circle.fill",
+            note: nil
+        )
+    }
+
+    /// Mild just under green → strong when far under.
+    private static func underShade(_ r: Double) -> PaceShade {
+        if r < 0.60 { return .strong }
+        if r < PaceCalculator.significantLo { return .medium }
+        return .mild
+    }
+
+    private static func overShade(_ r: Double, early: Bool) -> PaceShade {
+        if r > 1.50 { return .strong }
+        if r > PaceCalculator.significantHi { return .medium }
+        if r > PaceCalculator.greenHi { return .mild }
+        // Inside green but early depletion → mild fire.
+        return early ? .mild : .none
+    }
+
+    private static func overNote(pace: PaceResult, secondsRemaining: TimeInterval?) -> String? {
+        guard let daysToEmpty = pace.daysToExhaustion, daysToEmpty > 0 else { return nil }
+        let empty = RemainingTime.format(days: daysToEmpty)
+        guard let secondsRemaining, secondsRemaining > 0 else {
+            return "Empties in ~\(empty)"
+        }
+        let daysLeftInPeriod = secondsRemaining / RemainingTime.day
+        let idle = max(0, daysLeftInPeriod - daysToEmpty)
+        if idle < 1.0 / 24.0 {
+            // Less than ~1h of idle — just the empty timing.
+            return "Empties in ~\(empty)"
+        }
+        let idleFmt = RemainingTime.format(days: idle)
+        return "Empties in ~\(empty) · then ~\(idleFmt) with no quota"
     }
 
     /// `82% pace`, `Exhausted`, or `Pace n/a`.
@@ -189,11 +344,6 @@ public enum MenuPresenter {
         if pace.daysToExhaustion == 0 { return "Exhausted" }
         guard let r = pace.ratio else { return pace.label.isEmpty ? "Pace n/a" : pace.label }
         return "\(Int((r * 100).rounded()))% pace"
-    }
-
-    private static func earlyDepletionHint(_ pace: PaceResult?) -> String? {
-        guard let pace, pace.isEarly, let d = pace.daysToExhaustion, d > 0 else { return nil }
-        return "empties in ~\(RemainingTime.format(days: d))"
     }
 
     private static func glanceUsed(_ a: QuotaMeter, _ b: QuotaMeter) -> String {

@@ -31,6 +31,7 @@ struct QuotAIApp: App {
     }
 
     var body: some Scene {
+        // `.menu` → native NSMenu (Wi‑Fi / VPN style). Avoid `.window` chrome for buttons/pickers.
         MenuBarExtra {
             if store.isRefreshing {
                 Text("Refreshing…")
@@ -40,8 +41,15 @@ struct QuotAIApp: App {
                 Text("QuotAI")
             }
             Divider()
-            ForEach(presentation.rows, id: \.self) { row in
-                Text(row)
+            ForEach(presentation.notices, id: \.self) { notice in
+                Text(notice)
+            }
+            ForEach(presentation.meters) { meter in
+                Text(MeterInfoRow.title(for: meter))
+                if let note = meter.note {
+                    // Separate item — NSMenu strips newlines inside a single title.
+                    Text(note)
+                }
             }
             Divider()
             Button("Refresh") {
@@ -109,6 +117,7 @@ struct QuotAIApp: App {
                 blinkOverPercent: blinkOverPercent
             )
         }
+        .menuBarExtraStyle(.menu)
     }
 
     private func promptPasteToken() {
@@ -128,6 +137,24 @@ struct QuotAIApp: App {
             .filter { !$0.isEmpty }
         guard let access = lines.first else { return }
         store.pasteAccessToken(access, refreshToken: lines.count > 1 ? lines[1] : nil)
+    }
+}
+
+/// Builds the main meter title for a native menu row (emoji + copy).
+/// Notes are rendered as a following menu item so NSMenu does not drop them.
+private enum MeterInfoRow {
+    static func title(for meter: MenuMeterRow) -> String {
+        "\(bandMark(for: meter.band))\(meter.title)"
+    }
+
+    /// Colored emoji survives NSMenu vibrancy; SF Symbol Labels often do not.
+    static func bandMark(for band: PaceBand) -> String {
+        switch band {
+        case .under: return "❄️ "
+        case .on: return "✅ "
+        case .over, .exhausted: return "🔥 "
+        case .unavailable, .neutral: return ""
+        }
     }
 }
 
