@@ -109,21 +109,30 @@ struct QuotAIApp: App {
             cursorColors = [paceBarColor(cursor)]
         }
 
-        // Same billing cycle for Cursor Models + Other Models → one shared remaining label.
+        // Same billing cycle for Cursor Models + Other Models → one shared remaining + timeline.
         let cursorRemaining: String? = {
             if cursor.isUnavailable, !showOtherModels || other.isUnavailable { return nil }
             let seconds = cursor.secondsRemaining ?? other.secondsRemaining
             return seconds.map(RemainingTime.format(seconds:))
         }()
+        let cursorTimeline = cursor.periodElapsedPercent() ?? other.periodElapsedPercent()
+        let grokTimeline = grok.periodElapsedPercent()
 
         let grokFill = grok.isUnavailable ? nil : grok.percentUsed
         let rows = [
-            BarIcon.Row(avatar: .cursor, fills: cursorFills, remaining: cursorRemaining, barColors: cursorColors),
+            BarIcon.Row(
+                avatar: .cursor,
+                fills: cursorFills,
+                remaining: cursorRemaining,
+                barColors: cursorColors,
+                timeline: showRemaining ? cursorTimeline : nil
+            ),
             BarIcon.Row(
                 avatar: .grok,
                 fills: [grokFill],
                 remaining: grok.isUnavailable ? nil : grok.secondsRemaining.map(RemainingTime.format(seconds:)),
-                barColors: [paceBarColor(grok)]
+                barColors: [paceBarColor(grok)],
+                timeline: showRemaining ? grokTimeline : nil
             ),
         ]
         return BarIcon.image(

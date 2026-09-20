@@ -27,6 +27,14 @@ public struct QuotaMeter: Equatable, Sendable {
         self.periodStart = periodStart
         self.periodEnd = periodEnd
     }
+
+    /// 0–100 how far through the billing period we are (nil if dates missing).
+    public func periodElapsedPercent(now: Date = Date()) -> Double? {
+        guard let start = periodStart, let end = periodEnd else { return nil }
+        let total = end.timeIntervalSince(start)
+        guard total > 0 else { return nil }
+        return min(max(now.timeIntervalSince(start) / total, 0), 1) * 100
+    }
 }
 
 public enum BarDisplayMode: String, CaseIterable, Hashable, Sendable {
