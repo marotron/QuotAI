@@ -11,18 +11,25 @@ struct QuotAIApp: App {
     @AppStorage("showAvatars") private var showAvatars = true
     @AppStorage("showOtherModels") private var showOtherModels = false
     @AppStorage("blinkSignificantPace") private var blinkSignificantPace = false
-    /// Pace ratio % below which blink fires when enabled (default 75%).
     @AppStorage("blinkUnderPercent") private var blinkUnderPercent = 75
-    /// Pace ratio % above which blink fires when enabled (default 130%).
     @AppStorage("blinkOverPercent") private var blinkOverPercent = 130
-    /// On-pace dead zone low % (inclusive). Default 90 → ±10% band.
     @AppStorage("paceOnLoPercent") private var paceOnLoPercent = 90
-    /// On-pace dead zone high % (inclusive). Default 110 → ±10% band.
     @AppStorage("paceOnHiPercent") private var paceOnHiPercent = 110
+    @AppStorage("useSmartPaceAlerts") private var useSmartPaceAlerts = true
+    @AppStorage("overMaxStartPct") private var overMaxStartPct = 25
+    @AppStorage("overEmptyBeforePct") private var overEmptyBeforePct = 95
+    @AppStorage("underAfterPct") private var underAfterPct = 25
+    @AppStorage("underMinEndPct") private var underMinEndPct = 95
 
-    private static let blinkUnderChoices = [50, 60, 70, 75, 80, 85]
-    private static let blinkOverChoices = [115, 120, 125, 130, 140, 150]
-    /// Presets: tight ±5%, standard ±10% (default), loose ±15%, wide ±20%.
+    @AppStorage("pinRefreshInterval") private var pinRefreshInterval = true
+    @AppStorage("pinColorMode") private var pinColorMode = false
+    @AppStorage("pinOnPaceBand") private var pinOnPaceBand = false
+    @AppStorage("pinShowOtherModels") private var pinShowOtherModels = false
+    @AppStorage("pinShowAvatars") private var pinShowAvatars = false
+    @AppStorage("pinShowPercent") private var pinShowPercent = false
+    @AppStorage("pinShowRemaining") private var pinShowRemaining = false
+    @AppStorage("pinBlink") private var pinBlink = false
+
     private static let deadZonePresets: [(lo: Int, hi: Int)] = [
         (95, 105),
         (90, 110),
@@ -32,6 +39,15 @@ struct QuotAIApp: App {
 
     private var onPaceLo: Double { Double(min(paceOnLoPercent, paceOnHiPercent)) / 100 }
     private var onPaceHi: Double { Double(max(paceOnLoPercent, paceOnHiPercent)) / 100 }
+
+    private var smartThresholds: PaceAlertThresholds {
+        PaceAlertThresholds(
+            overMaxStartPct: Double(overMaxStartPct),
+            overEmptyBeforePct: Double(overEmptyBeforePct),
+            underAfterPct: Double(underAfterPct),
+            underMinEndPct: Double(underMinEndPct)
+        )
+    }
 
     private var presentation: MenuPresentation {
         let presented = MenuPresenter.present(
@@ -90,39 +106,48 @@ struct QuotAIApp: App {
             Button("Open Cursor Spending") {
                 NSWorkspace.shared.open(MenuPresenter.spendingURL)
             }
-            Divider()
-            Picker("Color mode", selection: $iconColorMode) {
-                Text("Monochrome").tag(IconColorMode.monochrome)
-                Text("By pace").tag(IconColorMode.byLevel)
-            }
-            Picker("On-pace band", selection: deadZoneSelection) {
-                ForEach(Self.deadZonePresets, id: \.lo) { preset in
-                    Text("\(preset.lo)–\(preset.hi)%").tag(deadZoneTag(lo: preset.lo, hi: preset.hi))
-                }
-            }
-            Picker("Refresh every", selection: $store.pollIntervalMinutes) {
-                ForEach(QuotaStore.pollIntervalChoices, id: \.self) { minutes in
-                    Text(minutes == 60 ? "1 hour" : "\(minutes) min").tag(minutes)
-                }
-            }
-            Toggle("Show Other Models", isOn: $showOtherModels)
-            Toggle("Show icons", isOn: $showAvatars)
-            Toggle("Show percentage", isOn: $showPercent)
-            Toggle("Show time to reset", isOn: $showRemaining)
-            Toggle("Blink on significant pace", isOn: $blinkSignificantPace)
-            if blinkSignificantPace {
-                Picker("Blink under", selection: $blinkUnderPercent) {
-                    ForEach(Self.blinkUnderChoices, id: \.self) { pct in
-                        Text("Below \(pct)% pace").tag(pct)
+            if hasPinnedPrefs {
+                Divider()
+                if pinColorMode {
+                    Picker("Color mode", selection: $iconColorMode) {
+                        Text("Monochrome").tag(IconColorMode.monochrome)
+                        Text("By pace").tag(IconColorMode.byLevel)
                     }
                 }
-                Picker("Blink over", selection: $blinkOverPercent) {
-                    ForEach(Self.blinkOverChoices, id: \.self) { pct in
-                        Text("Above \(pct)% pace").tag(pct)
+                if pinOnPaceBand {
+                    Picker("On-pace band", selection: deadZoneSelection) {
+                        ForEach(Self.deadZonePresets, id: \.lo) { preset in
+                            Text("\(preset.lo)–\(preset.hi)%").tag(deadZoneTag(lo: preset.lo, hi: preset.hi))
+                        }
                     }
+                }
+                if pinRefreshInterval {
+                    Picker("Refresh every", selection: $store.pollIntervalMinutes) {
+                        ForEach(QuotaStore.pollIntervalChoices, id: \.self) { minutes in
+                            Text(minutes == 60 ? "1 hour" : "\(minutes) min").tag(minutes)
+                        }
+                    }
+                }
+                if pinShowOtherModels {
+                    Toggle("Show Other Models", isOn: $showOtherModels)
+                }
+                if pinShowAvatars {
+                    Toggle("Show icons", isOn: $showAvatars)
+                }
+                if pinShowPercent {
+                    Toggle("Show percentage", isOn: $showPercent)
+                }
+                if pinShowRemaining {
+                    Toggle("Show time to reset", isOn: $showRemaining)
+                }
+                if pinBlink {
+                    Toggle("Blink on significant pace", isOn: $blinkSignificantPace)
                 }
             }
             Divider()
+            SettingsLink {
+                Text("Settings…")
+            }
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }
@@ -138,11 +163,22 @@ struct QuotAIApp: App {
                 blinkSignificantPace: blinkSignificantPace,
                 blinkUnderPercent: blinkUnderPercent,
                 blinkOverPercent: blinkOverPercent,
+                useSmartPaceAlerts: useSmartPaceAlerts,
+                smartThresholds: smartThresholds,
                 onPaceLo: onPaceLo,
                 onPaceHi: onPaceHi
             )
         }
         .menuBarExtraStyle(.menu)
+
+        Settings {
+            SettingsView(store: store)
+        }
+    }
+
+    private var hasPinnedPrefs: Bool {
+        pinRefreshInterval || pinColorMode || pinOnPaceBand || pinShowOtherModels
+            || pinShowAvatars || pinShowPercent || pinShowRemaining || pinBlink
     }
 
     private func deadZoneTag(lo: Int, hi: Int) -> String { "\(lo)-\(hi)" }
@@ -182,22 +218,44 @@ struct QuotAIApp: App {
 
 /// Pace marks live in the title as unicode (❄ ✓ ♨). Colors are applied through
 /// `NSMenuItem.attributedTitle` on menu open — SwiftUI foreground styles are washed out by NSMenu.
+///
+/// SwiftUI paints plain titles first (visible marks on note rows). We rewrite as soon as the
+/// menu begins tracking, again on the next run-loop turns / item inserts, and whenever `meters`
+/// updates while open — otherwise the first open can stick on the unstyled fallback (img1).
 private final class MeterMenuBadges: NSObject {
     static let shared = MeterMenuBadges()
 
     /// Text presentation (VS15) so `foregroundColor` can tint the glyph.
     private static let textStyle = "\u{FE0E}"
 
-    var meters: [MenuMeterRow] = []
+    var meters: [MenuMeterRow] = [] {
+        didSet { reapplyTrackingMenu() }
+    }
+
     private var installed = false
+    private weak var trackingMenu: NSMenu?
+    private var pendingApply: DispatchWorkItem?
 
     func install() {
         guard !installed else { return }
         installed = true
-        NotificationCenter.default.addObserver(
+        let nc = NotificationCenter.default
+        nc.addObserver(
             self,
             selector: #selector(menuDidBeginTracking(_:)),
             name: NSMenu.didBeginTrackingNotification,
+            object: nil
+        )
+        nc.addObserver(
+            self,
+            selector: #selector(menuDidEndTracking(_:)),
+            name: NSMenu.didEndTrackingNotification,
+            object: nil
+        )
+        nc.addObserver(
+            self,
+            selector: #selector(menuDidAddItem(_:)),
+            name: NSMenu.didAddItemNotification,
             object: nil
         )
     }
@@ -224,18 +282,74 @@ private final class MeterMenuBadges: NSObject {
 
     @objc private func menuDidBeginTracking(_ note: Notification) {
         guard let menu = note.object as? NSMenu else { return }
+        // Tentatively track the first open menu so meters didSet can re-apply before
+        // SwiftUI has inserted recognizable meter rows.
+        if trackingMenu == nil {
+            trackingMenu = menu
+        }
+        adoptIfMeterMenu(menu)
         apply(to: menu)
+        // Items / meters often arrive after tracking starts (SwiftUI build, refreshIfStale).
+        scheduleApply(menu)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            guard let self else { return }
+            self.adoptIfMeterMenu(menu)
+            self.apply(to: self.trackingMenu ?? menu)
+        }
+    }
+
+    @objc private func menuDidEndTracking(_ note: Notification) {
+        guard let menu = note.object as? NSMenu, trackingMenu === menu else { return }
+        pendingApply?.cancel()
+        pendingApply = nil
+        trackingMenu = nil
+    }
+
+    @objc private func menuDidAddItem(_ note: Notification) {
+        guard let menu = note.object as? NSMenu else { return }
+        // SwiftUI may insert meter rows after tracking begins (meters still empty on first open).
+        guard trackingMenu === menu || containsMeterItems(menu) else { return }
+        adoptIfMeterMenu(menu)
+        scheduleApply(menu)
+    }
+
+    private func reapplyTrackingMenu() {
+        guard let menu = trackingMenu else { return }
+        scheduleApply(menu)
+    }
+
+    private func adoptIfMeterMenu(_ menu: NSMenu) {
+        if containsMeterItems(menu) {
+            trackingMenu = menu
+        }
+    }
+
+    /// Coalesce rapid didAddItem / meters updates onto the next turn.
+    private func scheduleApply(_ menu: NSMenu) {
+        pendingApply?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            let target = self.trackingMenu ?? menu
+            self.adoptIfMeterMenu(target)
+            self.apply(to: target)
+        }
+        pendingApply = work
+        DispatchQueue.main.async(execute: work)
+    }
+
+    private func containsMeterItems(_ menu: NSMenu) -> Bool {
+        let meters = meters
+        guard !meters.isEmpty else { return false }
+        return menu.items.contains {
+            meter(forTitle: $0.title, meters: meters) != nil
+                || meter(forNoteTitle: $0.title, meters: meters) != nil
+        }
     }
 
     private func apply(to menu: NSMenu) {
         let meters = meters
         guard !meters.isEmpty else { return }
-        guard menu.items.contains(where: {
-            meter(forTitle: $0.title, meters: meters) != nil
-                || meter(forNoteTitle: $0.title, meters: meters) != nil
-        }) else {
-            return
-        }
+        guard containsMeterItems(menu) else { return }
 
         let menuFont = NSFont.menuFont(ofSize: 0)
         let noteFont = NSFont.menuFont(ofSize: NSFont.smallSystemFontSize)
@@ -351,6 +465,8 @@ private struct MenuBarIconLabel: View {
     let blinkSignificantPace: Bool
     let blinkUnderPercent: Int
     let blinkOverPercent: Int
+    let useSmartPaceAlerts: Bool
+    let smartThresholds: PaceAlertThresholds
     let onPaceLo: Double
     let onPaceHi: Double
 
@@ -521,6 +637,21 @@ private struct MenuBarIconLabel: View {
 
     private func meterNeedsBlink(_ meter: QuotaMeter) -> Bool {
         guard blinkSignificantPace, !meter.isUnavailable else { return false }
+        if let pct = meter.percentUsed,
+           let start = meter.periodStart,
+           let end = meter.periodEnd,
+           let t = PaceCalculator.elapsedFraction(periodStart: start, periodEnd: end) {
+            let kind = PaceAlertBands.evaluate(
+                percentUsed: pct,
+                elapsedFraction: t,
+                thresholds: smartThresholds,
+                smart: useSmartPaceAlerts,
+                legacyUnder: blinkUnderRatio,
+                legacyOver: blinkOverRatio
+            )
+            return PaceAlertBands.isSignificant(kind: kind)
+        }
+        // Exhausted / missing dates → fall back to pace result.
         return PaceCalculator.isSignificant(
             pace: meter.pace,
             under: blinkUnderRatio,

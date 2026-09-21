@@ -48,6 +48,20 @@ public enum PaceCalculator {
         return r < lo || r > hi
     }
 
+    /// Elapsed fraction of the billing period with the same ε clamp as `pace`.
+    public static func elapsedFraction(
+        periodStart: Date,
+        periodEnd: Date,
+        now: Date = Date()
+    ) -> Double? {
+        let total = periodEnd.timeIntervalSince(periodStart)
+        guard total > 0 else { return nil }
+        // ε ≈ one hour on a ~30-day period
+        let epsilon = total / (24 * 30)
+        let elapsed = max(now.timeIntervalSince(periodStart), epsilon)
+        return min(max(elapsed / total, 1e-6), 1.0)
+    }
+
     public static func pace(
         percentUsed: Double,
         periodStart: Date,
@@ -60,15 +74,13 @@ public enum PaceCalculator {
             return PaceResult(ratio: nil, label: "Exhausted", isEarly: false, daysToExhaustion: 0)
         }
 
-        let total = periodEnd.timeIntervalSince(periodStart)
-        guard total > 0 else {
+        guard let t = elapsedFraction(periodStart: periodStart, periodEnd: periodEnd, now: now) else {
             return PaceResult(ratio: nil, label: "Pace n/a", isEarly: false, daysToExhaustion: nil)
         }
 
-        // ε ≈ one hour on a ~30-day period
+        let total = periodEnd.timeIntervalSince(periodStart)
         let epsilon = total / (24 * 30)
         let elapsed = max(now.timeIntervalSince(periodStart), epsilon)
-        let t = min(max(elapsed / total, 1e-6), 1.0)
         let r = (percentUsed / 100.0) / t
 
         let daysElapsed = max(elapsed / 86_400.0, 1e-6)

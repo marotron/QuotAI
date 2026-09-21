@@ -99,6 +99,12 @@ final class QuotaStore: ObservableObject {
             authError = nil
             didAttemptAuthFailureReimport = false
             lastRefreshed = Date()
+            let includeOther = UserDefaults.standard.bool(forKey: "showOtherModels")
+            await PaceAlertOrchestrator.handleSuccessfulRefresh(
+                cursor: result.cursorModels,
+                other: includeOther ? result.otherModels : nil,
+                grok: result.grokBot
+            )
         } catch CursorConnectClient.ClientError.unauthorized,
                 CursorConnectClient.ClientError.shouldLogout,
                 CursorConnectClient.ClientError.refreshFailed {

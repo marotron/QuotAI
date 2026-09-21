@@ -15,3 +15,6 @@ xcuserdata/
 
 # Optional IDE / tooling
 .idea/
+
+# Local icon scratch / experiments
+.scratch/icons/
