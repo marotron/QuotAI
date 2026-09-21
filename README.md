@@ -4,6 +4,7 @@ macOS **Swift** menu-bar app for Cursor Spending quota (Cursor Models + Grok Bot
 
 **Stack:** Swift / SwiftUI `MenuBarExtra`, XcodeGen, macOS 14+  
 **Status:** live Connect fetch wired — open app to verify meters  
+**License:** [MIT](LICENSE)  
 **Wayfinder:** `.scratch/quotai/map.md`  
 **Product / tech:** `docs/pr.md`, `docs/tech-specs.md`
 
