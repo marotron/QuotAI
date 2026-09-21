@@ -20,6 +20,8 @@ struct QuotAIApp: App {
     @AppStorage("overEmptyBeforePct") private var overEmptyBeforePct = 95
     @AppStorage("underAfterPct") private var underAfterPct = 25
     @AppStorage("underMinEndPct") private var underMinEndPct = 95
+    @AppStorage("overCurvePct") private var overCurvePct = 0
+    @AppStorage("underCurvePct") private var underCurvePct = 0
 
     @AppStorage("pinRefreshInterval") private var pinRefreshInterval = true
     @AppStorage("pinColorMode") private var pinColorMode = false
@@ -45,7 +47,9 @@ struct QuotAIApp: App {
             overMaxStartPct: Double(overMaxStartPct),
             overEmptyBeforePct: Double(overEmptyBeforePct),
             underAfterPct: Double(underAfterPct),
-            underMinEndPct: Double(underMinEndPct)
+            underMinEndPct: Double(underMinEndPct),
+            overCurvePct: Double(overCurvePct),
+            underCurvePct: Double(underCurvePct)
         )
     }
 

@@ -1,6 +1,15 @@
 import Foundation
 import QuotAICore
 
+/// Outcome of a notify/email delivery attempt (blink is evaluated live elsewhere).
+enum PaceAlertDeliveryResult: Equatable {
+    case channelsOff
+    case quiet
+    case suppressedByCooldown
+    case delivered
+    case failed
+}
+
 /// On successful refresh → band decision → cooldown → notify/email adapters.
 @MainActor
 enum PaceAlertOrchestrator {
@@ -9,20 +18,23 @@ enum PaceAlertOrchestrator {
     /// Default 1 hour between identical signatures.
     static let defaultCooldown: TimeInterval = 3600
 
+    @discardableResult
     static func handleSuccessfulRefresh(
         cursor: QuotaMeter,
         other: QuotaMeter?,
         grok: QuotaMeter,
         now: Date = Date(),
         cooldown: TimeInterval = 3600
-    ) async {
+    ) async -> PaceAlertDeliveryResult {
         let defaults = UserDefaults.standard
         let smart = defaults.object(forKey: "useSmartPaceAlerts") as? Bool ?? true
         let thresholds = PaceAlertThresholds(
             overMaxStartPct: Double(defaults.object(forKey: "overMaxStartPct") as? Int ?? 25),
             overEmptyBeforePct: Double(defaults.object(forKey: "overEmptyBeforePct") as? Int ?? 95),
             underAfterPct: Double(defaults.object(forKey: "underAfterPct") as? Int ?? 25),
-            underMinEndPct: Double(defaults.object(forKey: "underMinEndPct") as? Int ?? 95)
+            underMinEndPct: Double(defaults.object(forKey: "underMinEndPct") as? Int ?? 95),
+            overCurvePct: Double(defaults.object(forKey: "overCurvePct") as? Int ?? 0),
+            underCurvePct: Double(defaults.object(forKey: "underCurvePct") as? Int ?? 0)
         )
         let legacyUnder = Double(defaults.object(forKey: "blinkUnderPercent") as? Int ?? 75) / 100
         let legacyOver = Double(defaults.object(forKey: "blinkOverPercent") as? Int ?? 130) / 100
@@ -51,7 +63,9 @@ enum PaceAlertOrchestrator {
         )
 
         // Blink is live in the menu bar; only gate notify/email here.
-        guard decision.shouldNotify || decision.shouldEmail else { return }
+        guard decision.shouldNotify || decision.shouldEmail else {
+            return decision.alerts.isEmpty ? .quiet : .channelsOff
+        }
 
         let lastSignature = defaults.string(forKey: lastSignatureKey)
         let lastDelivered = defaults.object(forKey: lastDeliveredKey) as? Date
@@ -62,7 +76,7 @@ enum PaceAlertOrchestrator {
             lastDeliveredAt: lastDelivered,
             cooldown: cooldown
         )
-        guard deliver else { return }
+        guard deliver else { return .suppressedByCooldown }
 
         let details: [PaceAlertMeterDetail] = decision.alerts.compactMap { alert in
             guard let input = inputs.first(where: { $0.id == alert.id }) else { return nil }
@@ -98,9 +112,10 @@ enum PaceAlertOrchestrator {
         }
 
         // Only gate future polls after at least one channel actually accepted delivery.
-        guard delivered else { return }
+        guard delivered else { return .failed }
         defaults.set(decision.signature, forKey: lastSignatureKey)
         defaults.set(now, forKey: lastDeliveredKey)
+        return .delivered
     }
 
     private static func meterInput(id: String, meter: QuotaMeter, now: Date) -> PaceAlertMeterInput? {

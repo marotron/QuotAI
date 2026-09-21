@@ -144,11 +144,14 @@ enum BarIcon {
         }
 
         // Time bar sits just under the group outline — not a quota track.
+        // Inset by half the quota stroke on each side so left/right match the
+        // inner fill edge (timeline has no border of its own).
         if let timeline = row.timeline {
+            let pad = barStroke / 2
             let track = NSRect(
-                x: x,
+                x: x + pad,
                 y: quotaOuter.maxY + m.timelineGap,
-                width: barWidth,
+                width: barWidth - barStroke,
                 height: m.timelineHeight
             )
             drawBar(
@@ -257,12 +260,14 @@ enum BarIcon {
         innerPath.fill()
 
         // Progress: whole-% like Spending. Timeline: continuous so the clock moves smoothly.
+        // Percent of inner width so stroked quota and inset timeline share one scale —
+        // avoid a height-based min stub (it made early-period used look ~2× elapsed).
         if let fill {
             let pct = ceilFill ? Double(QuotaPercent.display(fill)) : min(max(fill, 0), 100)
             if pct > 0 {
                 let exact = inner.width * CGFloat(pct) / 100
-                // Stub at least as wide as the corner diameter so 1% still reads.
-                let width = max(exact, min(inner.height, cornerRadius * 2))
+                // One point floor so sub-percent still paints a pixel.
+                let width = max(exact, 1)
                 NSGraphicsContext.saveGraphicsState()
                 innerPath.addClip()
                 color.setFill()

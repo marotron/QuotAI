@@ -28,7 +28,7 @@ Last updated: 2026-09-20
 | Quota response parsing | pure | Map Connect JSON → domain meters; missing Grok → unavailable |
 | Burn-rate / pace | pure | `PaceCalculator` from locked formula |
 | Menu presentation model | pure | Map meters + settings → bar title / dropdown rows |
-| Smart pace alert bands | pure | `PaceAlertBands` straight-line over/under corridors |
+| Smart pace alert bands | pure | `PaceAlertBands` over/under corridors; curve dials linear→parabolic (under mirrors across even pace; clamp to endpoint parallels) |
 | Alert decision | pure | `PaceAlertDecision` meters + channels → blink/notify/email + signature |
 | Alert cooldown | pure | `PaceAlertCooldown` edge + cooldown suppress |
 | Alert message builder | pure | `AlertMessageBuilder` subject/body |

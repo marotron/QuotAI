@@ -86,12 +86,113 @@ final class PaceAlertBandsTests: XCTestCase {
     }
 
     func testLineSamplesMatchLockedFormula() {
-        // u_over(0.5) = 0.25 + (0.75/0.95)*0.5
+        let b = 0.95
+        let d = 0.95
+        // u_over(0.5) linear; also ≥ parallel floor through Full quota before.
         let over = PaceAlertBands.overUsed(atElapsed: 0.5, thresholds: thresholds)
-        XCTAssertEqual(over, 0.25 + (0.75 / 0.95) * 0.5, accuracy: 1e-9)
+        let overRaw = 0.25 + (0.75 / 0.95) * 0.5
+        XCTAssertEqual(over, max(overRaw, 0.5 + (1 - b)), accuracy: 1e-9)
 
-        // u_under(0.8) = (0.95/0.75)*(0.8-0.25)
+        // u_under(0.8) linear; also ≤ parallel ceiling through Min usage by period end.
         let under = PaceAlertBands.underUsed(atElapsed: 0.8, thresholds: thresholds)
-        XCTAssertEqual(under, (0.95 / 0.75) * (0.8 - 0.25), accuracy: 1e-9)
+        let underRaw = (0.95 / 0.75) * (0.8 - 0.25)
+        XCTAssertEqual(under, min(underRaw, 0.8 + (d - 1)), accuracy: 1e-9)
+    }
+
+    func testOverParabolicUsesPowerTwo() {
+        let curved = PaceAlertThresholds(
+            overMaxStartPct: 25,
+            overEmptyBeforePct: 95,
+            underAfterPct: 25,
+            underMinEndPct: 95,
+            overCurvePct: 100,
+            underCurvePct: 0
+        )
+        let t = 0.5
+        let a = 0.25
+        let b = 0.95
+        let raw = a + (1 - a) * pow(t / b, 2)
+        let over = PaceAlertBands.overUsed(atElapsed: t, thresholds: curved)
+        XCTAssertEqual(over, max(raw, t + (1 - b)), accuracy: 1e-9)
+    }
+
+    func testUnderParabolicMirrorsWithReciprocalPower() {
+        let curved = PaceAlertThresholds(
+            overMaxStartPct: 25,
+            overEmptyBeforePct: 95,
+            underAfterPct: 25,
+            underMinEndPct: 95,
+            overCurvePct: 0,
+            underCurvePct: 100
+        )
+        let t = 0.8
+        let c = 0.25
+        let d = 0.95
+        let s = (t - c) / (1 - c)
+        let raw = d * pow(s, 0.5)
+        let under = PaceAlertBands.underUsed(atElapsed: t, thresholds: curved)
+        XCTAssertEqual(under, min(raw, t + (d - 1)), accuracy: 1e-9)
+    }
+
+    func testSymmetricEndpointsMirrorAcrossEvenPace() {
+        // Over (0, A)→(B, 1) with s^p; under (A, 0)→(1, B) with s^(1/p)
+        // is the reflection of over across u = t (before parallel clamps).
+        let A = 40.0
+        let B = 90.0
+        let p = 2.0
+        let th = PaceAlertThresholds(
+            overMaxStartPct: A,
+            overEmptyBeforePct: B,
+            underAfterPct: A,
+            underMinEndPct: B,
+            overCurvePct: 100,
+            underCurvePct: 100
+        )
+        let s = 0.4
+        let tOver = (B / 100) * s
+        let uOverRaw = (A / 100) + (1 - A / 100) * pow(s, p)
+        let tUnder = uOverRaw
+        let uUnderExpected = tOver
+        let under = PaceAlertBands.underUsed(atElapsed: tUnder, thresholds: th)
+        XCTAssertEqual(under, min(uUnderExpected, tUnder + (B / 100 - 1)), accuracy: 1e-9)
+        let over = PaceAlertBands.overUsed(atElapsed: tOver, thresholds: th)
+        XCTAssertEqual(over, max(uOverRaw, tOver + (1 - B / 100)), accuracy: 1e-9)
+    }
+
+    func testOverNeverBelowParallelThroughFullQuotaBefore() {
+        // Full curve would dip below the floor without the clamp.
+        let th = PaceAlertThresholds(
+            overMaxStartPct: 25,
+            overEmptyBeforePct: 95,
+            underAfterPct: 25,
+            underMinEndPct: 95,
+            overCurvePct: 100,
+            underCurvePct: 0
+        )
+        let t = 0.5
+        let floor = PaceAlertBands.overFloor(atElapsed: t, thresholds: th)
+        let over = PaceAlertBands.overUsed(atElapsed: t, thresholds: th)
+        XCTAssertGreaterThanOrEqual(over, floor - 1e-12)
+        // Floor is above even pace when empty-before < 100%.
+        XCTAssertGreaterThan(floor, t)
+        XCTAssertEqual(over, floor, accuracy: 1e-9)
+    }
+
+    func testUnderNeverAboveParallelThroughMinEnd() {
+        let th = PaceAlertThresholds(
+            overMaxStartPct: 25,
+            overEmptyBeforePct: 95,
+            underAfterPct: 1,
+            underMinEndPct: 95,
+            overCurvePct: 0,
+            underCurvePct: 100
+        )
+        let t = 0.5
+        let ceiling = PaceAlertBands.underCeiling(atElapsed: t, thresholds: th)
+        let under = PaceAlertBands.underUsed(atElapsed: t, thresholds: th)
+        XCTAssertLessThanOrEqual(under, ceiling + 1e-12)
+        // Ceiling is below even pace when min-end < 100%.
+        XCTAssertLessThan(ceiling, t)
+        XCTAssertEqual(under, ceiling, accuracy: 1e-9)
     }
 }

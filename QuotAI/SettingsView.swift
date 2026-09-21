@@ -21,6 +21,8 @@ struct SettingsView: View {
     @AppStorage("overEmptyBeforePct") private var overEmptyBeforePct = 95
     @AppStorage("underAfterPct") private var underAfterPct = 25
     @AppStorage("underMinEndPct") private var underMinEndPct = 95
+    @AppStorage("overCurvePct") private var overCurvePct = 0
+    @AppStorage("underCurvePct") private var underCurvePct = 0
     @AppStorage("notifySignificantPace") private var notifySignificantPace = false
     @AppStorage("emailSignificantPace") private var emailSignificantPace = false
 
@@ -43,6 +45,7 @@ struct SettingsView: View {
     @State private var smtpPassword = ""
     @State private var emailStatus: String?
     @State private var notifyStatus = ""
+    @State private var dialAlertTask: Task<Void, Never>?
 
     private static let blinkUnderChoices = [50, 60, 70, 75, 80, 85]
     private static let blinkOverChoices = [115, 120, 125, 130, 140, 150]
@@ -57,7 +60,9 @@ struct SettingsView: View {
             overMaxStartPct: Double(overMaxStartPct),
             overEmptyBeforePct: Double(overEmptyBeforePct),
             underAfterPct: Double(underAfterPct),
-            underMinEndPct: Double(underMinEndPct)
+            underMinEndPct: Double(underMinEndPct),
+            overCurvePct: Double(overCurvePct),
+            underCurvePct: Double(underCurvePct)
         )
     }
 
@@ -158,54 +163,84 @@ struct SettingsView: View {
                 Toggle("Use smart pace alerts", isOn: $useSmartPaceAlerts)
 
                 if useSmartPaceAlerts {
-                    HStack(alignment: .top, spacing: 10) {
-                        VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .top, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text("Over-pace")
-                                .font(.subheadline.weight(.semibold))
-                            HStack(alignment: .top, spacing: 6) {
+                                .font(.caption.weight(.semibold))
+                                .padding(.bottom, 4)
+                            HStack(alignment: .top, spacing: 2) {
                                 PercentDial(
                                     title: "Max usage at period start",
                                     value: $overMaxStartPct,
                                     range: 0...50,
-                                    tint: .orange
+                                    tint: .orange,
+                                    size: 32
                                 )
                                 PercentDial(
                                     title: "Full quota before",
                                     value: $overEmptyBeforePct,
                                     range: 50...100,
-                                    tint: .orange
+                                    tint: .orange,
+                                    size: 32
+                                )
+                                PercentDial(
+                                    title: "Curve (linear→parabolic)",
+                                    value: $overCurvePct,
+                                    range: 0...100,
+                                    tint: .orange,
+                                    size: 32
                                 )
                             }
 
                             Text("Under-pace")
-                                .font(.subheadline.weight(.semibold))
-                            HStack(alignment: .top, spacing: 6) {
+                                .font(.caption.weight(.semibold))
+                                .padding(.top, 6)
+                                .padding(.bottom, 4)
+                            HStack(alignment: .top, spacing: 2) {
                                 PercentDial(
                                     title: "Under alerts after",
                                     value: $underAfterPct,
                                     range: 0...50,
-                                    tint: .blue
+                                    tint: .blue,
+                                    size: 32
                                 )
                                 PercentDial(
                                     title: "Min usage by period end",
                                     value: $underMinEndPct,
                                     range: 50...100,
-                                    tint: .blue
+                                    tint: .blue,
+                                    size: 32
+                                )
+                                PercentDial(
+                                    title: "Curve (linear→parabolic)",
+                                    value: $underCurvePct,
+                                    range: 0...100,
+                                    tint: .blue,
+                                    size: 32
                                 )
                             }
                         }
                         .fixedSize(horizontal: true, vertical: true)
 
+                        Spacer(minLength: 0)
+
                         PaceAlertBandChart(thresholds: thresholds, meters: chartMeters)
-                            .frame(maxWidth: .infinity, alignment: .top)
+                            .padding(.top, 7)
                     }
                     .frame(maxWidth: .infinity, alignment: .top)
+                    .onChange(of: overMaxStartPct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: overEmptyBeforePct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: overCurvePct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: underAfterPct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: underMinEndPct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: underCurvePct) { _, _ in scheduleCorridorAlertRecheck() }
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("• Over alert if usage already exceeds “Max usage at period start” at the beginning of the billing period.")
                         Text("• Over alert if you reach 100% used before “Full quota before” share of the period has passed.")
                         Text("• Wait until “Under alerts after” share of the period has elapsed before considering an under alert.")
                         Text("• Under alert if usage would finish the period below “Min usage by period end”.")
+                        Text("• Curve dials bend each corridor (0% linear → 100% parabolic). Under mirrors over across even pace; curves stay on the near side of parallels through Full quota before / Min usage by period end.")
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -338,21 +373,40 @@ struct SettingsView: View {
         }
     }
 
+    /// Dial drags update blink live; notify/email only run through the orchestrator.
+    /// Debounce + clear cooldown so corridor simulation can fire a real alert.
+    private func scheduleCorridorAlertRecheck() {
+        guard notifySignificantPace || emailSignificantPace else { return }
+        dialAlertTask?.cancel()
+        dialAlertTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            await deliverAlertsNow(resetCooldown: true)
+        }
+    }
+
     private func deliverAlertsNow(resetCooldown: Bool) async {
         if resetCooldown {
             UserDefaults.standard.removeObject(forKey: "paceAlertLastSignature")
             UserDefaults.standard.removeObject(forKey: "paceAlertLastDeliveredAt")
         }
-        await PaceAlertOrchestrator.handleSuccessfulRefresh(
+        let result = await PaceAlertOrchestrator.handleSuccessfulRefresh(
             cursor: store.cursorModels,
             other: showOtherModels ? store.otherModels : nil,
             grok: store.grokBot
         )
-        if notifySignificantPace {
-            let defaults = UserDefaults.standard
-            if defaults.object(forKey: "paceAlertLastDeliveredAt") != nil {
-                notifyStatus = "Pace alert notification sent."
-            }
+        guard notifySignificantPace else { return }
+        switch result {
+        case .delivered:
+            notifyStatus = "Pace alert notification sent."
+        case .suppressedByCooldown:
+            notifyStatus = "Pace alert on hold (same alert within the last hour)."
+        case .quiet:
+            break
+        case .channelsOff:
+            break
+        case .failed:
+            notifyStatus = "Pace alert notify failed — check System Settings → Notifications."
         }
     }
 

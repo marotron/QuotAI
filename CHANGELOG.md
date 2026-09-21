@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0 — 2026-09-21
+
+### Added
+
+- Over/under curve dials (linear → parabolic); under mirrors over across even pace; curves clamped to parallels through Full quota before / Min usage by period end
+
+### Fixed
+
+- Pace notify/email re-checks when corridor dials change (blink was live; banners were not)
+- Alert status text only claims “sent” when delivery actually succeeded this attempt
+- Menu-bar timeline inset and early-period fill stub so used vs elapsed share one scale
+
+### Changed
+
+- Band chart: square used×elapsed plot, Used % on the trailing edge, meter dots grey until under (blue) / over (orange)
+- Corridor group titles spaced above dials
+
 ## 0.4.1 — 2026-09-21
 
 ### Fixed
