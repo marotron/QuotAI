@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.1 — 2026-09-21
+
+### Fixed
+
+- Settings opens in front from the menu bar (LSUIElement window raise)
+- macOS notification banners while Settings is open (foreground `UNUserNotificationCenter` delegate)
+- Alert cooldown only after notify/email delivery succeeds
+
+### Changed
+
+- Narrower Settings window with denser percent dials and shorter band chart
+- Alerts tab: test notification control grouped under the notifications toggle
+
 ## 0.4.0 — 2026-09-21
 
 ### Added

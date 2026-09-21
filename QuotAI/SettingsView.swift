@@ -42,6 +42,7 @@ struct SettingsView: View {
 
     @State private var smtpPassword = ""
     @State private var emailStatus: String?
+    @State private var notifyStatus = ""
 
     private static let blinkUnderChoices = [50, 60, 70, 75, 80, 85]
     private static let blinkOverChoices = [115, 120, 125, 130, 140, 150]
@@ -78,11 +79,9 @@ struct SettingsView: View {
             emailTab.tabItem { Label("Email", systemImage: "envelope") }
             pinsTab.tabItem { Label("Menu pins", systemImage: "pin") }
         }
-        .frame(width: 640, height: 600)
+        .frame(width: 480, height: 560)
         .onAppear {
-            // LSUIElement apps need a brief .regular policy so Settings comes to the front.
-            NSApp.setActivationPolicy(.regular)
-            NSApp.activate(ignoringOtherApps: true)
+            SettingsWindowElevator.raise()
             smtpPassword = EmailAlertService.loadPassword() ?? ""
         }
         .onDisappear {
@@ -123,65 +122,84 @@ struct SettingsView: View {
         settingsForm {
             Section {
                 Toggle("Blink on significant pace", isOn: $blinkSignificantPace)
-                Toggle("macOS notifications", isOn: $notifySignificantPace)
-                    .onChange(of: notifySignificantPace) { _, enabled in
-                        if enabled {
-                            Task { _ = await NotificationAlertService.requestAuthorizationIfNeeded() }
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("macOS notifications", isOn: $notifySignificantPace)
+                        .onChange(of: notifySignificantPace) { _, enabled in
+                            if enabled {
+                                Task { await enableNotificationsAndDeliverIfNeeded() }
+                            }
+                        }
+                    Button("Send test notification") {
+                        Task {
+                            let ok = await NotificationAlertService.deliver(
+                                subject: "QuotAI: test alert",
+                                body: "Notifications are working."
+                            )
+                            notifyStatus = ok
+                                ? "Test notification sent."
+                                : "Notification blocked — allow QuotAI in System Settings → Notifications."
                         }
                     }
+                    if !notifyStatus.isEmpty {
+                        Text(notifyStatus)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Toggle("Email alerts", isOn: $emailSignificantPace)
+                    .onChange(of: emailSignificantPace) { _, enabled in
+                        if enabled {
+                            Task { await deliverAlertsNow(resetCooldown: true) }
+                        }
+                    }
             }
 
             Section {
                 Toggle("Use smart pace alerts", isOn: $useSmartPaceAlerts)
 
                 if useSmartPaceAlerts {
-                    HStack(alignment: .top, spacing: 16) {
-                        VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text("Over-pace")
                                 .font(.subheadline.weight(.semibold))
-                            HStack(spacing: 20) {
+                            HStack(alignment: .top, spacing: 6) {
                                 PercentDial(
                                     title: "Max usage at period start",
                                     value: $overMaxStartPct,
                                     range: 0...50,
                                     tint: .orange
                                 )
-                                .frame(maxWidth: .infinity)
                                 PercentDial(
                                     title: "Full quota before",
                                     value: $overEmptyBeforePct,
                                     range: 50...100,
                                     tint: .orange
                                 )
-                                .frame(maxWidth: .infinity)
                             }
 
                             Text("Under-pace")
                                 .font(.subheadline.weight(.semibold))
-                                .padding(.top, 2)
-                            HStack(spacing: 20) {
+                            HStack(alignment: .top, spacing: 6) {
                                 PercentDial(
                                     title: "Under alerts after",
                                     value: $underAfterPct,
                                     range: 0...50,
                                     tint: .blue
                                 )
-                                .frame(maxWidth: .infinity)
                                 PercentDial(
                                     title: "Min usage by period end",
                                     value: $underMinEndPct,
                                     range: 50...100,
                                     tint: .blue
                                 )
-                                .frame(maxWidth: .infinity)
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: true, vertical: true)
 
                         PaceAlertBandChart(thresholds: thresholds, meters: chartMeters)
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: .infinity, alignment: .top)
                     }
+                    .frame(maxWidth: .infinity, alignment: .top)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("• Over alert if usage already exceeds “Max usage at period start” at the beginning of the billing period.")
@@ -206,6 +224,10 @@ struct SettingsView: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            guard notifySignificantPace || emailSignificantPace else { return }
+            Task { await deliverAlertsNow(resetCooldown: false) }
         }
     }
 
@@ -304,6 +326,36 @@ struct SettingsView: View {
         rows.append((name, used, t * 100))
     }
 
+    private func enableNotificationsAndDeliverIfNeeded() async {
+        let granted = await NotificationAlertService.requestAuthorizationIfNeeded()
+        if !granted {
+            notifyStatus = "Notification blocked — allow QuotAI in System Settings → Notifications."
+            return
+        }
+        await deliverAlertsNow(resetCooldown: true)
+        if notifyStatus.isEmpty {
+            notifyStatus = "Notifications enabled. Alerts fire on refresh when pace is significant."
+        }
+    }
+
+    private func deliverAlertsNow(resetCooldown: Bool) async {
+        if resetCooldown {
+            UserDefaults.standard.removeObject(forKey: "paceAlertLastSignature")
+            UserDefaults.standard.removeObject(forKey: "paceAlertLastDeliveredAt")
+        }
+        await PaceAlertOrchestrator.handleSuccessfulRefresh(
+            cursor: store.cursorModels,
+            other: showOtherModels ? store.otherModels : nil,
+            grok: store.grokBot
+        )
+        if notifySignificantPace {
+            let defaults = UserDefaults.standard
+            if defaults.object(forKey: "paceAlertLastDeliveredAt") != nil {
+                notifyStatus = "Pace alert notification sent."
+            }
+        }
+    }
+
     private func sendTestEmail() async {
         do {
             try EmailAlertService.savePassword(smtpPassword)
@@ -322,6 +374,38 @@ struct SettingsView: View {
             emailStatus = "Test email sent."
         } catch {
             emailStatus = error.localizedDescription
+        }
+    }
+}
+
+/// Menu-bar agent apps (LSUIElement) often create Settings behind other apps.
+enum SettingsWindowElevator {
+    static func show(_ open: () -> Void) {
+        NSApp.setActivationPolicy(.regular)
+        open()
+        raise()
+        DispatchQueue.main.async(execute: raise)
+        // Menu dismissal can steal focus after the first raise.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: raise)
+    }
+
+    static func raise() {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        for window in NSApp.windows where window.styleMask.contains(.titled) {
+            window.collectionBehavior.insert(.moveToActiveSpace)
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+        }
+    }
+}
+
+struct MenuSettingsButton: View {
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Button("Settings…") {
+            SettingsWindowElevator.show { openSettings() }
         }
     }
 }

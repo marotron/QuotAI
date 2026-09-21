@@ -64,6 +64,7 @@ struct QuotAIApp: App {
 
     init() {
         MeterMenuBadges.shared.install()
+        NotificationAlertService.install()
     }
 
     var body: some Scene {
@@ -145,9 +146,7 @@ struct QuotAIApp: App {
                 }
             }
             Divider()
-            SettingsLink {
-                Text("Settings…")
-            }
+            MenuSettingsButton()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }

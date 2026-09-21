@@ -76,8 +76,9 @@ enum PaceAlertOrchestrator {
         let subject = AlertMessageBuilder.subject(alerts: decision.alerts)
         let body = AlertMessageBuilder.body(alerts: details)
 
+        var delivered = false
         if decision.shouldNotify {
-            await NotificationAlertService.deliver(subject: subject, body: body)
+            delivered = await NotificationAlertService.deliver(subject: subject, body: body)
         }
         if decision.shouldEmail {
             let config = EmailAlertService.Config(
@@ -88,9 +89,16 @@ enum PaceAlertOrchestrator {
                 toAddress: defaults.string(forKey: "smtpTo") ?? "",
                 useTLS: defaults.object(forKey: "smtpUseTLS") as? Bool ?? true
             )
-            try? await EmailAlertService.send(config: config, subject: subject, body: body)
+            do {
+                try await EmailAlertService.send(config: config, subject: subject, body: body)
+                delivered = true
+            } catch {
+                // Keep cooldown unset so a later refresh can retry.
+            }
         }
 
+        // Only gate future polls after at least one channel actually accepted delivery.
+        guard delivered else { return }
         defaults.set(decision.signature, forKey: lastSignatureKey)
         defaults.set(now, forKey: lastDeliveredKey)
     }

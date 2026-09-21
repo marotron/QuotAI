@@ -7,7 +7,7 @@ struct PercentDial: View {
     @Binding var value: Int
     var range: ClosedRange<Int>
     var tint: Color = .accentColor
-    var size: CGFloat = 44
+    var size: CGFloat = 36
 
     /// Bottom gap; track runs the remaining 270°.
     private let trackFraction = 0.75
@@ -16,7 +16,7 @@ struct PercentDial: View {
 
     @State private var dragOriginValue: Int?
 
-    private var trackWidth: CGFloat { max(3, size * 0.08) }
+    private var trackWidth: CGFloat { max(2.5, size * 0.08) }
 
     private var fraction: Double {
         let span = Double(range.upperBound - range.lowerBound)
@@ -25,7 +25,7 @@ struct PercentDial: View {
     }
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 2) {
             ZStack {
                 Circle()
                     .trim(from: 0, to: trackFraction)
@@ -38,7 +38,7 @@ struct PercentDial: View {
                     .rotationEffect(.degrees(135))
 
                 Text("\(value)%")
-                    .font(.system(size: max(10, size * 0.28), weight: .semibold, design: .rounded))
+                    .font(.system(size: max(9, size * 0.28), weight: .semibold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.primary)
             }
@@ -62,9 +62,11 @@ struct PercentDial: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: size + 36)
+                .lineLimit(3)
+                .frame(width: size + 28)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(width: size + 28)
     }
 
     private var verticalDrag: some Gesture {

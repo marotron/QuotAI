@@ -62,7 +62,7 @@ struct PaceAlertBandChart: View {
         .chartYScale(domain: 0...100)
         .chartXAxisLabel("Elapsed % of period")
         .chartYAxisLabel("Used %")
-        .frame(height: 220)
+        .frame(height: 180)
     }
 
     private func overY(_ t: Double) -> Double {
