@@ -15,6 +15,7 @@
 		28B3DD16EFBC515D41661A4C /* QuotAICore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; };
 		29F5287C1AF7B0766A79F8AC /* PaceAlertDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = C656D72D3DC80308EE35332A /* PaceAlertDecision.swift */; };
 		3498F01BB3B5BCDC98192BAE /* CursorVscdbImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */; };
+		37031A88F12F70098989B788 /* PercentDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BA1B979CE208DC53FD1E1A /* PercentDial.swift */; };
 		3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65831D21C9C2B6C291737D22 /* QuotaPercent.swift */; };
 		3F5777DF22D0C5E36DCED8D9 /* MenuPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACFFF12333707318644EED0 /* MenuPresenterTests.swift */; };
 		53AC03AF4844D781A5C76CAE /* QuotAICore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -101,6 +102,7 @@
 		5C43130568DD9233B80DB58F /* EmailAlertService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailAlertService.swift; sourceTree = "<group>"; };
 		5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBandsTests.swift; sourceTree = "<group>"; };
 		65831D21C9C2B6C291737D22 /* QuotaPercent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaPercent.swift; sourceTree = "<group>"; };
+		67BA1B979CE208DC53FD1E1A /* PercentDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PercentDial.swift; sourceTree = "<group>"; };
 		7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaPercentTests.swift; sourceTree = "<group>"; };
 		779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationAlertService.swift; sourceTree = "<group>"; };
 		782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaResponseParserTests.swift; sourceTree = "<group>"; };
@@ -202,6 +204,7 @@
 				779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */,
 				3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */,
 				3ABB5D0F4B699BEDF9A4B8B6 /* PaceAlertOrchestrator.swift */,
+				67BA1B979CE208DC53FD1E1A /* PercentDial.swift */,
 				8A84478A2DFA344FC905215F /* QuotAIApp.swift */,
 				C7A145FDCDD83F3F7243FAD8 /* QuotaStore.swift */,
 				172E517E55BB1919952F6374 /* SettingsView.swift */,
@@ -388,6 +391,7 @@
 				9DF1B0F9D9FFCB1D5DE6DA79 /* NotificationAlertService.swift in Sources */,
 				24FC94F331FBF0E4CB21DDED /* PaceAlertBandChart.swift in Sources */,
 				24C4BD146B99880D51338CCC /* PaceAlertOrchestrator.swift in Sources */,
+				37031A88F12F70098989B788 /* PercentDial.swift in Sources */,
 				821C73A1D04EF95FDAF632E2 /* QuotAIApp.swift in Sources */,
 				7807B1E1EEC18A885C4FE5B1 /* QuotaStore.swift in Sources */,
 				CE7A9064D2EA35C569483CE2 /* SettingsView.swift in Sources */,
@@ -535,7 +539,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -546,7 +550,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};
@@ -574,7 +578,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -585,7 +589,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};

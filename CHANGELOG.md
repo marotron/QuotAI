@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 — 2026-09-21
+
+### Added
+
+- Smart pace-band alerts: linear over/under corridors with cooldown-gated macOS notifications and SMTP email
+- Settings window (Display, Pace, Alerts, Email, Menu pins) with live band chart
+- Percent dials for smart-alert threshold knobs
+
+### Changed
+
+- Blink and alert significance use smart bands when enabled (legacy pace ratios remain as a fallback)
+- Menu dropdown slimmed to meters, actions, pinned prefs, Settings, and Quit
+
 ## 0.3.0 — 2026-09-20
 
 ### Added

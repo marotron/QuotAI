@@ -50,8 +50,6 @@ struct SettingsView: View {
     ]
     /// Shared width for menu pickers so every dropdown control aligns on the right.
     private static let menuControlWidth: CGFloat = 180
-    /// Narrower strip for percent + stepper on the Alerts split layout.
-    private static let percentControlWidth: CGFloat = 88
 
     private var thresholds: PaceAlertThresholds {
         PaceAlertThresholds(
@@ -80,7 +78,7 @@ struct SettingsView: View {
             emailTab.tabItem { Label("Email", systemImage: "envelope") }
             pinsTab.tabItem { Label("Menu pins", systemImage: "pin") }
         }
-        .frame(width: 640, height: 560)
+        .frame(width: 640, height: 600)
         .onAppear {
             // LSUIElement apps need a brief .regular policy so Settings comes to the front.
             NSApp.setActivationPolicy(.regular)
@@ -124,7 +122,6 @@ struct SettingsView: View {
     private var alertsTab: some View {
         settingsForm {
             Section {
-                Toggle("Use smart pace alerts", isOn: $useSmartPaceAlerts)
                 Toggle("Blink on significant pace", isOn: $blinkSignificantPace)
                 Toggle("macOS notifications", isOn: $notifySignificantPace)
                     .onChange(of: notifySignificantPace) { _, enabled in
@@ -135,21 +132,49 @@ struct SettingsView: View {
                 Toggle("Email alerts", isOn: $emailSignificantPace)
             }
 
-            if useSmartPaceAlerts {
-                Section {
+            Section {
+                Toggle("Use smart pace alerts", isOn: $useSmartPaceAlerts)
+
+                if useSmartPaceAlerts {
                     HStack(alignment: .top, spacing: 16) {
-                        VStack(alignment: .leading, spacing: 14) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Over-pace")
-                                    .font(.headline)
-                                percentStepper("Max usage at period start", value: $overMaxStartPct, range: 0...50)
-                                percentStepper("Full quota before", value: $overEmptyBeforePct, range: 50...100)
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Over-pace")
+                                .font(.subheadline.weight(.semibold))
+                            HStack(spacing: 20) {
+                                PercentDial(
+                                    title: "Max usage at period start",
+                                    value: $overMaxStartPct,
+                                    range: 0...50,
+                                    tint: .orange
+                                )
+                                .frame(maxWidth: .infinity)
+                                PercentDial(
+                                    title: "Full quota before",
+                                    value: $overEmptyBeforePct,
+                                    range: 50...100,
+                                    tint: .orange
+                                )
+                                .frame(maxWidth: .infinity)
                             }
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Under-pace")
-                                    .font(.headline)
-                                percentStepper("Under alerts after", value: $underAfterPct, range: 0...50)
-                                percentStepper("Min usage by period end", value: $underMinEndPct, range: 50...100)
+
+                            Text("Under-pace")
+                                .font(.subheadline.weight(.semibold))
+                                .padding(.top, 2)
+                            HStack(spacing: 20) {
+                                PercentDial(
+                                    title: "Under alerts after",
+                                    value: $underAfterPct,
+                                    range: 0...50,
+                                    tint: .blue
+                                )
+                                .frame(maxWidth: .infinity)
+                                PercentDial(
+                                    title: "Min usage by period end",
+                                    value: $underMinEndPct,
+                                    range: 50...100,
+                                    tint: .blue
+                                )
+                                .frame(maxWidth: .infinity)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -168,9 +193,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
-                }
-            } else {
-                Section("Legacy pace-ratio thresholds") {
+                } else {
                     menuPicker("Blink under", selection: $blinkUnderPercent) {
                         ForEach(Self.blinkUnderChoices, id: \.self) { pct in
                             Text("Below \(pct)% pace").tag(pct)
@@ -252,24 +275,6 @@ struct SettingsView: View {
             .labelsHidden()
             .pickerStyle(.menu)
             .frame(width: Self.menuControlWidth, alignment: .trailing)
-        }
-    }
-
-    /// Label on the left; fixed-width percent + stepper aligned to the right.
-    private func percentStepper(
-        _ title: String,
-        value: Binding<Int>,
-        range: ClosedRange<Int>
-    ) -> some View {
-        LabeledContent(title) {
-            HStack(spacing: 6) {
-                Text("\(value.wrappedValue)%")
-                    .monospacedDigit()
-                    .frame(minWidth: 36, alignment: .trailing)
-                Stepper(title, value: value, in: range)
-                    .labelsHidden()
-            }
-            .frame(width: Self.percentControlWidth, alignment: .trailing)
         }
     }
 
