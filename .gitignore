@@ -5,6 +5,7 @@ tmp/
 build/
 DerivedData/
 .build/
+dist/
 xcuserdata/
 *.xcuserstate
 *.moved-aside

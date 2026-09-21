@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: project test run
+.PHONY: project test run dmg release
 
 project:
 	xcodegen generate
@@ -10,3 +10,8 @@ test: project
 
 run: project
 	open QuotAI.xcodeproj
+
+dmg: project
+	@./Scripts/release/dmg.sh
+
+release: test dmg
