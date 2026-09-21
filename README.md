@@ -12,11 +12,11 @@ macOS **Swift** menu-bar app for Cursor Spending quota (Cursor Models + Grok Bot
 
 Menu bar meters (used / elapsed → pace):
 
-![QuotAI menu](docs/screenshots/menu.png)
+![QuotAI menu](docs/screenshots/menu-half.png)
 
 Smart pace alert corridors in Settings:
 
-![QuotAI Settings — Alerts](docs/screenshots/settings-alerts.png)
+![QuotAI Settings — Alerts](docs/screenshots/settings-alerts-half.png)
 
 ## Build
 
