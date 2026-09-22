@@ -201,7 +201,7 @@ final class MenuPresenterTests: XCTestCase {
         XCTAssertEqual(paceTint(ratio: 1.0), .ok)
         XCTAssertEqual(paceTint(ratio: 0.95), .ok)
         XCTAssertEqual(paceTint(ratio: 1.03), .ok) // inside ±10% dead zone
-        XCTAssertEqual(paceTint(ratio: 1.2), .critical)
+        XCTAssertEqual(paceTint(ratio: 1.2), .warning)
         XCTAssertEqual(paceTint(ratio: nil, exhausted: true), .critical)
     }
 
@@ -233,7 +233,7 @@ final class MenuPresenterTests: XCTestCase {
             onPaceHi: 1.05
         )
         XCTAssertEqual(tight.meters[0].band, .over)
-        XCTAssertEqual(MenuPresenter.tint(pace: pace, onPaceLo: 0.95, onPaceHi: 1.05), .critical)
+        XCTAssertEqual(MenuPresenter.tint(pace: pace, onPaceLo: 0.95, onPaceHi: 1.05), .warning)
 
         // Wide ±20% → 108% is on.
         let wide = MenuPresenter.present(

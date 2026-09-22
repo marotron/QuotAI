@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0892FE50EFCD8B19A5562708 /* PaceCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */; };
 		1B8661FD4F037A083FB94E1E /* PaceAlertCooldown.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0372F0AA05AB178D5EA1251 /* PaceAlertCooldown.swift */; };
+		23467012F3DF3E69736B516A /* RingDialSegments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A98BF53179A39771BBE07A /* RingDialSegments.swift */; };
 		24C4BD146B99880D51338CCC /* PaceAlertOrchestrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ABB5D0F4B699BEDF9A4B8B6 /* PaceAlertOrchestrator.swift */; };
 		24FC94F331FBF0E4CB21DDED /* PaceAlertBandChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */; };
 		258406DDBA6376123299D5BF /* QuotaPercentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */; };
@@ -18,12 +19,15 @@
 		37031A88F12F70098989B788 /* PercentDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BA1B979CE208DC53FD1E1A /* PercentDial.swift */; };
 		3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65831D21C9C2B6C291737D22 /* QuotaPercent.swift */; };
 		3F5777DF22D0C5E36DCED8D9 /* MenuPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACFFF12333707318644EED0 /* MenuPresenterTests.swift */; };
+		533F866C08085583414D271B /* CursorAuthActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42221A63599893EAE95BCF0C /* CursorAuthActions.swift */; };
 		53AC03AF4844D781A5C76CAE /* QuotAICore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		61B41F97E9FD3001E1BE1196 /* EmailAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C43130568DD9233B80DB58F /* EmailAlertService.swift */; };
 		64994325D781B5E4ABF70296 /* BarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A474AF98F62D2275255057D5 /* BarIcon.swift */; };
 		6BE89DE482D0BC87A8FB7BDA /* AlertMessageBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E43043E693935CE5D71BAB9 /* AlertMessageBuilderTests.swift */; };
 		6D7CE40B79A4F097A6203104 /* PaceAlertBands.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38663DAC42813CB673B58AA /* PaceAlertBands.swift */; };
+		70EB91F8217E0C081AADF89C /* RingDialSegmentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01892621FA6BA723ADCA5EBE /* RingDialSegmentsTests.swift */; };
 		7807B1E1EEC18A885C4FE5B1 /* QuotaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A145FDCDD83F3F7243FAD8 /* QuotaStore.swift */; };
+		7C068AB0E5F7802F60CA7DA1 /* IconLookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD54EF9FAB7890CB1EC1A309 /* IconLookTests.swift */; };
 		821C73A1D04EF95FDAF632E2 /* QuotAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A84478A2DFA344FC905215F /* QuotAIApp.swift */; };
 		8B7A662793377C593D195980 /* QuotAICore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8F53C68CC8303EDA7842DF5B /* QuotaResponseParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */; };
@@ -31,6 +35,7 @@
 		9340A0320269F6E161D02A93 /* AlertMessageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41246CF6E708CBB9C7E79255 /* AlertMessageBuilder.swift */; };
 		988E8D070DE68CEB9D4DBB9A /* RemainingTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100900970A7EB9E28EF6C831 /* RemainingTime.swift */; };
 		9DF1B0F9D9FFCB1D5DE6DA79 /* NotificationAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */; };
+		A4C0B1482CC682B10F1055CA /* RingIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F68F209DE9B284DFAE003A /* RingIcon.swift */; };
 		AB2BB7A3F81DE014F8DB300C /* PaceAlertCooldownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C32FF53DBE2300A57A24E9C /* PaceAlertCooldownTests.swift */; };
 		BAF66F190A8C5BBDCFD56DE2 /* PaceAlertBandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */; };
 		BBEABA081CA2F226610DB285 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */; };
@@ -89,6 +94,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		01892621FA6BA723ADCA5EBE /* RingDialSegmentsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingDialSegmentsTests.swift; sourceTree = "<group>"; };
+		09A98BF53179A39771BBE07A /* RingDialSegments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingDialSegments.swift; sourceTree = "<group>"; };
 		100900970A7EB9E28EF6C831 /* RemainingTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTime.swift; sourceTree = "<group>"; };
 		172E517E55BB1919952F6374 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		22F0F40FD1FE615DF92CCF71 /* RemainingTimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTimeTests.swift; sourceTree = "<group>"; };
@@ -96,12 +103,14 @@
 		3ABB5D0F4B699BEDF9A4B8B6 /* PaceAlertOrchestrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertOrchestrator.swift; sourceTree = "<group>"; };
 		3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBandChart.swift; sourceTree = "<group>"; };
 		41246CF6E708CBB9C7E79255 /* AlertMessageBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertMessageBuilder.swift; sourceTree = "<group>"; };
+		42221A63599893EAE95BCF0C /* CursorAuthActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorAuthActions.swift; sourceTree = "<group>"; };
 		4AAFD417E417B50DE713398C /* PaceCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceCalculatorTests.swift; sourceTree = "<group>"; };
 		4E43043E693935CE5D71BAB9 /* AlertMessageBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertMessageBuilderTests.swift; sourceTree = "<group>"; };
 		5BCD6BD67F062EB51D2E62F2 /* QuotAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C43130568DD9233B80DB58F /* EmailAlertService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailAlertService.swift; sourceTree = "<group>"; };
 		5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBandsTests.swift; sourceTree = "<group>"; };
 		65831D21C9C2B6C291737D22 /* QuotaPercent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaPercent.swift; sourceTree = "<group>"; };
+		65F68F209DE9B284DFAE003A /* RingIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingIcon.swift; sourceTree = "<group>"; };
 		67BA1B979CE208DC53FD1E1A /* PercentDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PercentDial.swift; sourceTree = "<group>"; };
 		7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaPercentTests.swift; sourceTree = "<group>"; };
 		779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationAlertService.swift; sourceTree = "<group>"; };
@@ -115,6 +124,7 @@
 		A474AF98F62D2275255057D5 /* BarIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarIcon.swift; sourceTree = "<group>"; };
 		B38E8042E5851CC0AACB82BC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B4D5560D8CAD91D26D28FC1C /* QuotaResponseParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaResponseParser.swift; sourceTree = "<group>"; };
+		BD54EF9FAB7890CB1EC1A309 /* IconLookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconLookTests.swift; sourceTree = "<group>"; };
 		C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorVscdbImporter.swift; sourceTree = "<group>"; };
 		C656D72D3DC80308EE35332A /* PaceAlertDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertDecision.swift; sourceTree = "<group>"; };
 		C7A145FDCDD83F3F7243FAD8 /* QuotaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaStore.swift; sourceTree = "<group>"; };
@@ -172,6 +182,7 @@
 			isa = PBXGroup;
 			children = (
 				4E43043E693935CE5D71BAB9 /* AlertMessageBuilderTests.swift */,
+				BD54EF9FAB7890CB1EC1A309 /* IconLookTests.swift */,
 				DACFFF12333707318644EED0 /* MenuPresenterTests.swift */,
 				5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */,
 				7C32FF53DBE2300A57A24E9C /* PaceAlertCooldownTests.swift */,
@@ -180,6 +191,7 @@
 				7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */,
 				782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */,
 				22F0F40FD1FE615DF92CCF71 /* RemainingTimeTests.swift */,
+				01892621FA6BA723ADCA5EBE /* RingDialSegmentsTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -197,6 +209,7 @@
 			children = (
 				B38E8042E5851CC0AACB82BC /* Assets.xcassets */,
 				A474AF98F62D2275255057D5 /* BarIcon.swift */,
+				42221A63599893EAE95BCF0C /* CursorAuthActions.swift */,
 				DE812ED1CB4BE4CF91A26E25 /* CursorConnectClient.swift */,
 				C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */,
 				5C43130568DD9233B80DB58F /* EmailAlertService.swift */,
@@ -207,6 +220,7 @@
 				67BA1B979CE208DC53FD1E1A /* PercentDial.swift */,
 				8A84478A2DFA344FC905215F /* QuotAIApp.swift */,
 				C7A145FDCDD83F3F7243FAD8 /* QuotaStore.swift */,
+				65F68F209DE9B284DFAE003A /* RingIcon.swift */,
 				172E517E55BB1919952F6374 /* SettingsView.swift */,
 			);
 			path = QuotAI;
@@ -225,6 +239,7 @@
 				65831D21C9C2B6C291737D22 /* QuotaPercent.swift */,
 				B4D5560D8CAD91D26D28FC1C /* QuotaResponseParser.swift */,
 				100900970A7EB9E28EF6C831 /* RemainingTime.swift */,
+				09A98BF53179A39771BBE07A /* RingDialSegments.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -360,6 +375,7 @@
 				3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */,
 				FD24C4805DBDBBB0AFC5BA3F /* QuotaResponseParser.swift in Sources */,
 				988E8D070DE68CEB9D4DBB9A /* RemainingTime.swift in Sources */,
+				23467012F3DF3E69736B516A /* RingDialSegments.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -368,6 +384,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6BE89DE482D0BC87A8FB7BDA /* AlertMessageBuilderTests.swift in Sources */,
+				7C068AB0E5F7802F60CA7DA1 /* IconLookTests.swift in Sources */,
 				3F5777DF22D0C5E36DCED8D9 /* MenuPresenterTests.swift in Sources */,
 				BAF66F190A8C5BBDCFD56DE2 /* PaceAlertBandsTests.swift in Sources */,
 				AB2BB7A3F81DE014F8DB300C /* PaceAlertCooldownTests.swift in Sources */,
@@ -376,6 +393,7 @@
 				258406DDBA6376123299D5BF /* QuotaPercentTests.swift in Sources */,
 				8F53C68CC8303EDA7842DF5B /* QuotaResponseParserTests.swift in Sources */,
 				DC5676AEC84F8C26CB786FAB /* RemainingTimeTests.swift in Sources */,
+				70EB91F8217E0C081AADF89C /* RingDialSegmentsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -384,6 +402,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				64994325D781B5E4ABF70296 /* BarIcon.swift in Sources */,
+				533F866C08085583414D271B /* CursorAuthActions.swift in Sources */,
 				D83D8CB5C694C04497BDF2AC /* CursorConnectClient.swift in Sources */,
 				3498F01BB3B5BCDC98192BAE /* CursorVscdbImporter.swift in Sources */,
 				61B41F97E9FD3001E1BE1196 /* EmailAlertService.swift in Sources */,
@@ -394,6 +413,7 @@
 				37031A88F12F70098989B788 /* PercentDial.swift in Sources */,
 				821C73A1D04EF95FDAF632E2 /* QuotAIApp.swift in Sources */,
 				7807B1E1EEC18A885C4FE5B1 /* QuotaStore.swift in Sources */,
+				A4C0B1482CC682B10F1055CA /* RingIcon.swift in Sources */,
 				CE7A9064D2EA35C569483CE2 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -539,7 +559,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -550,7 +570,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};
@@ -578,7 +598,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -589,7 +609,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};

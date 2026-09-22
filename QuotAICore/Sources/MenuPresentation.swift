@@ -43,6 +43,25 @@ public enum IconColorMode: String, CaseIterable, Hashable, Sendable {
     case byLevel
 }
 
+/// User setting: bars vs ring-dial menu bar glyph.
+public enum IconLook: String, CaseIterable, Hashable, Sendable {
+    /// Linear tracks (existing `BarIcon`).
+    case bars
+    /// Proto A — one ring per meter + timeline.
+    case ringsPerQuota
+    /// Proto B — Cursor concentric + Grok + timeline; used % blinks Models ↔ Other.
+    case ringsPaired
+    /// Proto G — pace segments with pale under-slack (no timeline track).
+    case ringsPace
+}
+
+/// What (if anything) is drawn in the hollow of a ring dial.
+public enum RingCenterContent: String, CaseIterable, Hashable, Sendable {
+    case none
+    case remaining
+    case icon
+}
+
 /// Semantic tint for the icon; the app maps this to actual colors.
 public enum SymbolTint: Equatable, Sendable {
     case neutral
@@ -200,7 +219,8 @@ public enum MenuPresenter {
         let hi = max(onPaceLo, onPaceHi)
         if PaceCalculator.isOnPace(r, lo: lo, hi: hi) { return .ok }
         if r < lo { return .under }
-        return .critical
+        // Over → orange (warning); exhausted stays critical/red above.
+        return .warning
     }
 
     private static func worstPercentUsed(_ a: QuotaMeter, _ b: QuotaMeter) -> Double? {

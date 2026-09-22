@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.0 — 2026-09-22
+
+### Added
+
+- Ring-dial menu-bar looks: per-quota, nested Cursor (Models + Other), and pace-segment rings
+- Ring center options (none / time to reset / icon) and beside-meter elapsed %
+- Alternate elapsed % ↔ time to reset in one beside slot (rings)
+- Under↔over conflict: center/beside icon slowly pulses between the two pace colors (synced with nested used %)
+
+### Changed
+
+- Menu-bar fills and ring arcs use pace colors (under blue / on green / over orange) instead of fixed brand tints
+- Over-pace tint matches smart-alarm orange (exhausted stays red)
+- Display settings: Beside meter / Ring center groups; elapsed and center options only for ring looks
+
+### Fixed
+
+- Nested Cursor dial used % and under↔over center icon share one blink phase
+
 ## 0.5.0 — 2026-09-21
 
 ### Added

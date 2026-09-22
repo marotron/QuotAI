@@ -6,9 +6,13 @@ struct SettingsView: View {
     @ObservedObject var store: QuotaStore
 
     @AppStorage("iconColorMode") private var iconColorMode: IconColorMode = .monochrome
+    @AppStorage("iconLook") private var iconLook: IconLook = .bars
     @AppStorage("showRemaining") private var showRemaining = false
-    @AppStorage("showPercent") private var showPercent = true
+    @AppStorage("showPercent") private var showUsedPercent = true
+    @AppStorage("showElapsedPercent") private var showElapsedPercent = true
+    @AppStorage("alternateElapsedRemaining") private var alternateElapsedRemaining = false
     @AppStorage("showAvatars") private var showAvatars = true
+    @AppStorage("ringCenterContent") private var ringCenterContent: RingCenterContent = .remaining
     @AppStorage("showOtherModels") private var showOtherModels = false
     @AppStorage("blinkSignificantPace") private var blinkSignificantPace = false
     @AppStorage("blinkUnderPercent") private var blinkUnderPercent = 75
@@ -35,11 +39,15 @@ struct SettingsView: View {
 
     @AppStorage("pinRefreshInterval") private var pinRefreshInterval = true
     @AppStorage("pinColorMode") private var pinColorMode = false
+    @AppStorage("pinIconLook") private var pinIconLook = false
     @AppStorage("pinOnPaceBand") private var pinOnPaceBand = false
     @AppStorage("pinShowOtherModels") private var pinShowOtherModels = false
     @AppStorage("pinShowAvatars") private var pinShowAvatars = false
-    @AppStorage("pinShowPercent") private var pinShowPercent = false
+    @AppStorage("pinShowPercent") private var pinShowUsedPercent = false
+    @AppStorage("pinShowElapsedPercent") private var pinShowElapsedPercent = false
     @AppStorage("pinShowRemaining") private var pinShowRemaining = false
+    @AppStorage("pinAlternateElapsedRemaining") private var pinAlternateElapsedRemaining = false
+    @AppStorage("pinRingCenterContent") private var pinRingCenterContent = false
     @AppStorage("pinBlink") private var pinBlink = false
 
     @State private var smtpPassword = ""
@@ -79,12 +87,13 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             displayTab.tabItem { Label("Display", systemImage: "paintpalette") }
+            accountTab.tabItem { Label("Account", systemImage: "person.crop.circle") }
             paceTab.tabItem { Label("Pace", systemImage: "gauge.with.dots.needle.33percent") }
             alertsTab.tabItem { Label("Alerts", systemImage: "bell") }
             emailTab.tabItem { Label("Email", systemImage: "envelope") }
             pinsTab.tabItem { Label("Menu pins", systemImage: "pin") }
         }
-        .frame(width: 480, height: 560)
+        .frame(width: 480, height: 620)
         .onAppear {
             SettingsWindowElevator.raise()
             smtpPassword = EmailAlertService.loadPassword() ?? ""
@@ -97,14 +106,96 @@ struct SettingsView: View {
     private var displayTab: some View {
         settingsForm {
             Section {
+                menuPicker("Menu bar style", selection: $iconLook) {
+                    Text("Bars").tag(IconLook.bars)
+                    Text("Rings · one per meter").tag(IconLook.ringsPerQuota)
+                    Text("Rings · nested Cursor").tag(IconLook.ringsPaired)
+                    Text("Rings · by pace").tag(IconLook.ringsPace)
+                }
                 menuPicker("Color mode", selection: $iconColorMode) {
                     Text("Monochrome").tag(IconColorMode.monochrome)
                     Text("By pace").tag(IconColorMode.byLevel)
                 }
                 Toggle("Show Other Models", isOn: $showOtherModels)
+            }
+
+            Section {
                 Toggle("Show icons", isOn: $showAvatars)
-                Toggle("Show percentage", isOn: $showPercent)
-                Toggle("Show time to reset", isOn: $showRemaining)
+                Toggle("Show used %", isOn: $showUsedPercent)
+                if iconLook != .bars {
+                    if !alternateElapsedRemaining {
+                        Toggle("Show elapsed %", isOn: $showElapsedPercent)
+                        Toggle("Show time to reset", isOn: $showRemaining)
+                    }
+                    Toggle("Alternate elapsed % / time to reset", isOn: $alternateElapsedRemaining)
+                } else {
+                    Toggle("Show time to reset", isOn: $showRemaining)
+                }
+            } header: {
+                Text("Beside meter")
+            } footer: {
+                if iconLook == .bars {
+                    Text("Icons, used %, and time sit beside the tracks. When Models is over and Other is under (or the reverse), the Cursor icon slowly alternates those colors.")
+                } else if alternateElapsedRemaining {
+                    Text("One label blinks between elapsed % and time to reset (~2.5s). Used % still stacks above when enabled.")
+                } else {
+                    Text("Used and elapsed together stack as two rows, or alone as one larger label. When Models is over and Other is under (or the reverse), the Cursor icon slowly alternates those colors (beside icons, or center when set to Icon).")
+                }
+            }
+
+            if iconLook != .bars {
+                Section {
+                    menuPicker("Center", selection: $ringCenterContent) {
+                        Text("Nothing").tag(RingCenterContent.none)
+                        Text("Time to reset").tag(RingCenterContent.remaining)
+                        Text("Icon").tag(RingCenterContent.icon)
+                    }
+                } header: {
+                    Text("Ring center")
+                } footer: {
+                    Text("What sits inside each ring. Bars keep icons and time beside the tracks.")
+                }
+            }
+        }
+    }
+
+    private var accountTab: some View {
+        settingsForm {
+            Section {
+                if store.isRefreshing {
+                    Text("Refreshing…")
+                        .foregroundStyle(.secondary)
+                } else if let when = store.lastRefreshed {
+                    LabeledContent("Last updated") {
+                        Text(when.formatted(date: .omitted, time: .shortened))
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text("Not refreshed yet")
+                        .foregroundStyle(.secondary)
+                }
+                if let authError = store.authError {
+                    Text(authError)
+                        .foregroundStyle(.red)
+                }
+                Button("Refresh now") {
+                    Task { await store.refresh() }
+                }
+                .disabled(store.isRefreshing)
+            }
+
+            Section {
+                Button("Re-auth from Cursor") {
+                    Task { await store.reauthFromCursor() }
+                }
+                Button("Paste token…") {
+                    CursorAuthActions.promptPasteToken(into: store)
+                }
+                Button("Open Cursor Spending") {
+                    NSWorkspace.shared.open(MenuPresenter.spendingURL)
+                }
+            } footer: {
+                Text("Tokens stay in Keychain. Re-auth reads the signed-in Cursor app session when possible.")
             }
         }
     }
@@ -296,12 +387,30 @@ struct SettingsView: View {
         settingsForm {
             Section {
                 Toggle("Refresh interval", isOn: $pinRefreshInterval)
+                Toggle("Menu bar style", isOn: $pinIconLook)
                 Toggle("Color mode", isOn: $pinColorMode)
                 Toggle("On-pace band", isOn: $pinOnPaceBand)
                 Toggle("Show Other Models", isOn: $pinShowOtherModels)
+            }
+            Section {
                 Toggle("Show icons", isOn: $pinShowAvatars)
-                Toggle("Show percentage", isOn: $pinShowPercent)
+                Toggle("Show used %", isOn: $pinShowUsedPercent)
+                Toggle("Show elapsed %", isOn: $pinShowElapsedPercent)
                 Toggle("Show time to reset", isOn: $pinShowRemaining)
+                Toggle("Alternate elapsed % / time to reset", isOn: $pinAlternateElapsedRemaining)
+            } header: {
+                Text("Beside meter")
+            } footer: {
+                Text("Elapsed % and alternate apply to ring styles only.")
+            }
+            Section {
+                Toggle("Center content", isOn: $pinRingCenterContent)
+            } header: {
+                Text("Ring center")
+            } footer: {
+                Text("Ring styles only; ignored while Menu bar style is Bars.")
+            }
+            Section {
                 Toggle("Blink toggle", isOn: $pinBlink)
             } footer: {
                 Text("Pinned controls appear in the menu bar dropdown.")
