@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.7.0 — 2026-09-23
+
+### Added
+
+- Cursor and Grok marks inside rings, pace-tinted, with the white holes left transparent
+- Other Models ring shows its icon in one-per-meter when Center is Icon
+- Significant-pace blink on the quota ring that crossed the alert (same pattern as bars)
+- Alternate elapsed % ↔ time to reset on every ring style, including one per meter
+- Open Cursor Spending menu pin
+
+### Changed
+
+- Pace rings: brighter quota green, muted under-slack, orange over; both arcs go solid orange on a smart over alert
+- Thicker by-pace rings, thin separators between segments, white elapsed separator
+- Tighter tracking on percent labels beside the meters
+- A failed refresh stays in the menu notice; the rings keep the last meters (sign-in failure still replaces the icon)
+
+### Fixed
+
+- One-per-meter Cursor dial no longer swaps its center icon
+- Avatar tint stays on the mark
+
 ## 0.6.0 — 2026-09-22
 
 ### Added

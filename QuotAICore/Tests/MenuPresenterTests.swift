@@ -266,4 +266,15 @@ final class MenuPresenterTests: XCTestCase {
         XCTAssertEqual(view.notices.first, "Auth error — re-auth or paste token")
         XCTAssertEqual(view.barTitle, "QuotAI · auth")
     }
+
+    func testRefreshFailureKeepsGlanceTitle() {
+        let view = MenuPresenter.present(
+            cursorModels: QuotaMeter(name: "Cursor Models", percentUsed: 13),
+            grokBot: QuotaMeter(name: "Grok Bot", percentUsed: 57),
+            notice: "Refresh failed"
+        )
+        XCTAssertEqual(view.notices.first, "Refresh failed")
+        XCTAssertNotEqual(view.barTitle, "QuotAI · auth")
+        XCTAssertNotEqual(view.symbolName, "exclamationmark.triangle")
+    }
 }

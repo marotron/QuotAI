@@ -15,6 +15,13 @@ final class IconLookTests: XCTestCase {
         }
     }
 
+    func testAlternateElapsedForEveryRingStyle() {
+        XCTAssertFalse(IconLook.bars.alternatesElapsedAndRemaining)
+        XCTAssertTrue(IconLook.ringsPerQuota.alternatesElapsedAndRemaining)
+        XCTAssertTrue(IconLook.ringsPaired.alternatesElapsedAndRemaining)
+        XCTAssertTrue(IconLook.ringsPace.alternatesElapsedAndRemaining)
+    }
+
     func testRingCenterContentCasesMatchSettingsPickerOrder() {
         XCTAssertEqual(
             RingCenterContent.allCases.map(\.rawValue),

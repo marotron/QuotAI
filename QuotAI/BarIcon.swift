@@ -41,6 +41,8 @@ enum BarIcon {
         /// Match dual stack outer height so Cursor (2 tracks) and Grok (1) read the same thickness.
         var singleBarHeight: CGFloat { trackHeight * 2 + trackGap }
         var font: NSFont { .monospacedDigitSystemFont(ofSize: 8, weight: .semibold) }
+        /// Pull percent glyphs together. Time-to-reset labels stay at the font's own spacing.
+        let percentKern: CGFloat = -0.8
         var height: CGFloat { rowHeight * 2 }
 
         func quotaHeight(trackCount: Int) -> CGFloat {
@@ -67,7 +69,7 @@ enum BarIcon {
         let percents = rows.map(percentLabel)
         let remainings = rows.map { $0.remaining ?? "—" }
         let avatarCol = showAvatars ? m.avatar + gap : 0
-        let percentWidth = showPercent ? textWidth(percents, font: m.font) : 0
+        let percentWidth = showPercent ? textWidth(percents, font: m.font, percentKern: m.percentKern) : 0
         let remainingWidth = showRemaining ? textWidth(remainings, font: m.font) : 0
         let percentX = avatarCol + barWidth + gap
         let remainingX = showPercent ? percentX + percentWidth + gap : percentX
@@ -87,7 +89,7 @@ enum BarIcon {
                 }
                 drawBars(row: row, metrics: m, midY: midY, barX: avatarCol, ink: ink)
                 if showPercent {
-                    drawText(percents[index], x: percentX, midY: midY, font: m.font, ink: ink)
+                    drawText(percents[index], x: percentX, midY: midY, font: m.font, ink: ink, percentKern: m.percentKern)
                 }
                 if showRemaining {
                     drawText(remainings[index], x: remainingX, midY: midY, font: m.font, ink: ink)
@@ -213,17 +215,157 @@ enum BarIcon {
         }
     }
 
-    private static func drawAvatar(_ avatar: Avatar, in box: NSRect, ink: NSColor) {
-        let custom = NSImage(named: avatar.rawValue)
-        let image = custom ?? fallbackAvatar(avatar, size: box.height)
-        // SF Symbols carry internal padding; inset edge-to-edge assets so glyphs match visually.
-        let drawBox = custom != nil ? box.insetBy(dx: box.width * 0.08, dy: box.height * 0.08) : box
-        // Template assets draw black; tint via source-atop so they follow `ink`.
-        image?.draw(in: drawBox)
-        if ink != .black {
-            ink.setFill()
-            box.fill(using: .sourceAtop)
+    /// Body takes `ink`. White holes (Cursor triangle, Grok eyes) are not painted, so they stay clear.
+    static func drawAvatar(_ avatar: Avatar, in box: NSRect, ink: NSColor) {
+        if let parts = cutouts[avatar] {
+            let fitted = aspectFit(parts.aspect, in: box)
+            tinted(parts.body, ink, pointSize: fitted.size)?.draw(
+                in: fitted, from: .zero, operation: .sourceOver, fraction: 1
+            )
+            return
         }
+        guard let image = fallbackAvatar(avatar, size: box.height) else { return }
+        let painted = NSImage(size: box.size, flipped: false) { rect in
+            image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+            if ink != .black {
+                ink.setFill()
+                rect.fill(using: .sourceAtop)
+            }
+            return true
+        }
+        painted.isTemplate = false
+        painted.draw(in: box, from: .zero, operation: .sourceOver, fraction: 1)
+    }
+
+    /// Black body mask. `hole` is the white (triangle, eyes); it is kept for the split and not drawn.
+    private struct Cutout {
+        var body: NSImage
+        var hole: NSImage
+        var aspect: CGFloat
+    }
+
+    private static let cutouts: [Avatar: Cutout] = {
+        var found: [Avatar: Cutout] = [:]
+        for avatar in [Avatar.cursor, .grok] {
+            if let cutout = loadCutout(named: avatar.rawValue) {
+                found[avatar] = cutout
+            }
+        }
+        return found
+    }()
+
+    private static func loadCutout(named name: String) -> Cutout? {
+        guard let image = NSImage(named: name),
+              let tiff = image.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let src = rep.bitmapData else { return nil }
+        let w = rep.pixelsWide
+        let h = rep.pixelsHigh
+        let spp = rep.samplesPerPixel
+        let bpr = rep.bytesPerRow
+        // Asset catalog TIFF is often gray+alpha (spp 2), not RGB.
+        guard w > 0, h > 0, spp == 1 || spp == 2 || spp >= 3 else { return nil }
+
+        func sample(x: Int, y: Int) -> (lum: Int, a: Int) {
+            let s = y * bpr + x * spp
+            if spp == 2 { return (Int(src[s]), Int(src[s + 1])) }
+            if spp == 1 { return (Int(src[s]), 255) }
+            let r = Int(src[s]), g = Int(src[s + 1]), b = Int(src[s + 2])
+            let a = spp >= 4 ? Int(src[s + 3]) : 255
+            return ((r + g + b) / 3, a)
+        }
+
+        func mask(dark: Bool) -> NSImage? {
+            guard let out = NSBitmapImageRep(
+                bitmapDataPlanes: nil,
+                pixelsWide: w,
+                pixelsHigh: h,
+                bitsPerSample: 8,
+                samplesPerPixel: 4,
+                hasAlpha: true,
+                isPlanar: false,
+                colorSpaceName: .deviceRGB,
+                bytesPerRow: w * 4,
+                bitsPerPixel: 32
+            ), let dst = out.bitmapData else { return nil }
+            var hits = 0
+            for y in 0..<h {
+                for x in 0..<w {
+                    let (lum, a) = sample(x: x, y: y)
+                    let d = y * w * 4 + x * 4
+                    let take = a > 8 && (dark ? lum < 128 : lum >= 128)
+                    if take {
+                        dst[d] = 255
+                        dst[d + 1] = 255
+                        dst[d + 2] = 255
+                        dst[d + 3] = UInt8(a)
+                        hits += 1
+                    } else {
+                        dst[d] = 0
+                        dst[d + 1] = 0
+                        dst[d + 2] = 0
+                        dst[d + 3] = 0
+                    }
+                }
+            }
+            guard hits > 0 else { return nil }
+            let img = NSImage(size: NSSize(width: w, height: h))
+            img.addRepresentation(out)
+            img.isTemplate = false
+            return img
+        }
+
+        guard let body = mask(dark: true) else { return nil }
+        let hole = mask(dark: false)
+        return Cutout(body: body, hole: hole ?? NSImage(), aspect: CGFloat(w) / CGFloat(h))
+    }
+
+    /// Tint offscreen. A drawing-handler image nested inside the menu-bar image drops the glyph.
+    private static func tinted(_ mask: NSImage, _ color: NSColor, pointSize: NSSize) -> NSImage? {
+        guard pointSize.width > 0, pointSize.height > 0 else { return nil }
+        let scale = NSScreen.main?.backingScaleFactor ?? 2
+        let pw = max(1, Int((pointSize.width * scale).rounded(.up)))
+        let ph = max(1, Int((pointSize.height * scale).rounded(.up)))
+        guard let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: pw,
+            pixelsHigh: ph,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: pw * 4,
+            bitsPerPixel: 32
+        ), let ctx = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
+        // Bitmap context is in pixels. Drawing in points only fills a corner, then
+        // `rep.size` scales that corner down again — the mark becomes a dot.
+        // The menu-bar image is flipped, which turns this bitmap upside down, so
+        // draw the mask the other way up and the bar shows it upright.
+        let previous = NSGraphicsContext.current
+        NSGraphicsContext.current = ctx
+        ctx.cgContext.translateBy(x: 0, y: CGFloat(ph))
+        ctx.cgContext.scaleBy(x: 1, y: -1)
+        let canvas = NSRect(x: 0, y: 0, width: CGFloat(pw), height: CGFloat(ph))
+        mask.draw(in: canvas, from: .zero, operation: .sourceOver, fraction: 1)
+        color.setFill()
+        canvas.fill(using: .sourceAtop)
+        NSGraphicsContext.current = previous
+        rep.size = pointSize
+        let image = NSImage(size: pointSize)
+        image.addRepresentation(rep)
+        image.isTemplate = false
+        return image
+    }
+
+    private static func aspectFit(_ aspect: CGFloat, in box: NSRect) -> NSRect {
+        guard aspect > 0, box.width > 0, box.height > 0 else { return box }
+        if aspect > box.width / box.height {
+            let h = box.width / aspect
+            return NSRect(x: box.minX, y: box.midY - h / 2, width: box.width, height: h)
+        }
+        let w = box.height * aspect
+        return NSRect(x: box.midX - w / 2, y: box.minY, width: w, height: box.height)
     }
 
     private static func fallbackAvatar(_ avatar: Avatar, size: CGFloat) -> NSImage? {
@@ -287,12 +429,28 @@ enum BarIcon {
     }
 
     /// Column width = widest string, so nothing clips (`100/100%`, `14m`).
-    private static func textWidth(_ texts: [String], font: NSFont) -> CGFloat {
-        ceil(texts.map { NSAttributedString(string: $0, attributes: [.font: font]).size().width }.max() ?? 0)
+    private static func textWidth(_ texts: [String], font: NSFont, percentKern: CGFloat = 0) -> CGFloat {
+        ceil(texts.map { text in
+            NSAttributedString(string: text, attributes: [
+                .font: font,
+                .kern: text.contains("%") ? percentKern : 0,
+            ]).size().width
+        }.max() ?? 0)
     }
 
-    private static func drawText(_ text: String, x: CGFloat, midY: CGFloat, font: NSFont, ink: NSColor) {
-        let attributed = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: ink])
+    private static func drawText(
+        _ text: String,
+        x: CGFloat,
+        midY: CGFloat,
+        font: NSFont,
+        ink: NSColor,
+        percentKern: CGFloat = 0
+    ) {
+        let attributed = NSAttributedString(string: text, attributes: [
+            .font: font,
+            .foregroundColor: ink,
+            .kern: text.contains("%") ? percentKern : 0,
+        ])
         attributed.draw(at: NSPoint(x: x, y: midY - attributed.size().height / 2))
     }
 }

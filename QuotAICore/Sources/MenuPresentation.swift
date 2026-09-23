@@ -53,6 +53,14 @@ public enum IconLook: String, CaseIterable, Hashable, Sendable {
     case ringsPaired
     /// Proto G — pace segments with pale under-slack (no timeline track).
     case ringsPace
+
+    /// Elapsed % ↔ time to reset shares one beside slot on every ring style.
+    public var alternatesElapsedAndRemaining: Bool {
+        switch self {
+        case .ringsPerQuota, .ringsPaired, .ringsPace: return true
+        case .bars: return false
+        }
+    }
 }
 
 /// What (if anything) is drawn in the hollow of a ring dial.
@@ -160,6 +168,8 @@ public enum MenuPresenter {
         otherModels: QuotaMeter? = nil,
         grokBot: QuotaMeter,
         authError: String? = nil,
+        /// Transient fetch problem. Shown in the menu; does not replace the bar icon.
+        notice: String? = nil,
         now: Date = Date(),
         onPaceLo: Double = PaceCalculator.greenLo,
         onPaceHi: Double = PaceCalculator.greenHi
@@ -172,6 +182,9 @@ public enum MenuPresenter {
         }
         meters.append(meterRow(grokBot, now: now, onPaceLo: lo, onPaceHi: hi))
         var notices: [String] = []
+        if let notice, !notice.isEmpty {
+            notices.append(notice)
+        }
         if let authError, !authError.isEmpty {
             notices.append(authError)
         }

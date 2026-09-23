@@ -49,6 +49,7 @@ struct SettingsView: View {
     @AppStorage("pinAlternateElapsedRemaining") private var pinAlternateElapsedRemaining = false
     @AppStorage("pinRingCenterContent") private var pinRingCenterContent = false
     @AppStorage("pinBlink") private var pinBlink = false
+    @AppStorage("pinOpenCursorSpending") private var pinOpenCursorSpending = false
 
     @State private var smtpPassword = ""
     @State private var emailStatus: String?
@@ -122,13 +123,16 @@ struct SettingsView: View {
             Section {
                 Toggle("Show icons", isOn: $showAvatars)
                 Toggle("Show used %", isOn: $showUsedPercent)
-                if iconLook != .bars {
+                if iconLook == .bars {
+                    Toggle("Show time to reset", isOn: $showRemaining)
+                } else if iconLook.alternatesElapsedAndRemaining {
                     if !alternateElapsedRemaining {
                         Toggle("Show elapsed %", isOn: $showElapsedPercent)
                         Toggle("Show time to reset", isOn: $showRemaining)
                     }
                     Toggle("Alternate elapsed % / time to reset", isOn: $alternateElapsedRemaining)
                 } else {
+                    Toggle("Show elapsed %", isOn: $showElapsedPercent)
                     Toggle("Show time to reset", isOn: $showRemaining)
                 }
             } header: {
@@ -136,8 +140,12 @@ struct SettingsView: View {
             } footer: {
                 if iconLook == .bars {
                     Text("Icons, used %, and time sit beside the tracks. When Models is over and Other is under (or the reverse), the Cursor icon slowly alternates those colors.")
+                } else if iconLook == .ringsPerQuota, alternateElapsedRemaining {
+                    Text("Each meter has its own ring. One label blinks between elapsed % and time to reset (~5s). Used % still stacks above when enabled.")
+                } else if iconLook == .ringsPerQuota {
+                    Text("Each meter has its own ring. Used % and elapsed % stack beside it. The icon sits beside the ring, or inside when Center is Icon — including Other Models.")
                 } else if alternateElapsedRemaining {
-                    Text("One label blinks between elapsed % and time to reset (~2.5s). Used % still stacks above when enabled.")
+                    Text("One label blinks between elapsed % and time to reset (~5s; half the Models ↔ Other pace). Used % still stacks above when enabled.")
                 } else {
                     Text("Used and elapsed together stack as two rows, or alone as one larger label. When Models is over and Other is under (or the reverse), the Cursor icon slowly alternates those colors (beside icons, or center when set to Icon).")
                 }
@@ -176,6 +184,9 @@ struct SettingsView: View {
                 }
                 if let authError = store.authError {
                     Text(authError)
+                        .foregroundStyle(.red)
+                } else if let refreshError = store.refreshError {
+                    Text(refreshError)
                         .foregroundStyle(.red)
                 }
                 Button("Refresh now") {
@@ -391,6 +402,7 @@ struct SettingsView: View {
                 Toggle("Color mode", isOn: $pinColorMode)
                 Toggle("On-pace band", isOn: $pinOnPaceBand)
                 Toggle("Show Other Models", isOn: $pinShowOtherModels)
+                Toggle("Open Cursor Spending", isOn: $pinOpenCursorSpending)
             }
             Section {
                 Toggle("Show icons", isOn: $pinShowAvatars)
@@ -401,7 +413,7 @@ struct SettingsView: View {
             } header: {
                 Text("Beside meter")
             } footer: {
-                Text("Elapsed % and alternate apply to ring styles only.")
+                Text("Elapsed % and alternate apply to every ring style. Bars keep time to reset beside the tracks.")
             }
             Section {
                 Toggle("Center content", isOn: $pinRingCenterContent)

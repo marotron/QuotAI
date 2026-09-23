@@ -12,7 +12,7 @@ struct QuotAIApp: App {
     @AppStorage("showPercent") private var showUsedPercent = true
     /// Elapsed % beside ring dials (ignored for bars).
     @AppStorage("showElapsedPercent") private var showElapsedPercent = true
-    /// Rings: one beside slot blinks elapsed % ↔ time to reset (instead of showing both).
+    /// Nested and by-pace rings: one beside slot blinks elapsed % ↔ time to reset.
     @AppStorage("alternateElapsedRemaining") private var alternateElapsedRemaining = false
     @AppStorage("showAvatars") private var showAvatars = true
     @AppStorage("ringCenterContent") private var ringCenterContent: RingCenterContent = .remaining
@@ -42,6 +42,7 @@ struct QuotAIApp: App {
     @AppStorage("pinAlternateElapsedRemaining") private var pinAlternateElapsedRemaining = false
     @AppStorage("pinRingCenterContent") private var pinRingCenterContent = false
     @AppStorage("pinBlink") private var pinBlink = false
+    @AppStorage("pinOpenCursorSpending") private var pinOpenCursorSpending = false
 
     private static let deadZonePresets: [(lo: Int, hi: Int)] = [
         (95, 105),
@@ -70,6 +71,7 @@ struct QuotAIApp: App {
             otherModels: showOtherModels ? store.otherModels : nil,
             grokBot: store.grokBot,
             authError: store.authError,
+            notice: store.refreshError,
             onPaceLo: onPaceLo,
             onPaceHi: onPaceHi
         )
@@ -113,6 +115,11 @@ struct QuotAIApp: App {
             .onAppear {
                 Task { await store.refreshIfStale() }
             }
+            if pinOpenCursorSpending {
+                Button("Open Cursor Spending") {
+                    NSWorkspace.shared.open(MenuPresenter.spendingURL)
+                }
+            }
             if hasPinnedPrefs {
                 Divider()
                 if pinIconLook {
@@ -152,13 +159,13 @@ struct QuotAIApp: App {
                 if pinShowUsedPercent {
                     Toggle("Show used %", isOn: $showUsedPercent)
                 }
-                if pinShowElapsedPercent, iconLook != .bars, !alternateElapsedRemaining {
+                if pinShowElapsedPercent, iconLook != .bars, !alternateElapsedActive {
                     Toggle("Show elapsed %", isOn: $showElapsedPercent)
                 }
-                if pinShowRemaining, !alternateElapsedRemaining || iconLook == .bars {
+                if pinShowRemaining, !alternateElapsedActive || iconLook == .bars {
                     Toggle("Show time to reset", isOn: $showRemaining)
                 }
-                if pinAlternateElapsedRemaining, iconLook != .bars {
+                if pinAlternateElapsedRemaining, iconLook.alternatesElapsedAndRemaining {
                     Toggle("Alternate elapsed % / time to reset", isOn: $alternateElapsedRemaining)
                 }
                 if pinRingCenterContent, iconLook != .bars {
@@ -204,6 +211,11 @@ struct QuotAIApp: App {
         Settings {
             SettingsView(store: store)
         }
+    }
+
+    /// Stored alternate flag takes effect on every ring style.
+    private var alternateElapsedActive: Bool {
+        alternateElapsedRemaining && iconLook.alternatesElapsedAndRemaining
     }
 
     private var hasPinnedPrefs: Bool {
@@ -486,12 +498,21 @@ private struct MenuBarIconLabel: View {
     let onPaceLo: Double
     let onPaceHi: Double
 
-    @State private var iconAnimDate = Date()
-    /// Half-cycle for blink / dual-avatar pulse (~2s full period).
-    private let iconAnimTimer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
+    /// Shared animation tick (0.5s). Significant = 2; paired = 5; elapsed↔remaining = 10.
+    @State private var iconAnimTick = 0
+    private let iconAnimTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
     private var blinkUnderRatio: Double { Double(blinkUnderPercent) / 100 }
     private var blinkOverRatio: Double { Double(blinkOverPercent) / 100 }
+
+    /// Significant under/over fill pulse — 1.0s half-cycle (2 ticks).
+    private var significantBlinkLit: Bool { (iconAnimTick / 2) % 2 == 0 }
+
+    /// Nested used % + under↔over center icon — 2.5s half-cycle (5 ticks). One flag for both.
+    private var pairedShowsOther: Bool { (iconAnimTick / 5) % 2 == 1 }
+
+    /// Elapsed % ↔ time to reset — 5.0s half-cycle (10 ticks). Synced: flips every 2 paired cycles.
+    private var alternateShowsRemainingPhase: Bool { (iconAnimTick / 10) % 2 == 1 }
 
     private var presentation: MenuPresentation {
         MenuPresenter.present(
@@ -499,6 +520,7 @@ private struct MenuBarIconLabel: View {
             otherModels: showOtherModels ? store.otherModels : nil,
             grokBot: store.grokBot,
             authError: store.authError,
+            notice: store.refreshError,
             onPaceLo: onPaceLo,
             onPaceHi: onPaceHi
         )
@@ -507,8 +529,9 @@ private struct MenuBarIconLabel: View {
     var body: some View {
         Group {
             if store.authError == nil {
-                Image(nsImage: compactIcon(at: iconAnimDate))
+                Image(nsImage: compactIcon())
                     .renderingMode(iconColorMode == .monochrome ? .template : .original)
+                    .id(iconAnimTick)
             } else {
                 HStack(spacing: 4) {
                     Image(nsImage: symbolIcon)
@@ -516,9 +539,9 @@ private struct MenuBarIconLabel: View {
                 }
             }
         }
-        .onReceive(iconAnimTimer) { date in
+        .onReceive(iconAnimTimer) { _ in
             guard needsAnimatedIcon else { return }
-            iconAnimDate = date
+            iconAnimTick += 1
         }
     }
 
@@ -537,12 +560,18 @@ private struct MenuBarIconLabel: View {
         }
     }
 
-    /// Rings: elapsed % ↔ time to reset in one beside slot (~2.5s each).
-    private var needsElapsedRemainingBlink: Bool {
-        iconLook != .bars && alternateElapsedRemaining
+    /// Stored alternate flag takes effect on every ring style.
+    private var alternateElapsedActive: Bool {
+        alternateElapsedRemaining && iconLook.alternatesElapsedAndRemaining
     }
 
-    /// Cursor Models + Other Models under vs over at once → pulse avatar between those colors.
+    /// Every ring style: elapsed % ↔ time to reset in one beside slot (5s each).
+    private var needsElapsedRemainingBlink: Bool {
+        alternateElapsedActive
+    }
+
+    /// One shared Cursor mark (bars, nested, by-pace) pulses when Models and Other
+    /// disagree under vs over. One-per-meter dials each carry their own mark.
     private var needsCursorAvatarPulse: Bool {
         guard iconColorMode == .byLevel, showOtherModels else { return false }
         guard let a = paceTint(store.cursorModels), let b = paceTint(store.otherModels) else { return false }
@@ -550,8 +579,10 @@ private struct MenuBarIconLabel: View {
         switch iconLook {
         case .bars:
             return showAvatars
-        case .ringsPerQuota, .ringsPaired, .ringsPace:
+        case .ringsPaired, .ringsPace:
             return ringCenterContent == .icon
+        case .ringsPerQuota:
+            return false
         }
     }
 
@@ -568,16 +599,16 @@ private struct MenuBarIconLabel: View {
     }
 
     /// Cursor (+ optional Other Models stacked) and Grok: avatar · bar(s)/rings · percent · time.
-    private func compactIcon(at date: Date) -> NSImage {
+    private func compactIcon() -> NSImage {
         switch iconLook {
         case .bars:
-            return barIcon(at: date)
+            return barIcon()
         case .ringsPerQuota, .ringsPaired, .ringsPace:
-            return ringIcon(at: date)
+            return ringIcon()
         }
     }
 
-    private func barIcon(at date: Date) -> NSImage {
+    private func barIcon() -> NSImage {
         let cursor = store.cursorModels
         let other = store.otherModels
         let grok = store.grokBot
@@ -598,7 +629,7 @@ private struct MenuBarIconLabel: View {
             cursorMeters = [cursor]
         }
         let cursorColors = zip(cursorBaseColors, cursorMeters).map { color, meter in
-            blinkedBarColor(color, meter: meter, at: date)
+            blinkedBarColor(color, meter: meter)
         }
 
         // Same billing cycle for Cursor Models + Other Models → one shared remaining + timeline.
@@ -612,7 +643,7 @@ private struct MenuBarIconLabel: View {
 
         let grokFill = grok.isUnavailable ? nil : grok.percentUsed
         let grokBaseColors: [NSColor?] = [paceBarColor(grok)]
-        let grokColors = [blinkedBarColor(grokBaseColors[0], meter: grok, at: date)]
+        let grokColors = [blinkedBarColor(grokBaseColors[0], meter: grok)]
         let rows = [
             BarIcon.Row(
                 avatar: .cursor,
@@ -622,11 +653,9 @@ private struct MenuBarIconLabel: View {
                 avatarColor: blinkedAvatarColor(
                     lightAvatarColor(
                         from: cursorBaseColors,
-                        at: date,
                         slowPulse: needsCursorAvatarPulse
                     ),
-                    meters: cursorMeters,
-                    at: date
+                    meters: cursorMeters
                 ),
                 timeline: cursorTimeline
             ),
@@ -636,9 +665,8 @@ private struct MenuBarIconLabel: View {
                 remaining: grok.isUnavailable ? nil : grok.secondsRemaining.map(RemainingTime.format(seconds:)),
                 barColors: grokColors,
                 avatarColor: blinkedAvatarColor(
-                    lightAvatarColor(from: grokBaseColors, at: date),
-                    meters: [grok],
-                    at: date
+                    lightAvatarColor(from: grokBaseColors),
+                    meters: [grok]
                 ),
                 timeline: grokTimeline
             ),
@@ -652,7 +680,7 @@ private struct MenuBarIconLabel: View {
         )
     }
 
-    private func ringIcon(at date: Date) -> NSImage {
+    private func ringIcon() -> NSImage {
         let cursor = store.cursorModels
         let other = store.otherModels
         let grok = store.grokBot
@@ -667,18 +695,20 @@ private struct MenuBarIconLabel: View {
             ? nil
             : grok.secondsRemaining.map(RemainingTime.format(seconds:))
 
+        // One phase for center icon color and beside used %; elapsed↔remaining is 2× slower.
+        let showOtherPhase = showOtherModels && pairedShowsOther
+
         let dials: [RingIcon.Dial]
         let cursorAvatarColor: NSColor? = {
             if showOtherModels {
                 return lightAvatarColor(
                     from: [paceBarColor(cursor), paceBarColor(other)],
-                    at: date,
                     slowPulse: needsCursorAvatarPulse
                 )
             }
-            return lightAvatarColor(from: [paceBarColor(cursor)], at: date)
+            return lightAvatarColor(from: [paceBarColor(cursor)])
         }()
-        let grokAvatarColor = lightAvatarColor(from: [paceBarColor(grok)], at: date)
+        let grokAvatarColor = lightAvatarColor(from: [paceBarColor(grok)])
 
         switch iconLook {
         case .ringsPerQuota:
@@ -691,18 +721,23 @@ private struct MenuBarIconLabel: View {
                     avatarColor: cursorAvatarColor,
                     elapsedPct: cursorElapsed,
                     remaining: cursorRemaining,
-                    displayedUsedIndex: 0
+                    displayedUsedIndex: 0,
+                    smartOver: [meterIsSmartOver(cursor)],
+                    blinkOff: [quotaBlinkOff(cursor)]
                 ),
             ]
             if showOtherModels {
                 list.append(RingIcon.Dial(
                     avatar: .cursor,
-                    showAvatar: false,
+                    showAvatar: true,
                     usedPcts: [other.isUnavailable ? nil : other.percentUsed],
                     brandColors: [paceBarColor(other)],
+                    avatarColor: lightAvatarColor(from: [paceBarColor(other)]),
                     elapsedPct: cursorElapsed,
                     remaining: cursorRemaining,
-                    displayedUsedIndex: 0
+                    displayedUsedIndex: 0,
+                    smartOver: [meterIsSmartOver(other)],
+                    blinkOff: [quotaBlinkOff(other)]
                 ))
             }
             list.append(RingIcon.Dial(
@@ -713,7 +748,9 @@ private struct MenuBarIconLabel: View {
                 avatarColor: grokAvatarColor,
                 elapsedPct: grokElapsed,
                 remaining: grokRemaining,
-                displayedUsedIndex: 0
+                displayedUsedIndex: 0,
+                smartOver: [meterIsSmartOver(grok)],
+                blinkOff: [quotaBlinkOff(grok)]
             ))
             dials = list
         case .ringsPaired, .ringsPace:
@@ -729,7 +766,12 @@ private struct MenuBarIconLabel: View {
                 useds = [cursor.isUnavailable ? nil : cursor.percentUsed]
                 fills = [paceBarColor(cursor)]
             }
-            let blinkOther = showOtherModels && pairedUsedShowsOther(at: date)
+            let cursorSmart: [Bool] = showOtherModels
+                ? [meterIsSmartOver(cursor), meterIsSmartOver(other)]
+                : [meterIsSmartOver(cursor)]
+            let cursorBlink: [Bool] = showOtherModels
+                ? [quotaBlinkOff(cursor), quotaBlinkOff(other)]
+                : [quotaBlinkOff(cursor)]
             dials = [
                 RingIcon.Dial(
                     avatar: .cursor,
@@ -739,7 +781,9 @@ private struct MenuBarIconLabel: View {
                     avatarColor: cursorAvatarColor,
                     elapsedPct: cursorElapsed,
                     remaining: cursorRemaining,
-                    displayedUsedIndex: blinkOther ? 1 : 0
+                    displayedUsedIndex: showOtherPhase ? 1 : 0,
+                    smartOver: cursorSmart,
+                    blinkOff: cursorBlink
                 ),
                 RingIcon.Dial(
                     avatar: .grok,
@@ -749,7 +793,9 @@ private struct MenuBarIconLabel: View {
                     avatarColor: grokAvatarColor,
                     elapsedPct: grokElapsed,
                     remaining: grokRemaining,
-                    displayedUsedIndex: 0
+                    displayedUsedIndex: 0,
+                    smartOver: [meterIsSmartOver(grok)],
+                    blinkOff: [quotaBlinkOff(grok)]
                 ),
             ]
         case .bars:
@@ -761,11 +807,9 @@ private struct MenuBarIconLabel: View {
             dials: dials,
             showAvatarsBeside: showAvatars,
             showUsedPercent: showUsedPercent,
-            showElapsedPercent: alternateElapsedRemaining ? false : showElapsedPercent,
-            showRemainingBeside: alternateElapsedRemaining ? false : showRemaining,
-            alternateShowsRemaining: alternateElapsedRemaining
-                ? pairedUsedShowsOther(at: date) // same ~2.5s cadence as Models↔Other
-                : nil,
+            showElapsedPercent: alternateElapsedActive ? false : showElapsedPercent,
+            showRemainingBeside: alternateElapsedActive ? false : showRemaining,
+            alternateShowsRemaining: alternateElapsedActive ? alternateShowsRemainingPhase : nil,
             ringCenter: ringCenterContent,
             colorMode: iconColorMode,
             onPaceLo: onPaceLo,
@@ -773,12 +817,6 @@ private struct MenuBarIconLabel: View {
             foreground: .white,
             paceColor: tintColor
         )
-    }
-
-    /// Shared ~2.5s phase: nested used % (Other vs Models), elapsed↔remaining,
-    /// and under↔over center-icon color.
-    private func pairedUsedShowsOther(at date: Date) -> Bool {
-        Int(date.timeIntervalSinceReferenceDate / 2.5) % 2 == 1
     }
 
     /// Template (monochrome) or palette-tinted symbol; NSImage so the status item honors the color.
@@ -797,13 +835,13 @@ private struct MenuBarIconLabel: View {
         }
     }
 
-    /// Menu-bar fills: brighter than system colors, richer than pastel wash.
+    /// Menu-bar fills: neon on-pace (battery-like), saturated under/over.
     private func tintColor(_ tint: SymbolTint) -> NSColor {
         switch tint {
         case .neutral: return .labelColor
-        case .under: return NSColor(calibratedRed: 0.35, green: 0.68, blue: 1.0, alpha: 1)
-        case .ok: return NSColor(calibratedRed: 0.28, green: 0.82, blue: 0.45, alpha: 1)
-        case .warning: return NSColor(calibratedRed: 0.95, green: 0.48, blue: 0.00, alpha: 1) // smart-alarm mild over
+        case .under: return NSColor(calibratedRed: 0.28, green: 0.72, blue: 1.0, alpha: 1)
+        case .ok: return NSColor(calibratedRed: 0.22, green: 0.95, blue: 0.35, alpha: 1)
+        case .warning: return NSColor(calibratedRed: 1.0, green: 0.55, blue: 0.05, alpha: 1)
         case .critical: return NSColor(calibratedRed: 1.0, green: 0.25, blue: 0.30, alpha: 1)
         }
     }
@@ -818,6 +856,28 @@ private struct MenuBarIconLabel: View {
     private func paceBarColor(_ meter: QuotaMeter) -> NSColor? {
         guard let tint = paceTint(meter) else { return nil }
         return tintColor(tint)
+    }
+
+    /// Smart over corridor (or legacy over ratio when smart alerts are off), including exhausted.
+    private func meterIsSmartOver(_ meter: QuotaMeter) -> Bool {
+        guard !meter.isUnavailable else { return false }
+        if let pct = meter.percentUsed,
+           let start = meter.periodStart,
+           let end = meter.periodEnd,
+           let t = PaceCalculator.elapsedFraction(periodStart: start, periodEnd: end) {
+            let kind = PaceAlertBands.evaluate(
+                percentUsed: pct,
+                elapsedFraction: t,
+                thresholds: smartThresholds,
+                smart: useSmartPaceAlerts,
+                legacyUnder: blinkUnderRatio,
+                legacyOver: blinkOverRatio
+            )
+            return kind == .over || kind == .exhausted
+        }
+        if meter.percentUsed ?? 0 >= 100 { return true }
+        guard let r = meter.pace?.ratio else { return false }
+        return r > blinkOverRatio
     }
 
     private func meterNeedsBlink(_ meter: QuotaMeter) -> Bool {
@@ -844,41 +904,49 @@ private struct MenuBarIconLabel: View {
         )
     }
 
-    /// ~2s hard on/off for significant under/over fills (1s half-cycle).
-    private func blinkLit(at date: Date) -> Bool {
-        Int(date.timeIntervalSinceReferenceDate / 1.0) % 2 == 0
+    /// Off beat for one quota ring — same 1.0s pulse as `blinkedBarColor`.
+    private func quotaBlinkOff(_ meter: QuotaMeter) -> Bool {
+        meterNeedsBlink(meter) && !significantBlinkLit
     }
 
-    private func blinkedBarColor(_ base: NSColor?, meter: QuotaMeter, at date: Date) -> NSColor? {
+    /// Significant under/over fill pulse uses `significantBlinkLit` (1.0s half-cycle).
+    private func blinkedBarColor(_ base: NSColor?, meter: QuotaMeter) -> NSColor? {
         guard meterNeedsBlink(meter) else { return base }
-        if blinkLit(at: date) { return base }
+        if significantBlinkLit { return base }
         if let base { return base.withAlphaComponent(0.35) }
         // Monochrome: dim the ink fill while "off".
         return NSColor.white.withAlphaComponent(0.35)
     }
 
-    private func blinkedAvatarColor(_ base: NSColor?, meters: [QuotaMeter], at date: Date) -> NSColor? {
+    private func blinkedAvatarColor(_ base: NSColor?, meters: [QuotaMeter]) -> NSColor? {
         guard meters.contains(where: meterNeedsBlink) else { return base }
-        if blinkLit(at: date) { return base }
+        if significantBlinkLit { return base }
         if let base { return base.withAlphaComponent(0.4) }
         return NSColor.white.withAlphaComponent(0.4)
     }
 
-    /// Avatar tint: light mix toward white. `slowPulse` → Models↔Other colors on the same
-    /// ~2.5s phase as nested dial used % (`pairedUsedShowsOther`).
+    /// Avatar tint: light mix toward white. `slowPulse` → Models↔Other on `pairedShowsOther`
+    /// (same flag as nested dial used %).
     private func lightAvatarColor(
         from barColors: [NSColor?],
-        at date: Date,
         slowPulse: Bool = false
     ) -> NSColor? {
-        let colors = barColors.compactMap { $0 }
-        guard let first = colors.first else { return nil }
+        guard barColors.contains(where: { $0 != nil }) else { return nil }
         let blended: NSColor
-        if slowPulse, colors.count >= 2, !colors[0].isEqual(colors[1]) {
-            // Match beside used %: Other phase → colors[1], Models phase → colors[0].
-            blended = pairedUsedShowsOther(at: date) ? colors[1] : colors[0]
-        } else {
+        if slowPulse, barColors.count >= 2 {
+            // Index-aligned with usedPcts / displayedUsedIndex — do not compactMap (nil would shift).
+            let idx = pairedShowsOther ? 1 : 0
+            if let picked = barColors[idx] {
+                blended = picked
+            } else if let fallback = barColors[1 - idx] ?? barColors.compactMap({ $0 }).first {
+                blended = fallback
+            } else {
+                return nil
+            }
+        } else if let first = barColors.compactMap({ $0 }).first {
             blended = first
+        } else {
+            return nil
         }
         return lighten(blended, towardWhite: 0.22)
     }

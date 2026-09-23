@@ -9,7 +9,10 @@ final class QuotaStore: ObservableObject {
     @Published var cursorModels = QuotaMeter(name: "Cursor Models")
     @Published var otherModels = QuotaMeter(name: "Other Models", isUnavailable: true)
     @Published var grokBot = QuotaMeter(name: "Grok Bot", isUnavailable: true)
+    /// Sign-in failure. Replaces the menu-bar icon until re-auth works.
     @Published var authError: String?
+    /// Last fetch failed. Shown in the menu; the rings stay up with the previous meters.
+    @Published var refreshError: String?
     @Published var isRefreshing = false
     @Published var lastRefreshed: Date?
 
@@ -87,32 +90,18 @@ final class QuotaStore: ObservableObject {
     func refresh(forceReimport: Bool = false) async {
         guard !isRefreshing else { return }
         isRefreshing = true
+        authError = nil
+        refreshError = nil
         defer { isRefreshing = false }
 
         do {
-            let credentials = try await resolveCredentials(forceReimport: forceReimport)
-            let result = try await CursorConnectClient.fetchMeters(credentials: credentials)
-            try KeychainStore.save(result.credentials)
-            cursorModels = result.cursorModels
-            otherModels = result.otherModels
-            grokBot = result.grokBot
-            authError = nil
-            didAttemptAuthFailureReimport = false
-            lastRefreshed = Date()
-            let includeOther = UserDefaults.standard.bool(forKey: "showOtherModels")
-            await PaceAlertOrchestrator.handleSuccessfulRefresh(
-                cursor: result.cursorModels,
-                other: includeOther ? result.otherModels : nil,
-                grok: result.grokBot
-            )
+            try await fetchAndApply(forceReimport: forceReimport)
         } catch CursorConnectClient.ClientError.unauthorized,
                 CursorConnectClient.ClientError.shouldLogout,
                 CursorConnectClient.ClientError.refreshFailed {
             await handleAuthFailure()
         } catch {
-            if authError == nil {
-                authError = "Refresh failed"
-            }
+            refreshError = Self.refreshFailureMessage(error)
         }
     }
 
@@ -132,6 +121,7 @@ final class QuotaStore: ObservableObject {
         do {
             try KeychainStore.save(creds)
             authError = nil
+            refreshError = nil
             Task { await self.refresh() }
         } catch {
             authError = "Could not save token"
@@ -152,15 +142,59 @@ final class QuotaStore: ObservableObject {
         throw CursorConnectClient.ClientError.unauthorized
     }
 
+    private func fetchAndApply(forceReimport: Bool) async throws {
+        let credentials = try await resolveCredentials(forceReimport: forceReimport)
+        let result = try await CursorConnectClient.fetchMeters(credentials: credentials)
+        try KeychainStore.save(result.credentials)
+        cursorModels = result.cursorModels
+        otherModels = result.otherModels
+        grokBot = result.grokBot
+        authError = nil
+        refreshError = nil
+        didAttemptAuthFailureReimport = false
+        lastRefreshed = Date()
+        let includeOther = UserDefaults.standard.bool(forKey: "showOtherModels")
+        await PaceAlertOrchestrator.handleSuccessfulRefresh(
+            cursor: result.cursorModels,
+            other: includeOther ? result.otherModels : nil,
+            grok: result.grokBot
+        )
+    }
+
+    /// One re-read of the Cursor session, then a real fetch. Calling `refresh()` here
+    /// no-ops because this attempt is already in flight.
     private func handleAuthFailure() async {
         if !didAttemptAuthFailureReimport {
             didAttemptAuthFailureReimport = true
             if let imported = try? CursorVscdbImporter.importCredentials() {
                 try? KeychainStore.save(imported)
-                await refresh()
-                return
+                do {
+                    try await fetchAndApply(forceReimport: false)
+                    return
+                } catch CursorConnectClient.ClientError.unauthorized,
+                        CursorConnectClient.ClientError.shouldLogout,
+                        CursorConnectClient.ClientError.refreshFailed {
+                    // Fall through to the re-auth message.
+                } catch {
+                    refreshError = Self.refreshFailureMessage(error)
+                    return
+                }
             }
         }
         authError = "Auth error — re-auth or paste token"
+    }
+
+    private static func refreshFailureMessage(_ error: Error) -> String {
+        if let url = error as? URLError {
+            switch url.code {
+            case .timedOut: return "Refresh failed — timed out"
+            case .notConnectedToInternet, .networkConnectionLost: return "Refresh failed — offline"
+            default: break
+            }
+        }
+        if case CursorConnectClient.ClientError.httpStatus(let code) = error {
+            return "Refresh failed — HTTP \(code)"
+        }
+        return "Refresh failed"
     }
 }

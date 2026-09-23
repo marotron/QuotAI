@@ -10,13 +10,23 @@ macOS **Swift** menu-bar app for Cursor Spending quota (Cursor Models + Grok Bot
 
 ## Screenshots
 
-Menu bar meters (used / elapsed → pace):
+Menu bar rings (used % and time to reset). Nested Cursor blinks between Models and Other; a smart pace hit blinks that quota ring:
 
-![QuotAI menu](docs/screenshots/menu-half.png)
+![QuotAI menu bar rings](docs/screenshots/menu-rings.gif)
 
-Smart pace alert corridors in Settings:
+[Original recording](docs/screenshots/menu-rings.mov)
 
-![QuotAI Settings — Alerts](docs/screenshots/settings-alerts-half.png)
+Display (ring style, beside-meter labels, ring center):
+
+![QuotAI Settings — Display](docs/screenshots/settings-display.png)
+
+Smart pace alert corridors:
+
+![QuotAI Settings — Alerts](docs/screenshots/settings-alerts.png)
+
+Menu pins, including Open Cursor Spending:
+
+![QuotAI Settings — Menu pins](docs/screenshots/settings-pins.png)
 
 ## Build
 

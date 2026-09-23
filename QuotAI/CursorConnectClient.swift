@@ -62,6 +62,7 @@ enum CursorConnectClient {
         request.setValue("1", forHTTPHeaderField: "Connect-Protocol-Version")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = Data("{}".utf8)
+        request.timeoutInterval = 20
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ClientError.badPayload }
@@ -83,6 +84,7 @@ enum CursorConnectClient {
             "refresh_token": credentials.refreshToken,
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 20
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ClientError.refreshFailed }
