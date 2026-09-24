@@ -2,10 +2,12 @@ import XCTest
 @testable import QuotAICore
 
 final class QuotaPercentTests: XCTestCase {
-    func testCeilMatchesSpendingUIForFractionalCursorUsage() {
-        // Live GetCurrentPeriodUsage: autoPercentUsed ≈ 0.32, Spending shows "1% used".
-        XCTAssertEqual(QuotaPercent.display(0.31777777777777777), 1)
-        XCTAssertEqual(QuotaPercent.format(0.31777777777777777), "1%")
+    func testHalfUp() {
+        XCTAssertEqual(QuotaPercent.display(0.31777777777777777), 0)
+        XCTAssertEqual(QuotaPercent.format(0.31777777777777777), "0%")
+        XCTAssertEqual(QuotaPercent.display(15.49), 15)
+        XCTAssertEqual(QuotaPercent.display(15.5), 16)
+        XCTAssertEqual(QuotaPercent.display(15.56), 16)
     }
 
     func testZeroStaysZero() {

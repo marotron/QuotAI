@@ -8,15 +8,17 @@ final class RemainingTimeTests: XCTestCase {
     }
 
     func testUnderOneDayUsesHours() {
-        XCTAssertEqual(RemainingTime.format(seconds: 86_399), "24h")
+        XCTAssertEqual(RemainingTime.format(seconds: 86_399), "23h")
         XCTAssertEqual(RemainingTime.format(seconds: 5 * 3_600), "5h")
         XCTAssertEqual(RemainingTime.format(seconds: 3_600), "1h")
     }
 
     func testUnderOneHourUsesMinutes() {
-        XCTAssertEqual(RemainingTime.format(seconds: 3_599), "60m")
+        XCTAssertEqual(RemainingTime.format(seconds: 3_599), "59m")
         XCTAssertEqual(RemainingTime.format(seconds: 15 * 60), "15m")
-        XCTAssertEqual(RemainingTime.format(seconds: 1), "1m")
+        XCTAssertEqual(RemainingTime.format(seconds: 45.60 * 60), "45m")
+        XCTAssertEqual(RemainingTime.format(seconds: 51 * 60 + 30), "51m")
+        XCTAssertEqual(RemainingTime.format(seconds: 1), "0m")
         XCTAssertEqual(RemainingTime.format(seconds: 0), "0m")
     }
 

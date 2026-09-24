@@ -1,11 +1,11 @@
 import Foundation
 
-/// Display formatting for Spending-style usage percentages.
+/// Display formatting for quota and elapsed percentages.
 public enum QuotaPercent {
-    /// Integer % matching Cursor’s Spending UI (`0.32` → `1`, not `0`).
+    /// Whole percent. Half and above rounds up (`15.5` → `16`, `15.49` → `15`).
     public static func display(_ value: Double) -> Int {
         guard value > 0 else { return 0 }
-        return Int(value.rounded(.up))
+        return Int(value.rounded(.toNearestOrAwayFromZero))
     }
 
     public static func format(_ value: Double) -> String {

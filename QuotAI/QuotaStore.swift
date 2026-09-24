@@ -15,9 +15,12 @@ final class QuotaStore: ObservableObject {
     @Published var refreshError: String?
     @Published var isRefreshing = false
     @Published var lastRefreshed: Date?
+    /// Dropdown + menu-bar reset countdown. Moves at most once a minute.
+    @Published private(set) var displayClock = Date()
 
     private var didAttemptAuthFailureReimport = false
     private var pollTimer: Timer?
+    private var displayClockTimer: Timer?
     private var pollActivity: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
 
@@ -37,6 +40,7 @@ final class QuotaStore: ObservableObject {
         let stored = UserDefaults.standard.integer(forKey: Self.pollIntervalKey)
         pollIntervalMinutes = Self.pollIntervalChoices.contains(stored) ? stored : 10
         startPolling(refreshNow: true)
+        startDisplayClock()
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -46,8 +50,34 @@ final class QuotaStore: ObservableObject {
 
     deinit {
         pollTimer?.invalidate()
+        displayClockTimer?.invalidate()
         if let pollActivity { ProcessInfo.processInfo.endActivity(pollActivity) }
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
+    }
+
+    /// Align the countdown to now. Used when the menu opens, between minute ticks.
+    func snapDisplayClock() {
+        displayClock = Date()
+    }
+
+    /// Next fire is the following wall-clock minute, then every 60s, including while a menu is tracking.
+    private func startDisplayClock() {
+        displayClockTimer?.invalidate()
+        let timer = Timer(fire: Self.nextMinute(), interval: 60, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.displayClock = Date()
+            }
+        }
+        timer.tolerance = 1
+        RunLoop.main.add(timer, forMode: .common)
+        displayClockTimer = timer
+    }
+
+    private static func nextMinute(after now: Date = Date()) -> Date {
+        let seconds = now.timeIntervalSince1970
+        let boundary = ceil(seconds / 60) * 60
+        let fire = boundary <= seconds + 0.05 ? boundary + 60 : boundary
+        return Date(timeIntervalSince1970: fire)
     }
 
     /// Menu-bar apps nap hard; RunLoop timer + activity keep the cadence honest.

@@ -103,7 +103,7 @@ enum BarIcon {
 
     // MARK: - Labels
 
-    /// Single → `23%`; dual → `23/2%` (one `%` at the end). Ceil matches Spending UI.
+    /// Single → `23%`; dual → `23/2%` (one `%` at the end). Half and above rounds up.
     static func percentLabel(_ row: Row) -> String {
         let parts = row.fills.map { fill -> String in
             fill.map { String(QuotaPercent.display($0)) } ?? "—"
@@ -401,7 +401,7 @@ enum BarIcon {
         trackColor.setFill()
         innerPath.fill()
 
-        // Progress: whole-% like Spending. Timeline: continuous so the clock moves smoothly.
+        // Progress: whole % (half-up). Timeline: continuous so the clock moves smoothly.
         // Percent of inner width so stroked quota and inset timeline share one scale —
         // avoid a height-based min stub (it made early-period used look ~2× elapsed).
         if let fill {

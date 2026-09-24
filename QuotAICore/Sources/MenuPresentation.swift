@@ -35,6 +35,40 @@ public struct QuotaMeter: Equatable, Sendable {
         guard total > 0 else { return nil }
         return min(max(now.timeIntervalSince(start) / total, 0), 1) * 100
     }
+
+    /// Seconds until `periodEnd` at `now`. Falls back to the fetch snapshot when the window is missing.
+    public func secondsRemaining(at now: Date) -> TimeInterval? {
+        if let end = periodEnd {
+            return max(0, end.timeIntervalSince(now))
+        }
+        return secondsRemaining
+    }
+
+    /// Used % stays the last fetch. Remaining and pace follow the billing window at `now`.
+    public func projected(
+        at now: Date,
+        onPaceLo: Double = PaceCalculator.greenLo,
+        onPaceHi: Double = PaceCalculator.greenHi
+    ) -> QuotaMeter {
+        var copy = self
+        if let end = periodEnd {
+            copy.secondsRemaining = max(0, end.timeIntervalSince(now))
+        }
+        if !isUnavailable,
+           let pct = percentUsed,
+           let start = periodStart,
+           let end = periodEnd {
+            copy.pace = PaceCalculator.pace(
+                percentUsed: pct,
+                periodStart: start,
+                periodEnd: end,
+                now: now,
+                onPaceLo: onPaceLo,
+                onPaceHi: onPaceHi
+            )
+        }
+        return copy
+    }
 }
 
 /// User setting: how the menu bar icon is colored.
@@ -107,7 +141,7 @@ public enum PaceBand: Equatable, Sendable {
 public struct MenuMeterRow: Equatable, Identifiable, Sendable {
     public var id: String { name }
     public var name: String
-    /// e.g. `1.64% used / 2% elapsed → 82% pace · 29d 10h`
+    /// e.g. `1.64% used / 2.35% elapsed → 82% pace · 29d 10h`
     public var title: String
     /// Smaller secondary line (waste % or early-empty / idle days).
     public var note: String?
@@ -269,8 +303,7 @@ public enum MenuPresenter {
         let used = QuotaPercent.precise(pct)
         let title: String
         if let elapsed = m.periodElapsedPercent(now: now) {
-            let elapsedPct = Int(elapsed.rounded())
-            title = "\(m.name): \(used) used / \(elapsedPct)% elapsed → \(paceArrow(m.pace)) · \(remaining)"
+            title = "\(m.name): \(used) used / \(QuotaPercent.precise(elapsed)) elapsed → \(paceArrow(m.pace)) · \(remaining)"
         } else {
             let pace = m.pace?.label ?? "Pace n/a"
             title = "\(m.name): \(used) used · \(remaining) · \(pace)"

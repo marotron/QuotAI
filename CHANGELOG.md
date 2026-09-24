@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.1 — 2026-09-24
+
+### Fixed
+
+- Dropdown time to reset and the pace estimate follow the clock between refreshes, at most once a minute
+- Menu-bar time to reset uses that same minute clock
+- Time to reset rounds down, so the menu bar and dropdown show the same minute
+- Quota and elapsed percents round half up (`15.5` → `16`, `15.49` → `15`)
+- Dropdown elapsed percent uses the same two-decimal precision as quota used
+
 ## 0.7.0 — 2026-09-23
 
 ### Added

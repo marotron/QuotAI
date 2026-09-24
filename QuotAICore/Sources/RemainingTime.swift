@@ -6,15 +6,9 @@ public enum RemainingTime {
     public static let hour: TimeInterval = 3_600
     public static let minute: TimeInterval = 60
 
+    /// Compact time to reset. Partial units round down (`45.6m` → `45m`).
     public static func format(seconds: TimeInterval) -> String {
-        let remaining = max(0, seconds)
-        if remaining >= day {
-            return "\(Int(ceil(remaining / day)))d"
-        }
-        if remaining >= hour {
-            return "\(Int(ceil(remaining / hour)))h"
-        }
-        return "\(Int(ceil(remaining / minute)))m"
+        labeled(max(0, seconds), roundingUp: false)
     }
 
     /// Expanded menu: `29d 14h`, `5h 12m`, `4m`.
@@ -32,8 +26,18 @@ public enum RemainingTime {
         return "\(mins)m"
     }
 
-    /// Pace early-depletion uses fractional days.
+    /// Pace early-depletion uses fractional days. A partial unit still counts.
     public static func format(days: Double) -> String {
-        format(seconds: days * day)
+        labeled(max(0, days) * day, roundingUp: true)
+    }
+
+    private static func labeled(_ remaining: TimeInterval, roundingUp: Bool) -> String {
+        func count(_ span: TimeInterval) -> Int {
+            let units = remaining / span
+            return roundingUp ? Int(ceil(units)) : Int(units)
+        }
+        if remaining >= day { return "\(count(day))d" }
+        if remaining >= hour { return "\(count(hour))h" }
+        return "\(count(minute))m"
     }
 }

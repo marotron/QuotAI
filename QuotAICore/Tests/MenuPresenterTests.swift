@@ -30,8 +30,9 @@ final class MenuPresenterTests: XCTestCase {
         XCTAssertTrue(view.meters[0].title.contains("0.32% used"), view.meters[0].title)
         XCTAssertTrue(view.meters[0].title.contains("29d 14h"), view.meters[0].title)
         XCTAssertTrue(view.meters[1].title.contains("46.4% used"), view.meters[1].title)
-        // Bar glance stays ceiled whole %.
-        XCTAssertTrue(view.barTitle.contains("1%"))
+        // Bar glance is a whole %: 0.32 rounds down, 46.4 rounds to 46.
+        XCTAssertTrue(view.barTitle.contains("0%"), view.barTitle)
+        XCTAssertTrue(view.barTitle.contains("46%"), view.barTitle)
     }
 
     func testMenuRowShowsUsedOverElapsedArrowPace() {
@@ -88,6 +89,27 @@ final class MenuPresenterTests: XCTestCase {
         XCTAssertEqual(view.meters[0].band, .under)
         XCTAssertNotNil(view.meters[0].note)
         XCTAssertTrue(view.meters[0].note!.contains("unused by reset"), view.meters[0].note!)
+    }
+
+    func testMenuRowShowsPreciseElapsed() {
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let end = start.addingTimeInterval(100 * 86_400)
+        let now = start.addingTimeInterval(15.234 * 86_400)
+        let cursor = QuotaMeter(
+            name: "Cursor Models",
+            percentUsed: 15.75,
+            secondsRemaining: 84 * 86_400,
+            periodStart: start,
+            periodEnd: end
+        )
+        let view = MenuPresenter.present(
+            cursorModels: cursor,
+            grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
+            now: now
+        )
+        let elapsed = QuotaPercent.precise(cursor.periodElapsedPercent(now: now)!)
+        XCTAssertTrue(elapsed.contains("."), elapsed)
+        XCTAssertTrue(view.meters[0].title.contains("15.75% used / \(elapsed) elapsed"), view.meters[0].title)
     }
 
     func testUnderNoteShowsProjectedWaste() {
@@ -265,6 +287,55 @@ final class MenuPresenterTests: XCTestCase {
         )
         XCTAssertEqual(view.notices.first, "Auth error — re-auth or paste token")
         XCTAssertEqual(view.barTitle, "QuotAI · auth")
+    }
+
+    func testProjectedClockMovesRemainingAndPace() {
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let end = start.addingTimeInterval(10 * 86_400)
+        let fetched = start.addingTimeInterval(4 * 86_400)
+        let later = fetched.addingTimeInterval(90 * 60)
+        let fetchedPace = PaceCalculator.pace(percentUsed: 50, periodStart: start, periodEnd: end, now: fetched)
+        let meter = QuotaMeter(
+            name: "Cursor Models",
+            percentUsed: 50,
+            secondsRemaining: end.timeIntervalSince(fetched),
+            pace: fetchedPace,
+            periodStart: start,
+            periodEnd: end
+        )
+        let live = meter.projected(at: later)
+        XCTAssertEqual(live.secondsRemaining!, end.timeIntervalSince(later), accuracy: 0.001)
+        XCTAssertNotEqual(live.pace?.ratio, fetchedPace.ratio)
+        XCTAssertEqual(
+            live.secondsRemaining(at: later)!,
+            end.timeIntervalSince(later),
+            accuracy: 0.001
+        )
+
+        let view = MenuPresenter.present(
+            cursorModels: live,
+            grokBot: QuotaMeter(name: "Grok Bot", isUnavailable: true),
+            now: later
+        )
+        let remaining = RemainingTime.formatDetailed(seconds: end.timeIntervalSince(later))
+        XCTAssertTrue(view.meters[0].title.contains(remaining), view.meters[0].title)
+        let pacePct = Int((live.pace!.ratio! * 100).rounded())
+        XCTAssertTrue(view.meters[0].title.contains("\(pacePct)% pace"), view.meters[0].title)
+        XCTAssertNotNil(view.meters[0].note)
+    }
+
+    func testProjectedKeepsSnapshotWithoutBillingWindow() {
+        let pace = PaceResult(ratio: 0.5, label: "Under", isEarly: false, daysToExhaustion: 3)
+        let meter = QuotaMeter(
+            name: "Cursor Models",
+            percentUsed: 10,
+            secondsRemaining: 100,
+            pace: pace
+        )
+        let later = meter.projected(at: Date().addingTimeInterval(3_600))
+        XCTAssertEqual(later.secondsRemaining, 100)
+        XCTAssertEqual(later.pace, pace)
+        XCTAssertEqual(later.secondsRemaining(at: Date()), 100)
     }
 
     func testRefreshFailureKeepsGlanceTitle() {

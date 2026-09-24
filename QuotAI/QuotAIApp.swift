@@ -66,12 +66,16 @@ struct QuotAIApp: App {
     }
 
     private var presentation: MenuPresentation {
+        let now = store.displayClock
         let presented = MenuPresenter.present(
-            cursorModels: store.cursorModels,
-            otherModels: showOtherModels ? store.otherModels : nil,
-            grokBot: store.grokBot,
+            cursorModels: store.cursorModels.projected(at: now, onPaceLo: onPaceLo, onPaceHi: onPaceHi),
+            otherModels: showOtherModels
+                ? store.otherModels.projected(at: now, onPaceLo: onPaceLo, onPaceHi: onPaceHi)
+                : nil,
+            grokBot: store.grokBot.projected(at: now, onPaceLo: onPaceLo, onPaceHi: onPaceHi),
             authError: store.authError,
             notice: store.refreshError,
+            now: now,
             onPaceLo: onPaceLo,
             onPaceHi: onPaceHi
         )
@@ -113,6 +117,7 @@ struct QuotAIApp: App {
                 Task { await store.refresh() }
             }
             .onAppear {
+                store.snapDisplayClock()
                 Task { await store.refreshIfStale() }
             }
             if pinOpenCursorSpending {
@@ -377,29 +382,49 @@ private final class MeterMenuBadges: NSObject {
 
         let menuFont = NSFont.menuFont(ofSize: 0)
         let noteFont = NSFont.menuFont(ofSize: NSFont.smallSystemFontSize)
-        for item in menu.items {
+        var index = 0
+        while index < menu.items.count {
+            let item = menu.items[index]
             if let meter = meter(forTitle: item.title, meters: meters) {
                 item.isEnabled = true
                 item.image = nil
                 item.attributedTitle = Self.coloredTitle(for: meter, font: menuFont)
+                if let note = meter.note,
+                   index + 1 < menu.items.count,
+                   looksLikePaceNote(menu.items[index + 1].title) {
+                    let noteItem = menu.items[index + 1]
+                    noteItem.isEnabled = true
+                    noteItem.image = nil
+                    noteItem.attributedTitle = Self.indentedNote(note, matching: meter, font: noteFont)
+                    index += 1
+                }
             } else if let meter = meter(forNoteTitle: item.title, meters: meters),
                       let note = meter.note {
                 item.isEnabled = true
                 item.image = nil
                 item.attributedTitle = Self.indentedNote(note, matching: meter, font: noteFont)
             }
+            index += 1
         }
     }
 
     private func meter(forTitle title: String, meters: [MenuMeterRow]) -> MenuMeterRow? {
         if let exact = meters.first(where: { $0.title == title }) { return exact }
         // "❄︎ <title>" from SwiftUI before attributedTitle rewrite.
-        return meters.first { meter in
+        if let marked = meters.first(where: { meter in
             guard title.hasSuffix(meter.title), title != meter.title else { return false }
             // Note rows also end with text after a mark — exclude those.
             if let note = meter.note, title.hasSuffix(note) { return false }
             return true
+        }) {
+            return marked
         }
+        // Minute tick rewrites the title while NSMenuItem.title is still the previous minute.
+        return meters.first { title.contains("\($0.name):") }
+    }
+
+    private func looksLikePaceNote(_ title: String) -> Bool {
+        title.contains("At this pace") || title.contains("Empties in") || title.contains("Quota exhausted")
     }
 
     private func meter(forNoteTitle title: String, meters: [MenuMeterRow]) -> MenuMeterRow? {
@@ -598,6 +623,22 @@ private struct MenuBarIconLabel: View {
         return meterNeedsBlink(store.grokBot)
     }
 
+    /// Minute clock shared with the dropdown. Reset labels do not follow the 0.5s blink.
+    private var clock: Date { store.displayClock }
+
+    /// Compact time-to-reset for the menu bar. Nil when that meter has nothing to show.
+    private func liveRemaining(_ meter: QuotaMeter) -> String? {
+        guard !meter.isUnavailable else { return nil }
+        return meter.secondsRemaining(at: clock).map(RemainingTime.format(seconds:))
+    }
+
+    /// Cursor Models and Other Models share one billing window, so one reset label.
+    private func sharedRemaining(_ cursor: QuotaMeter, _ other: QuotaMeter) -> String? {
+        if cursor.isUnavailable, !showOtherModels || other.isUnavailable { return nil }
+        let seconds = cursor.secondsRemaining(at: clock) ?? other.secondsRemaining(at: clock)
+        return seconds.map(RemainingTime.format(seconds:))
+    }
+
     /// Cursor (+ optional Other Models stacked) and Grok: avatar · bar(s)/rings · percent · time.
     private func compactIcon() -> NSImage {
         switch iconLook {
@@ -633,13 +674,9 @@ private struct MenuBarIconLabel: View {
         }
 
         // Same billing cycle for Cursor Models + Other Models → one shared remaining + timeline.
-        let cursorRemaining: String? = {
-            if cursor.isUnavailable, !showOtherModels || other.isUnavailable { return nil }
-            let seconds = cursor.secondsRemaining ?? other.secondsRemaining
-            return seconds.map(RemainingTime.format(seconds:))
-        }()
-        let cursorTimeline = cursor.periodElapsedPercent() ?? other.periodElapsedPercent()
-        let grokTimeline = grok.periodElapsedPercent()
+        let cursorRemaining = sharedRemaining(cursor, other)
+        let cursorTimeline = cursor.periodElapsedPercent(now: clock) ?? other.periodElapsedPercent(now: clock)
+        let grokTimeline = grok.periodElapsedPercent(now: clock)
 
         let grokFill = grok.isUnavailable ? nil : grok.percentUsed
         let grokBaseColors: [NSColor?] = [paceBarColor(grok)]
@@ -662,7 +699,7 @@ private struct MenuBarIconLabel: View {
             BarIcon.Row(
                 avatar: .grok,
                 fills: [grokFill],
-                remaining: grok.isUnavailable ? nil : grok.secondsRemaining.map(RemainingTime.format(seconds:)),
+                remaining: liveRemaining(grok),
                 barColors: grokColors,
                 avatarColor: blinkedAvatarColor(
                     lightAvatarColor(from: grokBaseColors),
@@ -684,16 +721,10 @@ private struct MenuBarIconLabel: View {
         let cursor = store.cursorModels
         let other = store.otherModels
         let grok = store.grokBot
-        let cursorElapsed = cursor.periodElapsedPercent() ?? other.periodElapsedPercent()
-        let grokElapsed = grok.periodElapsedPercent()
-        let cursorRemaining: String? = {
-            if cursor.isUnavailable, !showOtherModels || other.isUnavailable { return nil }
-            let seconds = cursor.secondsRemaining ?? other.secondsRemaining
-            return seconds.map(RemainingTime.format(seconds:))
-        }()
-        let grokRemaining = grok.isUnavailable
-            ? nil
-            : grok.secondsRemaining.map(RemainingTime.format(seconds:))
+        let cursorElapsed = cursor.periodElapsedPercent(now: clock) ?? other.periodElapsedPercent(now: clock)
+        let grokElapsed = grok.periodElapsedPercent(now: clock)
+        let cursorRemaining = sharedRemaining(cursor, other)
+        let grokRemaining = liveRemaining(grok)
 
         // One phase for center icon color and beside used %; elapsed↔remaining is 2× slower.
         let showOtherPhase = showOtherModels && pairedShowsOther
