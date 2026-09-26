@@ -18,5 +18,7 @@ xcuserdata/
 .idea/
 .history/
 
-# Local icon scratch / experiments
+# Local icon scratch / experiments (CHANGELOG.md is the release record)
 .scratch/icons/
+.scratch/quotai/prototype/
+.scratch/RELEASE_NOTES_*.md
