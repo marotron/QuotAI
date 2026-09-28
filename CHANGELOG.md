@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0 — 2026-09-26
+
+### Added
+
+- Dynamic refresh: polls faster as the soonest quota reset gets closer, with a schedule edited in minutes, hours, or days
+
 ## 0.7.1 — 2026-09-24
 
 ### Fixed
