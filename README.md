@@ -1,8 +1,10 @@
 # QuotAI
 
-<p align="center"><img src="docs/brand/app-icon-128.png" width="96" alt="QuotAI app icon"></p>
+<img src="docs/brand/app-icon-128.png" width="72" alt="QuotAI app icon" align="left" hspace="12" />
 
-macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot. Pace shows as rings and blinks.
+macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot. Pace shows as rings and blinks. The same mark appears in Finder, the Dock (when Settings is open), and About — source art in [`docs/brand/`](docs/brand/).
+
+<br clear="all" />
 
 ## Install
 
@@ -14,29 +16,21 @@ macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot
 
 The 0.9.0 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
 
-## Icons
-
-App icon (Finder / Dock / About):
-
-<p align="center"><img src="docs/brand/app-icon.png" width="160" alt="QuotAI app icon"></p>
-
-Source SVGs: [`quotai-icon.svg`](docs/brand/quotai-icon.svg) · [`quotai-icon-macos.svg`](docs/brand/quotai-icon-macos.svg).
-
 ## Screenshots
+
+Menu bar rings show used % and time to reset. Nested Cursor blinks between Models and Other; a smart pace hit blinks that quota ring. ([Original recording](docs/screenshots/menu-rings.mov).)
 
 ![QuotAI menu bar rings](docs/screenshots/menu-rings.gif)
 
-Menu bar rings (used % and time to reset). Nested Cursor blinks between Models and Other; a smart pace hit blinks that quota ring. [Original recording](docs/screenshots/menu-rings.mov).
-
-Display (ring style, beside-meter labels, ring center):
+Settings → Display sets ring style, beside-meter labels, and ring center:
 
 ![QuotAI Settings — Display](docs/screenshots/settings-display.png)
 
-Smart pace alert corridors:
+Settings → Alerts draws the smart pace corridors:
 
 ![QuotAI Settings — Alerts](docs/screenshots/settings-alerts.png)
 
-Menu pins, including Open Cursor Spending:
+Settings → Menu pins which rows stay on the menu, including Open Cursor Spending:
 
 ![QuotAI Settings — Menu pins](docs/screenshots/settings-pins.png)
 
