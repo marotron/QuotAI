@@ -1,4 +1,4 @@
-# <img src="docs/brand/app-icon-128.png" width="40" height="40" alt="" style="vertical-align: middle;" /> QuotAI 
+# <img src="docs/brand/app-icon-128.png" width="40" height="40" alt="" align="absmiddle" /> QuotAI 
 
 macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot. Pace shows as rings and blinks.
 
