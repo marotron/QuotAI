@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 — 2026-10-09
+
+### Added
+
+- App icon (Finder / Dock / About) from the QuotAI icon pack
+
 ## 0.8.0 — 2026-10-09
 
 ### Added

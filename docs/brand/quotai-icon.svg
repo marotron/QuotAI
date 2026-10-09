@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2B2833"/>
+      <stop offset="0.5" stop-color="#0E0D12"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="blue" gradientUnits="userSpaceOnUse" x1="560" y1="250" x2="360" y2="720">
+      <stop offset="0" stop-color="#B8F6FF"/>
+      <stop offset="0.45" stop-color="#3DC4FF"/>
+      <stop offset="1" stop-color="#1F6CFF"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" gradientUnits="userSpaceOnUse" x1="320" y1="220" x2="760" y2="820">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F0ECFF"/>
+    </linearGradient>
+    <radialGradient id="face" cx="0.62" cy="0.62" r="0.8" fx="0.66" fy="0.66">
+      <stop offset="0" stop-color="#9BD9FF"/>
+      <stop offset="1" stop-color="#6EC4FB"/>
+    </radialGradient>
+    <mask id="eyes" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect x="0" y="0" width="1024" height="1024" fill="#FFFFFF"/>
+      <rect x="522" y="508" width="32" height="76" rx="16" fill="#000000"/>
+      <rect x="578" y="508" width="32" height="76" rx="16" fill="#000000"/>
+    </mask>
+    <mask id="cur" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect x="0" y="0" width="1024" height="1024" fill="#FFFFFF"/>
+      <path d="M 642.1 642.1 L 642.1 798.5 L 678.9 763.5 L 706.5 826.1 L 735.9 813.2 L 709.3 751.6 L 755.3 751.6 Z" fill="#000000" stroke="#000000" stroke-width="85.1" stroke-linejoin="round" transform="rotate(-21 642.1 642.1)"/>
+    </mask>
+  
+    <filter id="gGauge" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <!-- cast shadow onto the layer below -->
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="sb"/>
+      <feOffset in="sb" dx="0" dy="12" result="so"/>
+      <feFlood flood-color="#1B1240" flood-opacity="0.27"/>
+      <feComposite in2="so" operator="in" result="shadow"/>
+      <!-- translucent glass body -->
+      <feComponentTransfer in="SourceGraphic" result="body"><feFuncA type="linear" slope="0.5"/></feComponentTransfer>
+      <!-- volume: specular dome from blurred alpha -->
+      <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="bump"/>
+      <feSpecularLighting in="bump" surfaceScale="10" specularConstant="1.1" specularExponent="22" lighting-color="#FFFFFF" result="spec">
+        <feDistantLight azimuth="225" elevation="48"/>
+      </feSpecularLighting>
+      <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn"/>
+      <feComponentTransfer in="specIn" result="specSoft"><feFuncA type="linear" slope="0.75"/></feComponentTransfer>
+      <!-- bright rim on the top-left edge -->
+      <feMorphology in="SourceAlpha" operator="erode" radius="3" result="er"/>
+      <feComposite in="SourceAlpha" in2="er" operator="out" result="edge"/>
+      <feOffset in="SourceAlpha" dx="5" dy="5" result="shiftTL"/>
+      <feComposite in="edge" in2="shiftTL" operator="out" result="edgeTL"/>
+      <feFlood flood-color="#FFFFFF" flood-opacity="1.0"/>
+      <feComposite in2="edgeTL" operator="in" result="rimTL"/>
+      <!-- inner shade on the bottom-right edge -->
+      <feOffset in="SourceAlpha" dx="-8" dy="-8" result="shiftBR"/>
+      <feComposite in="SourceAlpha" in2="shiftBR" operator="out" result="brBand"/>
+      <feGaussianBlur in="brBand" stdDeviation="3" result="brSoft"/>
+      <feFlood flood-color="#241860" flood-opacity="0.35"/>
+      <feComposite in2="brSoft" operator="in" result="innerShade"/>
+      <feComposite in="innerShade" in2="SourceAlpha" operator="in" result="innerShadeIn"/>
+      <feMerge>
+        <feMergeNode in="shadow"/><feMergeNode in="body"/><feMergeNode in="innerShadeIn"/>
+        <feMergeNode in="specSoft"/><feMergeNode in="rimTL"/>
+      </feMerge>
+    </filter>
+    <filter id="gRing" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <!-- cast shadow onto the layer below -->
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="sb"/>
+      <feOffset in="sb" dx="0" dy="18" result="so"/>
+      <feFlood flood-color="#1B1240" flood-opacity="0.32"/>
+      <feComposite in2="so" operator="in" result="shadow"/>
+      <!-- translucent glass body -->
+      <feComponentTransfer in="SourceGraphic" result="body"><feFuncA type="linear" slope="0.62"/></feComponentTransfer>
+      <!-- volume: specular dome from blurred alpha -->
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="bump"/>
+      <feSpecularLighting in="bump" surfaceScale="12" specularConstant="1.1" specularExponent="22" lighting-color="#FFFFFF" result="spec">
+        <feDistantLight azimuth="225" elevation="48"/>
+      </feSpecularLighting>
+      <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn"/>
+      <feComponentTransfer in="specIn" result="specSoft"><feFuncA type="linear" slope="0.75"/></feComponentTransfer>
+      <!-- bright rim on the top-left edge -->
+      <feMorphology in="SourceAlpha" operator="erode" radius="3" result="er"/>
+      <feComposite in="SourceAlpha" in2="er" operator="out" result="edge"/>
+      <feOffset in="SourceAlpha" dx="5" dy="5" result="shiftTL"/>
+      <feComposite in="edge" in2="shiftTL" operator="out" result="edgeTL"/>
+      <feFlood flood-color="#FFFFFF" flood-opacity="1.0"/>
+      <feComposite in2="edgeTL" operator="in" result="rimTL"/>
+      <!-- inner shade on the bottom-right edge -->
+      <feOffset in="SourceAlpha" dx="-8" dy="-8" result="shiftBR"/>
+      <feComposite in="SourceAlpha" in2="shiftBR" operator="out" result="brBand"/>
+      <feGaussianBlur in="brBand" stdDeviation="3" result="brSoft"/>
+      <feFlood flood-color="#241860" flood-opacity="0.35"/>
+      <feComposite in2="brSoft" operator="in" result="innerShade"/>
+      <feComposite in="innerShade" in2="SourceAlpha" operator="in" result="innerShadeIn"/>
+      <feMerge>
+        <feMergeNode in="shadow"/><feMergeNode in="body"/><feMergeNode in="innerShadeIn"/>
+        <feMergeNode in="specSoft"/><feMergeNode in="rimTL"/>
+      </feMerge>
+    </filter>
+    <filter id="gFace" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="23" result="sb"/>
+      <feOffset in="sb" dx="4" dy="31" result="so"/>
+      <feFlood flood-color="#160E3A" flood-opacity="0.4"/>
+      <feComposite in2="so" operator="in" result="shadow"/>
+      <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="gCursor" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <!-- cast shadow onto the layer below -->
+      <feGaussianBlur in="SourceAlpha" stdDeviation="22" result="sb"/>
+      <feOffset in="sb" dx="0" dy="30" result="so"/>
+      <feFlood flood-color="#1B1240" flood-opacity="0.42000000000000004"/>
+      <feComposite in2="so" operator="in" result="shadow"/>
+      <!-- translucent glass body -->
+      <feComponentTransfer in="SourceGraphic" result="body"><feFuncA type="linear" slope="0.95"/></feComponentTransfer>
+      <!-- volume: specular dome from blurred alpha -->
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="bump"/>
+      <feSpecularLighting in="bump" surfaceScale="16" specularConstant="1.1" specularExponent="22" lighting-color="#FFFFFF" result="spec">
+        <feDistantLight azimuth="225" elevation="48"/>
+      </feSpecularLighting>
+      <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn"/>
+      <feComponentTransfer in="specIn" result="specSoft"><feFuncA type="linear" slope="0.75"/></feComponentTransfer>
+      <!-- bright rim on the top-left edge -->
+      <feMorphology in="SourceAlpha" operator="erode" radius="3" result="er"/>
+      <feComposite in="SourceAlpha" in2="er" operator="out" result="edge"/>
+      <feOffset in="SourceAlpha" dx="5" dy="5" result="shiftTL"/>
+      <feComposite in="edge" in2="shiftTL" operator="out" result="edgeTL"/>
+      <feFlood flood-color="#FFFFFF" flood-opacity="0.9"/>
+      <feComposite in2="edgeTL" operator="in" result="rimTL"/>
+      <!-- inner shade on the bottom-right edge -->
+      <feOffset in="SourceAlpha" dx="-8" dy="-8" result="shiftBR"/>
+      <feComposite in="SourceAlpha" in2="shiftBR" operator="out" result="brBand"/>
+      <feGaussianBlur in="brBand" stdDeviation="3" result="brSoft"/>
+      <feFlood flood-color="#241860" flood-opacity="0.35"/>
+      <feComposite in2="brSoft" operator="in" result="innerShade"/>
+      <feComposite in="innerShade" in2="SourceAlpha" operator="in" result="innerShadeIn"/>
+      <feMerge>
+        <feMergeNode in="shadow"/><feMergeNode in="body"/><feMergeNode in="innerShadeIn"/>
+        <feMergeNode in="specSoft"/><feMergeNode in="rimTL"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="glassBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C8EEFF"/><stop offset="0.5" stop-color="#5CC4FF"/><stop offset="1" stop-color="#2E9CF0"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="0.4" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="tileGlow" cx="0.3" cy="0.2" r="0.9">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.10"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphere" cx="0.38" cy="0.32" r="0.78" fx="0.34" fy="0.28">
+      <stop offset="0" stop-color="#EAF9FF"/>
+      <stop offset="0.45" stop-color="#6FC3FA"/>
+      <stop offset="0.85" stop-color="#2A80E0"/>
+      <stop offset="1" stop-color="#17479E"/>
+    </radialGradient>
+    <radialGradient id="sphereRim" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.82" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.96" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="spec" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="sq"><rect x="40" y="40" width="944" height="944" rx="210"/></clipPath>
+  </defs>
+  <g clip-path="url(#sq)">
+    <rect x="40" y="40" width="944" height="944" fill="url(#tile)"/>
+    <rect x="40" y="40" width="944" height="944" fill="url(#tileGlow)"/>
+    <g transform="translate(512 512) scale(1.16) translate(-512 -512)">
+    <g mask="url(#cur)">
+      <circle cx="512" cy="512" r="211.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="78"/>
+      <g><path d="M 512.00 262.00 A 250 250 0 1 1 335.22 688.78 L 390.38 633.62 A 172 172 0 1 0 512.00 340.00 Z" fill="url(#blue)"/></g>
+      <g><path d="M 512.00 213.00 A 299 299 0 1 1 300.58 300.58" fill="none" stroke="url(#ringGrad)" stroke-width="34" stroke-linecap="round"/></g>
+    </g>
+    <g filter="url(#gFace)" mask="url(#eyes)">
+      <circle cx="512" cy="512" r="140" fill="url(#sphere)"/>
+      <circle cx="512" cy="512" r="140" fill="url(#sphereRim)"/>
+      <ellipse cx="462" cy="440" rx="62" ry="40" fill="url(#spec)" transform="rotate(-35 462 440)"/>
+      <circle cx="455" cy="430" r="11" fill="#FFFFFF" fill-opacity="0.9"/>
+    </g>
+    <g mask="url(#eyes)" opacity="0">.</g>
+    <g>
+      <rect x="522" y="508" width="32" height="76" rx="16" fill="none" stroke="#0E0640" stroke-opacity="0.55" stroke-width="5" transform="translate(-2 -3)"/>
+      <rect x="578" y="508" width="32" height="76" rx="16" fill="none" stroke="#0E0640" stroke-opacity="0.55" stroke-width="5" transform="translate(-2 -3)"/>
+    </g>
+    <g filter="url(#gCursor)"><path d="M 642.1 642.1 L 642.1 798.5 L 678.9 763.5 L 706.5 826.1 L 735.9 813.2 L 709.3 751.6 L 755.3 751.6 Z" fill="none" stroke="#FFFFFF" stroke-width="21.1" stroke-linejoin="round" stroke-linecap="round" transform="rotate(-21 642.1 642.1)"/></g>
+    </g>
+    <rect x="40" y="40" width="944" height="944" rx="210" fill="url(#sheen)"/>
+  </g>
+  <rect x="41.5" y="41.5" width="941" height="941" rx="208.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="3"/>
+</svg>
