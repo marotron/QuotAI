@@ -1,8 +1,6 @@
-# QuotAI
+# QuotAI <img src="docs/brand/app-icon-128.png" width="28" alt="" />
 
-<img src="docs/brand/app-icon-128.png" width="40" alt="QuotAI app icon" align="left" hspace="8" />macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot. Pace shows as rings and blinks.
-
-<br clear="all" />
+macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot. Pace shows as rings and blinks.
 
 ## Install
 
