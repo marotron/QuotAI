@@ -1,6 +1,6 @@
 # Tech specs — QuotAI
 
-Last updated: 2026-09-20
+Last updated: 2026-09-26
 
 ## Stack
 
@@ -32,6 +32,7 @@ Last updated: 2026-09-20
 | Alert decision | pure | `PaceAlertDecision` meters + channels → blink/notify/email + signature |
 | Alert cooldown | pure | `PaceAlertCooldown` edge + cooldown suppress |
 | Alert message builder | pure | `AlertMessageBuilder` subject/body |
+| Dynamic refresh schedule | pure | `RefreshSchedule.interval(periodEnds:now:)` — soonest reset, first step strictly under the threshold; bad or duplicate JSON → default |
 | Network + Keychain + SMTP + UserNotifications | untested | Thin adapters |
 
 ## Modules (initial)
