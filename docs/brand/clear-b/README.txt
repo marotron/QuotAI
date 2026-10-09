@@ -1,5 +1,9 @@
 QuotAI clear-b  (frosted clear tile, grey mascot, artwork scale 1.28)
 
+TOOL
+  quotai-icon-studio.html   live SVG generator (open in a browser)
+  settings.json             last exported studio preset (Paste JSON… in the studio)
+
 NO LIQUID GLASS (default / legacy: macOS < 26, iOS < 26, web)  ->  the DARK icon
   QuotAI.svg / QuotAI-macos.svg / QuotAI-ios.svg   SVG masters (flat tile / macOS 824 grid / iOS full-bleed)
   png/                         quotai-16 ... quotai-1024

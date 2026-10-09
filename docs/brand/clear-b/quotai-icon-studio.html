@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuotAI Icon Studio</title>
+<style>
+  :root { --bg:#ECECEF; --panel:#F7F7F9; --line:#D9D9DE; --text:#1D1D1F; --sub:#6E6E73; --accent:#3478F7; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; font:13px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif; color:var(--text); background:var(--bg); }
+  .app { display:grid; grid-template-columns: 360px 1fr; height:100vh; }
+  aside { background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; padding:14px 14px 40px; }
+  main { overflow:auto; padding:18px 26px 40px; }
+  h1 { font-size:15px; margin:0 0 2px; font-weight:650; letter-spacing:-.01em; }
+  .tag { color:var(--sub); font-size:12px; margin-bottom:12px; }
+  details { background:#fff; border:1px solid var(--line); border-radius:10px; margin:0 0 10px; }
+  summary { cursor:pointer; padding:9px 12px; font-weight:600; list-style:none; display:flex; justify-content:space-between; user-select:none; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"›"; transform:rotate(90deg); color:var(--sub); transition:.15s; }
+  details:not([open]) summary::after { transform:rotate(0); }
+  .grp { padding:2px 12px 10px; }
+  .row { display:grid; grid-template-columns: 118px 1fr 58px; align-items:center; gap:8px; margin:6px 0; }
+  .row.two { grid-template-columns: 118px 1fr; }
+  .row label { color:#3A3A3C; }
+  input[type=range] { width:100%; accent-color:var(--accent); }
+  input[type=number] { width:58px; padding:3px 4px; border:1px solid var(--line); border-radius:6px; font:inherit; font-size:12px; text-align:right; background:#fff; }
+  input[type=color] { width:44px; height:24px; border:1px solid var(--line); border-radius:6px; padding:0 2px; background:#fff; cursor:pointer; }
+  select { width:100%; padding:4px 6px; border:1px solid var(--line); border-radius:6px; font:inherit; background:#fff; }
+  .seg { display:inline-flex; background:#E6E6EA; border-radius:8px; padding:2px; width:100%; }
+  .seg button { flex:1; border:0; background:transparent; padding:4px 6px; border-radius:6px; font:inherit; cursor:pointer; color:#3A3A3C; }
+  .seg button.on { background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.15); color:#000; font-weight:600; }
+  .btn { border:1px solid var(--line); background:#fff; border-radius:7px; padding:6px 10px; font:inherit; cursor:pointer; }
+  .btn:hover { background:#F2F2F5; }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.primary:hover { filter:brightness(1.05); }
+  .bar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:14px; }
+  .bar .sep { width:1px; height:22px; background:var(--line); margin:0 4px; }
+  .stage { display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; }
+  .big { width:512px; height:512px; border-radius:18px; background:repeating-conic-gradient(#E3E3E7 0 25%, #F4F4F6 0 50%) 0 0/24px 24px; display:grid; place-items:center; }
+  .big img { width:512px; height:512px; display:block; }
+  .smalls { display:flex; gap:18px; align-items:flex-end; margin-top:10px; }
+  .smalls figure, .walls figure { margin:0; text-align:center; color:var(--sub); font-size:11px; }
+  .smalls canvas { display:block; margin:0 auto 4px; image-rendering:auto; }
+  .walls { display:flex; gap:16px; margin-top:22px; flex-wrap:wrap; }
+  .walls img { width:220px; height:220px; border-radius:12px; display:block; margin-bottom:4px; }
+  .stops .stop input[type=text], .hex { width:70px; padding:3px 4px; border:1px solid #D9D9DE; border-radius:6px; font:12px ui-monospace,monospace; box-sizing:border-box; }
+  .stops .stop { display:grid; grid-template-columns: 36px 70px 1fr 46px 24px; gap:6px; align-items:center; margin:5px 0; }
+  .stops .x { border:0; background:transparent; cursor:pointer; color:#B00; font-size:15px; }
+  .gradbar { height:12px; border-radius:6px; border:1px solid var(--line); margin:6px 0; }
+  .side h3 { font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.04em; margin:16px 0 6px; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; place-items:center; z-index:10; }
+  .modal.on { display:grid; }
+  .modal .card { background:#fff; border-radius:12px; padding:16px; width:min(640px, 92vw); box-shadow:0 20px 60px rgba(0,0,0,.3); }
+  .modal textarea { width:100%; height:300px; font:12px ui-monospace, Menlo, monospace; border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .status { color:var(--sub); font-size:12px; margin-left:6px; }
+  .hint { color:var(--sub); font-size:11px; margin:2px 0 6px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="panel">
+    <h1>QuotAI Icon Studio</h1>
+    <div class="tag">Live SVG generator · clear-b design</div>
+  </aside>
+  <main>
+    <div class="bar" id="presets"></div>
+    <div class="bar">
+      <button class="btn primary" id="bPack" title="Exports the active appearance (Dark or Light)">Export pack (.zip)</button>
+      <button class="btn" id="bSvg">Download SVG</button>
+      <button class="btn" id="bPng">Download PNG</button>
+      <select id="pngSize" style="width:auto"><option>16</option><option>32</option><option>64</option><option>128</option><option>256</option><option selected>512</option><option>1024</option><option>2048</option></select>
+      <select id="pngFrame" style="width:auto"><option value="flat">flat tile</option><option value="mac">macOS frame</option><option value="ios">iOS full-bleed</option></select>
+      <span class="sep"></span>
+      <button class="btn" id="bCopy">Copy settings JSON</button>
+      <button class="btn" id="bPaste">Paste JSON…</button>
+      <button class="btn" id="bReset">Reset</button>
+      <span class="status" id="status"></span>
+    </div>
+    <div class="stage">
+      <div>
+        <div class="big"><img id="bigImg" alt="icon preview"></div>
+        <div class="smalls" id="smalls"></div>
+      </div>
+    </div>
+    <div class="walls" id="walls"></div>
+  </main>
+</div>
+<div class="modal" id="modal"><div class="card">
+  <div style="font-weight:600;margin-bottom:8px" id="mTitle">Settings JSON</div>
+  <textarea id="mText" spellcheck="false"></textarea>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+    <button class="btn" id="mClose">Close</button><button class="btn primary" id="mApply">Apply</button>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+/* ============================ colour maths ============================ */
+const hex2rgb = h => { h = h.replace('#',''); if (h.length===3) h = h.split('').map(c=>c+c).join(''); return [0,2,4].map(i=>parseInt(h.substr(i,2),16)); };
+const rgb2hex = a => '#' + a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('').toUpperCase();
+const s2l = c => { c/=255; return c<=0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+const l2s = c => { c = Math.max(0, Math.min(1, c)); return 255*(c<=0.0031308 ? 12.92*c : 1.055*Math.pow(c,1/2.4)-0.055); };
+function toOklch(h){
+  const [r,g,b] = hex2rgb(h).map(s2l);
+  const l = Math.cbrt(0.4122214708*r+0.5363325363*g+0.0514459929*b), m = Math.cbrt(0.2119034982*r+0.6806995451*g+0.1073969566*b),
+        s = Math.cbrt(0.0883024619*r+0.2817188376*g+0.6299787005*b);
+  const L = 0.2104542553*l+0.7936177850*m-0.0040720468*s, A = 1.9779984951*l-2.4285922050*m+0.4505937099*s, B = 0.0259040371*l+0.7827717662*m-0.8086757660*s;
+  return [L, Math.hypot(A,B), ((Math.atan2(B,A)*180/Math.PI)%360+360)%360];
+}
+function fromOklch(L,C,H){
+  const A = C*Math.cos(H*Math.PI/180), B = C*Math.sin(H*Math.PI/180);
+  const l = (L+0.3963377774*A+0.2158037573*B)**3, m = (L-0.1055613458*A-0.0638541728*B)**3, s = (L-0.0894841775*A-1.2914855480*B)**3;
+  return rgb2hex([ 4.0767416621*l-3.3077115913*m+0.2309699292*s, -1.2684380046*l+2.6097574011*m-0.3413193965*s,
+                  -0.0041960863*l-0.7034186147*m+1.7076147010*s].map(l2s));
+}
+function mixOklch(c0, c1, t){
+  let [L0,C0,H0] = toOklch(c0), [L1,C1,H1] = toOklch(c1);
+  if (C0 < 0.002) H0 = H1; if (C1 < 0.002) H1 = H0;
+  const dH = ((H1-H0+180)%360+360)%360 - 180;
+  return fromOklch(L0+(L1-L0)*t, C0+(C1-C0)*t, H0+dH*t);
+}
+function mixRgb(c0, c1, t){ const a = hex2rgb(c0), b = hex2rgb(c1); return rgb2hex(a.map((v,i)=>v+(b[i]-v)*t)); }
+function greyHex(h){ const [r,g,b] = hex2rgb(h).map(s2l); const v = l2s(0.2126*r+0.7152*g+0.0722*b); return rgb2hex([v,v,v]); }
+function gradColor(stops, t, interp){
+  const st = stops.slice().sort((a,b)=>a[0]-b[0]);
+  if (t <= st[0][0]) return st[0][1].toUpperCase();
+  for (let i=0;i<st.length-1;i++){
+    const [p0,c0] = st[i], [p1,c1] = st[i+1];
+    if (t <= p1){ const u = p1>p0 ? (t-p0)/(p1-p0) : 0; return interp==='srgb' ? mixRgb(c0,c1,u) : mixOklch(c0,c1,u); }
+  }
+  return st[st.length-1][1].toUpperCase();
+}
+
+/* ============================ state & presets ============================ */
+const FX_DARK  = {band:[.95,.45,.28,1], ring:[.97,.55,.30,2], hand:[.97,.55,.40,3], face:[.96,.45,.45,4]};
+const FX_LIGHT = {band:[.95,.45,.18,1], ring:[.96,.30,.16,2], hand:[.97,.55,.25,3], face:[.96,.30,.16,2]};
+const SPH_DARK  = [[0,'#FFFFFF'],[.18,'#F4F4F6'],[.5,'#DADADA'],[.8,'#A9A9B0'],[.93,'#8E8E96'],[1,'#6A6A72']];
+const SPH_LIGHT = [[0,'#BDBDC2'],[.18,'#A6A6AC'],[.5,'#6F6F6F'],[.8,'#5A5A5F'],[.93,'#48484E'],[1,'#36363B']];
+const APPEAR = {
+  dark:  {appearance:'dark', ringColor:'#FFFFFF', ringColor2:'#F3EEE9', mascotColor:'#DADADA', sphereStops:SPH_DARK,
+          trackColor:'#FFFFFF', trackOpacity:0.10, tint:'#FFFFFF', tintMin:0, borderColor:'#FFFFFF', baseWall:'neutral-dark',
+          spec:0.75, rim:0.38, contact:0.38, fx:FX_DARK},
+  light: {appearance:'light', ringColor:'#6F6F6F', ringColor2:'#6F6F6F', mascotColor:'#6F6F6F', sphereStops:SPH_LIGHT,
+          trackColor:'#DADADA', trackOpacity:0.6, tint:'#F2F2F2', tintMin:0.42, borderColor:'#DADADA', baseWall:'neutral-light',
+          spec:0.45, rim:0.26, contact:0.22, fx:FX_LIGHT},
+};
+const DEFAULTS = Object.assign({
+  tileStyle:'frosted', glass:1, tileC1:'#2B2833', tileC2:'#000000',
+  quotaEnd:360, elapsedEnd:270, handAngle:135, ringCap:1, ringCapWhere:'both', quotaCap:0, quotaCapWhere:'both', handCap:1, handCapWhere:'both', capPlacement:'outside', handCapPlacement:'outside', knockout:'follow', handOut:80, scale:1.28, gap:32, band:78, ring:34, face:140,
+  stops:[[0,'#3478F7'],[1,'#F19A38']], gradMode:'ring', interp:'oklch', handColor:'#F19A38',
+  mascotStyle:'sphere', eyeFollow:true, lookAngle:124.7, eyeSize:1, eyeStyle:'open', gazeMode:'classic', turn:35, persp:0.45, fxMode:'glass', colorMode:'color', bwInvert:false,
+}, APPEAR.dark);
+const clone = o => JSON.parse(JSON.stringify(o));
+/* Appearance-specific keys: each appearance (dark / light) keeps its own copy in state.modes; the active one is also
+   flattened onto state (that is what the renderer reads). Everything else (geometry, quota gradient, hand, eyes, gaze, caps,
+   colour mode) is shared. */
+const AKEYS = ['ringColor','ringColor2','mascotColor','sphereStops','mascotStyle','spec','rim','contact','trackColor','trackOpacity',
+               'tint','tintMin','borderColor','baseWall','tileStyle','tileC1','tileC2','glass','fxMode','fx'];
+const pickA = s => { const o = {}; AKEYS.forEach(k => { if (k in s) o[k] = clone(s[k]); }); return o; };
+const modeDefaults = m => pickA(Object.assign(clone(DEFAULTS), clone(APPEAR[m])));
+// preset(shared overrides, {dark, light} per-appearance overrides, active appearance)
+function mkPreset(shared, per = {}, active = 'dark'){
+  const modes = {dark: Object.assign(modeDefaults('dark'), clone(per.dark || {})), light: Object.assign(modeDefaults('light'), clone(per.light || {}))};
+  return Object.assign(clone(DEFAULTS), clone(shared), clone(modes[active]), {appearance: active, modes});
+}
+const V19_MASCOT = {mascotColor:'#FF8A35', sphereStops:[[0,'#FFE9C9'],[.42,'#FF8A35'],[.85,'#DE3F22'],[1,'#9E1C16']], fxMode:'classic', spec:0.85, rim:0.18, contact:0};
+const PRESETS = {
+  'v19 · black tile, blue→#FF5A2A': mkPreset({
+    scale:1.10, stops:[[0,'#3FA9FF'],[0.3492,'#6E6BF5'],[0.6667,'#D04AB0'],[1,'#FF5A2A']], interp:'srgb', handColor:'#FF5A2A'},
+    {dark: Object.assign({tileStyle:'black'}, V19_MASCOT), light: clone(V19_MASCOT)}),
+  'clear-b dark (current)': mkPreset({}),
+  'clear-b light': mkPreset({}, {}, 'light'),
+  'greyscale': mkPreset({colorMode:'grey'}),
+  'black / white': mkPreset({colorMode:'bw'}),
+};
+const WALLS = {
+  'neutral-dark':  {stops:[[0,'#34343C'],[1,'#121216']], blobs:[], tintOp:0.10, border:0.30},
+  'neutral-light': {stops:[[0,'#F7F7F7'],[1,'#E2E2E2']], blobs:[], tintOp:0.30, border:0.75},
+  sample: {stops:[[0,'#5B8CFF'],[0.45,'#C46BE0'],[1,'#FF9A5A']], blobs:[], tintOp:0.22, border:0.55},
+  light:  {stops:[[0,'#F7F3EC'],[0.5,'#E4ECF7'],[1,'#F3E4EE']], blobs:[[230,260,210,'#BFD8FF',0.8],[830,790,240,'#FFD3B8',0.8]], tintOp:0.30, border:0.75},
+  dark:   {stops:[[0,'#0A0D1C'],[0.55,'#1C1630'],[1,'#2B1420']], blobs:[[250,250,230,'#2A3F8F',0.7],[820,800,250,'#7A2A4A',0.6]], tintOp:0.10, border:0.30},
+};
+let state = clone(DEFAULTS);
+
+/* ============================ SVG generator ============================ */
+const f1 = v => (Math.round(v*10)/10).toFixed(1), f2 = v => v.toFixed(2);
+const pt = (r, deg) => { const a = (deg-90)*Math.PI/180; return [512 + r*Math.cos(a), 512 + r*Math.sin(a)]; };
+function arcD(r, a0, a1){ const [x1,y1]=pt(r,a0), [x2,y2]=pt(r,a1); const lg = ((a1-a0)%360+360)%360 > 180 ? 1 : 0;
+  return `M ${f2(x1)} ${f2(y1)} A ${r} ${r} 0 ${lg} 1 ${f2(x2)} ${f2(y2)}`; }
+function bandD(ri, ro, a0, a1){ const lg = ((a1-a0)%360+360)%360 > 180 ? 1 : 0;
+  const o1=pt(ro,a0), o2=pt(ro,a1), i2=pt(ri,a1), i1=pt(ri,a0);
+  return `M ${f2(o1[0])} ${f2(o1[1])} A ${ro} ${ro} 0 ${lg} 1 ${f2(o2[0])} ${f2(o2[1])} L ${f2(i2[0])} ${f2(i2[1])} A ${ri} ${ri} 0 ${lg} 0 ${f2(i1[0])} ${f2(i1[1])} Z`; }
+/** Annular sector a0..a1 (deg, clockwise from 12:00) between radii ri..ro with corner radius r0 at the start and r1 at the end.
+    Corners are rounded inside the sector (fillets tangent to the radial edge and the inner/outer circle). */
+function roundedBandD(ri, ro, a0, a1, r0, r1){
+  const P = (r, a) => { const [x, y] = pt(r, a); return `${f2(x)} ${f2(y)}`; }, deg = x => x*180/Math.PI;
+  const corner = r => r > 0.01 ? { r, dO: deg(Math.asin(r/(ro-r))), dI: deg(Math.asin(r/(ri+r))),
+                                   radO: (ro-r)*Math.cos(Math.asin(r/(ro-r))), radI: (ri+r)*Math.cos(Math.asin(r/(ri+r))) }
+                                : { r:0, dO:0, dI:0, radO:ro, radI:ri };
+  const s = corner(r0), e = corner(r1);
+  const lgO = (a1-e.dO) - (a0+s.dO) > 180 ? 1 : 0, lgI = (a1-e.dI) - (a0+s.dI) > 180 ? 1 : 0;
+  let d = `M ${P(ro, a0+s.dO)} A ${ro} ${ro} 0 ${lgO} 1 ${P(ro, a1-e.dO)}`;
+  if (e.r) d += ` A ${e.r} ${e.r} 0 0 1 ${P(e.radO, a1)}`;
+  d += ` L ${P(e.radI, a1)}`;
+  if (e.r) d += ` A ${e.r} ${e.r} 0 0 1 ${P(ri, a1-e.dI)}`;
+  d += ` A ${ri} ${ri} 0 ${lgI} 0 ${P(ri, a0+s.dI)}`;
+  if (s.r) d += ` A ${s.r} ${s.r} 0 0 1 ${P(s.radI, a0)}`;
+  d += ` L ${P(s.radO, a0)}`;
+  if (s.r) d += ` A ${s.r} ${s.r} 0 0 1 ${P(ro, a0+s.dO)}`;
+  return d + ' Z';
+}
+const capAt = (where, which) => where === 'both' || where === which;
+function glassFilter(id, [body, rim, shadow, z]){
+  return `<filter id="${id}" filterUnits="userSpaceOnUse" x="-100" y="-100" width="1224" height="1224" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="${6+3*z}" result="sb"/><feOffset in="sb" dy="${4+3*z}" result="so"/>
+      <feFlood flood-color="#000" flood-opacity="${shadow}"/><feComposite in2="so" operator="in" result="shadow"/>
+      <feComponentTransfer in="SourceGraphic" result="body"><feFuncA type="linear" slope="${body}"/></feComponentTransfer>
+      <feMorphology in="SourceAlpha" operator="erode" radius="2.5" result="er"/>
+      <feComposite in="SourceAlpha" in2="er" operator="out" result="edge"/>
+      <feOffset in="SourceAlpha" dx="4" dy="4" result="sh"/>
+      <feComposite in="edge" in2="sh" operator="out" result="edgeTL"/>
+      <feGaussianBlur in="edgeTL" stdDeviation="0.6" result="edgeS"/>
+      <feFlood flood-color="#FFFFFF" flood-opacity="${rim}"/><feComposite in2="edgeS" operator="in" result="rimTL"/>
+      <feMerge><feMergeNode in="shadow"/><feMergeNode in="body"/><feMergeNode in="rimTL"/></feMerge>
+    </filter>`;
+}
+function liftFilter(id, blur, dx, dy, op){
+  return `<filter id="${id}" filterUnits="userSpaceOnUse" x="-100" y="-100" width="1224" height="1224">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="${blur}"/><feOffset dx="${dx}" dy="${dy}" result="o"/>
+      <feFlood flood-color="#000" flood-opacity="${op}"/><feComposite in2="o" operator="in" result="sh"/>
+      <feMerge><feMergeNode in="sh"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>`;
+}
+const stopsXml = st => st.map(([o,c,op]) => `<stop offset="${o}" stop-color="${c}"${op!==undefined?` stop-opacity="${op}"`:''}/>`).join('');
+function derivedSphere(b){ return [[0,mixRgb(b,'#FFFFFF',.62)],[.18,mixRgb(b,'#FFFFFF',.42)],[.5,b],[.8,mixRgb(b,'#000000',.2)],[.93,mixRgb(b,'#000000',.35)],[1,mixRgb(b,'#000000',.5)]]; }
+
+/** Build the icon SVG.  opts.frame: 'flat' | 'mac' | 'ios';  opts.wall: wallpaper name drawn behind (preview) or null */
+function buildSVG(s, opts = {}){
+  const frame = opts.frame || 'flat', ios = frame === 'ios', pageWall = opts.wall || null;
+  const bw = s.colorMode === 'bw', grey = s.colorMode === 'grey';
+  const cm = grey ? greyHex : (c => c.toUpperCase());
+  const FG = bw ? (s.bwInvert ? '#000000' : '#FFFFFF') : null, BG = bw ? (s.bwInvert ? '#FFFFFF' : '#000000') : null;
+  const fx = bw ? 'none' : s.fxMode;
+  const RF = +s.face, GAP = +s.gap, BWd = +s.band, W = +s.ring, k = RF/140;
+  const RBI = RF+GAP, RBO = RBI+BWd, RW = RBO+GAP+W/2, RO = RW+W/2;
+  const NR0 = RF+GAP, NR1 = RO + (+s.handOut);
+  const hA = pt(NR0+W/2, +s.handAngle), hB = pt(NR1-W/2, +s.handAngle);
+  const needle = `M ${f1(hA[0])} ${f1(hA[1])} L ${f1(hB[0])} ${f1(hB[1])}`;
+  // cap placement rule (rings: s.capPlacement for elapsed ring + quota band; hand: s.handCapPlacement):
+  //   'outside' = rounding grows past the nominal end like a stroke cap (r = 0 -> square end exactly at the nominal end)
+  //   'inside'  = the shape always ends exactly at the nominal end; corners are rounded inside it
+  const inside = s.capPlacement === 'inside';
+  const hInside = (s.handCapPlacement || s.capPlacement) === 'inside';   // hand + its knockout follow the hand's own placement
+  const hcf = Math.max(0, Math.min(1, s.handCap === undefined ? 1 : +s.handCap)), hr = hcf*W/2;
+  const hr0 = capAt(s.handCapWhere, 'start') ? hr : 0, hr1 = capAt(s.handCapWhere, 'end') ? hr : 0;
+  const handLegacy = hcf >= 1 && (s.handCapWhere || 'both') === 'both';     // fully round both ends = original stroke (same shape in both placements)
+  let handOutline = '';
+  const hAng = (+s.handAngle-90)*Math.PI/180, dir = [Math.cos(hAng), Math.sin(hAng)], nrm = [-dir[1], dir[0]];
+  const hu1 = handLegacy ? NR1 : (hInside ? NR1 : NR1 - W/2 + hr1);          // outer extent of the hand along its axis
+  if (!handLegacy) {
+    const u0 = hInside ? NR0 : NR0 + W/2 - hr0, u1 = hu1, L = u1 - u0, h = W/2;
+    const P = (u, v) => `${f2(512 + (u0+u)*dir[0] + v*nrm[0])} ${f2(512 + (u0+u)*dir[1] + v*nrm[1])}`;
+    let d = `M ${P(hr0, -h)} L ${P(L-hr1, -h)}`;
+    if (hr1 > 0.01) d += ` A ${f2(hr1)} ${f2(hr1)} 0 0 1 ${P(L, -h+hr1)}`;
+    d += ` L ${P(L, h-hr1)}`;
+    if (hr1 > 0.01) d += ` A ${f2(hr1)} ${f2(hr1)} 0 0 1 ${P(L-hr1, h)}`;
+    d += ` L ${P(hr0, h)}`;
+    if (hr0 > 0.01) d += ` A ${f2(hr0)} ${f2(hr0)} 0 0 1 ${P(0, h-hr0)}`;
+    d += ` L ${P(0, -h+hr0)}`;
+    if (hr0 > 0.01) d += ` A ${f2(hr0)} ${f2(hr0)} 0 0 1 ${P(hr0, -h)}`;
+    handOutline = d + ' Z';
+  }
+  // knockout = the hand outline offset by GAP (round joins), so the gap is uniform for every cap shape
+  // 'slot' = straight-sided cut along the hand axis (half-width W/2 + GAP) from the centre to the hand tip + GAP
+  const SP = (u, v) => `${f2(512 + u*dir[0] + v*nrm[0])} ${f2(512 + u*dir[1] + v*nrm[1])}`, sh = W/2 + GAP, se = hu1 + GAP;
+  const handMask = s.knockout === 'slot'
+    ? `<path d="M ${SP(0, -sh)} L ${SP(se, -sh)} L ${SP(se, sh)} L ${SP(0, sh)} Z" fill="#000"/>`
+    : handLegacy
+    ? `<path d="${needle}" fill="none" stroke="#000" stroke-width="${W+2*GAP}" stroke-linecap="round"/>`
+    : `<path d="${handOutline}" fill="#000" stroke="#000" stroke-width="${2*GAP}" stroke-linejoin="round"/>`;
+  // eyes: look direction (follow hand keeps the designed -10.3° offset)
+  const look = s.eyeFollow ? (+s.handAngle - 10.3048) : +s.lookAngle;
+  const la = look*Math.PI/180, mx = 512 + 63.2456*k*Math.sin(la), my = 512 - 63.2456*k*Math.cos(la);
+  const ew = 32*k*s.eyeSize, eh = 76*k*s.eyeSize;
+  const eyeStyle = s.eyeStyle || 'open';
+  // eye shape in its own local frame (centred on 0,0)
+  const eyeShape = (x, y, tf = '') => {
+      if (eyeStyle === 'round') return `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(ew/2)}" fill="#000"${tf}/>`;
+      if (eyeStyle === 'closed') {          // happy closed eye: gentle arch, round caps
+        const sw = ew*0.6, half = (1.4*ew - sw)/2, h = ew*0.42;
+        return `<path d="M ${f1(x-half)} ${f1(y+h/2)} Q ${f1(x)} ${f1(y-h*1.5)} ${f1(x+half)} ${f1(y+h/2)}" fill="none" stroke="#000" stroke-width="${f1(sw)}" stroke-linecap="round"${tf}/>`;
+      }
+      return `<rect x="${f1(x-ew/2)}" y="${f1(y-eh/2)}" width="${f1(ew)}" height="${f1(eh)}" rx="${f1(ew/2)}" fill="#000"${tf}/>`;
+  };
+  let eyes;
+  if (s.gazeMode === 'sphere') {
+    // eyes are features on the sphere: front view at (±28k, 0); the head turns by `turn` degrees toward screen direction phi
+    const th = (+s.turn || 0)*Math.PI/180, phi = (s.eyeFollow ? +s.handAngle : +s.lookAngle)*Math.PI/180;
+    const d = [Math.sin(phi), -Math.cos(phi), 0], kx = [-d[1], d[0], 0];
+    const rot = v => { const c = Math.cos(th), sn = Math.sin(th), kv = kx[0]*v[0]+kx[1]*v[1]+kx[2]*v[2];
+      const cr = [kx[1]*v[2]-kx[2]*v[1], kx[2]*v[0]-kx[0]*v[2], kx[0]*v[1]-kx[1]*v[0]];
+      return [0,1,2].map(i => v[i]*c + cr[i]*sn + kx[i]*kv*(1-c)); };
+    const norm = v => { const l = Math.hypot(...v); return v.map(x => x/l); };
+    const feats = [-28*k, 28*k].map(u => {
+      const n0 = [u/RF, 0, Math.sqrt(1 - (u/RF)**2)];
+      const eu0 = norm([1 - n0[0]*n0[0], -n0[0]*n0[1], -n0[0]*n0[2]]);            // tangent "right"
+      const ev0 = [n0[1]*eu0[2]-n0[2]*eu0[1], n0[2]*eu0[0]-n0[0]*eu0[2], n0[0]*eu0[1]-n0[1]*eu0[0]];   // n × right = "down"
+      return {n: rot(n0), a: rot(eu0), b: rot(ev0)};
+    });
+    // perspective: camera at distance D = 1/persp sphere radii; size ∝ 1/(D - z), normalised so the nearest eye keeps size 1
+    const P = Math.max(0, +s.persp || 0), zMax = Math.max(...feats.map(f => f.n[2]));
+    eyes = feats.map(({n, a, b}) => {
+      if (n[2] <= 0.02) return '';                                                     // turned away from the viewer
+      const sc = P > 0 ? (1/P - zMax) / (1/P - n[2]) : 1;
+      const px = 512 + RF*n[0], py = 512 + RF*n[1];
+      return eyeShape(0, 0, ` transform="matrix(${[a[0]*sc, a[1]*sc, b[0]*sc, b[1]*sc].map(v => v.toFixed(4)).join(' ')} ${f1(px)} ${f1(py)})"`);
+    }).join('\n      ');
+  } else {
+    eyes = [[mx-28*k, my+4*k], [mx+28*k, my-4*k]].map(([x,y]) => eyeShape(x, y)).join('\n      ');
+  }
+  // tile / wallpaper
+  const tileWallName = s.tileStyle === 'frosted' ? (pageWall || s.baseWall) : null;
+  const wallDefs = [], wallBody = name => { const w = WALLS[name];
+      return `<rect width="1024" height="1024" fill="url(#wp_${name})"/>` + w.blobs.map(([x,y,r,c,o]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" opacity="${o}"/>`).join(''); };
+  for (const n of new Set([pageWall, tileWallName].filter(Boolean)))
+    wallDefs.push(`<linearGradient id="wp_${n}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024">${stopsXml(WALLS[n].stops)}</linearGradient>`);
+  let tile, borderCol = cm(s.borderColor), borderOp;
+  if (bw) { tile = `<rect x="40" y="40" width="944" height="944" fill="${BG}"/>`; borderOp = 0; }
+  else if (s.tileStyle === 'frosted') {
+    const w = WALLS[tileWallName], g = +s.glass;
+    const op = Math.min(1, Math.max(w.tintOp, +s.tintMin) * (0.5 + 0.5*g));
+    tile = `<g filter="url(#frost)">${wallBody(tileWallName)}</g>
+    <rect x="40" y="40" width="944" height="944" fill="${cm(s.tint)}" fill-opacity="${+op.toFixed(3)}"/>`;
+    borderOp = w.border;
+  } else if (s.tileStyle === 'black') {
+    tile = `<rect x="40" y="40" width="944" height="944" fill="url(#tile)"/>
+    <rect x="40" y="40" width="944" height="944" fill="url(#tileGlow)"/>`; borderCol = '#FFFFFF'; borderOp = 0.18;
+  } else {
+    tile = `<rect x="40" y="40" width="944" height="944" fill="url(#tileC)"/>
+    <rect x="40" y="40" width="944" height="944" fill="url(#tileGlow)"/>`; borderOp = 0.25;
+  }
+  // quota band
+  const qEnd = Math.max(0, Math.min(360, +s.quotaEnd));
+  let band = '';
+  if (!bw && +s.trackOpacity > 0)
+    band += `<circle cx="512" cy="512" r="${(RBI+RBO)/2}" fill="none" stroke="${cm(s.trackColor)}" stroke-opacity="${s.trackOpacity}" stroke-width="${BWd}"/>\n        `;
+  const qcf = Math.max(0, Math.min(1, +s.quotaCap || 0)), qr = qcf * BWd/2;
+  const qr0 = capAt(s.quotaCapWhere, 'start') ? qr : 0, qr1 = capAt(s.quotaCapWhere, 'end') ? qr : 0;
+  const qRounded = qEnd > 0 && (qr0 > 0.01 || qr1 > 0.01);
+  // outside placement grows rounded caps past the start/end angles (like a stroke cap); inside keeps the true angles.
+  // At 360° + outside the caps would overlap at 12:00: the band is drawn as two halves with the end half on top,
+  // so the end cap sits over the start like a gauge that has wrapped around.
+  const qOut = !inside, qExt = r => qOut && r > 0.01 ? Math.asin(r/((RBI+RBO)/2))*180/Math.PI : 0;
+  const qA0 = -qExt(qr0), qA1 = qEnd + qExt(qr1);
+  const qWrap = qRounded && qOut && qEnd >= 360;
+  const qSegs = !qRounded ? [] : qWrap ? [{a0:qA0, a1:181, r0:qr0, r1:0}, {a0:180, a1:qA1, r0:0, r1:qr1}]
+                                       : [{a0:qA0, a1:qA1, r0:qr0, r1:qr1}];
+  qSegs.forEach((g, i) => { g.d = roundedBandD(RBI, RBO, g.a0, g.a1, g.r0, g.r1); g.id = `qclip${i}`; });
+  const slicesFor = (from, to) => { const sl = []; let a = from;
+    while (a < to - 1e-6) { const b = Math.min(a+1, to), ext = Math.min(b+0.6, to);
+      const t = Math.max(0, Math.min(1, (a+b)/2/qEnd));           // caps beyond the angles take the start / end colour
+      sl.push(`<path d="${bandD(RBI, RBO, a, ext)}" fill="${cm(gradColor(s.stops, t, s.interp))}"/>`); a = b; }
+    return sl.join('\n        '); };
+  if (qRounded && (bw || s.gradMode === 'solid')) {
+    band += qSegs.map(g => `<path d="${g.d}" fill="${bw ? FG : cm(s.stops[0][1])}"/>`).join('\n        ');
+  } else if (qRounded) {
+    band += qSegs.map(g => `<g clip-path="url(#${g.id})">\n        ${slicesFor(g.a0, g.a1)}\n        </g>`).join('\n        ');
+  } else if (qEnd > 0) {
+    if (bw || s.gradMode === 'solid') {
+      const c = bw ? FG : cm(s.stops[0][1]);
+      band += qEnd >= 360 ? `<circle cx="512" cy="512" r="${(RBI+RBO)/2}" fill="none" stroke="${c}" stroke-width="${BWd}"/>`
+                          : `<path d="${bandD(RBI, RBO, 0, qEnd)}" fill="${c}"/>`;
+    } else band += slicesFor(0, qEnd);
+  }
+  // elapsed ring
+  const eEnd = Math.max(0, Math.min(360, +s.elapsedEnd));
+  const ringStroke = bw ? FG : 'url(#ringGrad)';
+  const rcf = Math.max(0, Math.min(1, s.ringCap === undefined ? 1 : +s.ringCap)), rr = rcf * W/2;
+  const rr0 = capAt(s.ringCapWhere, 'start') ? rr : 0, rr1 = capAt(s.ringCapWhere, 'end') ? rr : 0;
+  // caps extend past the end angle like a stroke cap: at r = W/2 this is exactly a round linecap, at r = 0 a butt end
+  const ext = r => !inside && r > 0.01 ? Math.asin(r/RW)*180/Math.PI : 0;
+  let ring;
+  if (eEnd <= 0) ring = '';
+  else if (eEnd >= 360) ring = `<circle cx="512" cy="512" r="${RW}" fill="none" stroke="${ringStroke}" stroke-width="${W}"/>`;
+  else if (!inside && rcf >= 1 && s.ringCapWhere === 'both')   // default: identical to the original round-capped stroke
+    ring = `<path d="${arcD(RW, 0, eEnd)}" fill="none" stroke="${ringStroke}" stroke-width="${W}" stroke-linecap="round"/>`;
+  else ring = `<path d="${roundedBandD(RW-W/2, RW+W/2, -ext(rr0), eEnd+ext(rr1), rr0, rr1)}" fill="${ringStroke}"/>`;
+  const hand = handLegacy ? `<path d="${needle}" fill="none" stroke="${bw ? FG : cm(s.handColor)}" stroke-width="${W}" stroke-linecap="round"/>`
+                          : `<path d="${handOutline}" fill="${bw ? FG : cm(s.handColor)}"/>`;
+  // mascot
+  const sphere = !bw && s.mascotStyle === 'sphere';
+  const sphSt = (s.sphereStops || derivedSphere(s.mascotColor)).map(([o,c]) => [o, cm(c)]);
+  const T = (x, y) => [512 + (x-512)*k, 512 + (y-512)*k];
+  const [sx, sy] = T(465, 442), [qx, qy] = T(456, 432);
+  const face = sphere ? `<circle cx="512" cy="512" r="${RF}" fill="url(#sph)"/>
+        <circle cx="512" cy="512" r="${RF}" fill="url(#sphRim)"/>
+        <ellipse cx="${f1(sx)}" cy="${f1(sy)}" rx="${f1(60*k)}" ry="${f1(38*k)}" fill="url(#sphSpec)" transform="rotate(-35 ${f1(sx)} ${f1(sy)})"/>
+        <ellipse cx="${f1(qx)}" cy="${f1(qy)}" rx="${f1(17*k)}" ry="${f1(12*k)}" fill="url(#sphCore)" transform="rotate(-35 ${f1(qx)} ${f1(qy)})"/>`
+      : `<circle cx="512" cy="512" r="${RF}" fill="${bw ? FG : cm(s.mascotColor)}"/>`;
+  const contact = sphere && fx !== 'none' && +s.contact > 0
+      ? `<ellipse cx="${f1(512+10*k)}" cy="${f1(512+RF-6*k)}" rx="${Math.round(RF*0.78)}" ry="${f1(26*k)}" fill="#000" fill-opacity="${s.contact}" filter="url(#contactBlur)"/>` : '';
+  const coreOp = Math.max(0, Math.min(1, +s.spec/0.45));
+  const wrap = (kind, inner) => {
+    if (fx === 'glass') return `<g filter="url(#c${kind})">${inner}</g>`;
+    if (fx === 'classic' && kind === 'Hand') return `<g filter="url(#liftSm)">${inner}</g>`;
+    if (fx === 'classic' && kind === 'Face') return `<g filter="url(#lift)">${inner}</g>`;
+    return inner;
+  };
+  const defs = `
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${cm('#2B2833')}"/><stop offset="0.5" stop-color="${cm('#0E0D12')}"/><stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="tileC" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${cm(s.tileC1)}"/><stop offset="1" stop-color="${cm(s.tileC2)}"/></linearGradient>
+    <radialGradient id="tileGlow" cx="0.3" cy="0.2" r="0.9">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.10"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/><stop offset="0.4" stop-color="#FFFFFF" stop-opacity="0.04"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" gradientUnits="userSpaceOnUse" x1="320" y1="300" x2="700" y2="720">
+      <stop offset="0" stop-color="${cm(s.ringColor)}"/><stop offset="1" stop-color="${cm(s.ringColor2 || s.ringColor)}"/>
+    </linearGradient>
+    <radialGradient id="sph" cx="0.38" cy="0.32" r="0.78" fx="0.33" fy="0.27">${stopsXml(sphSt)}</radialGradient>
+    <radialGradient id="sphRim" cx="0.35" cy="0.35" r="0.72">
+      <stop offset="0.86" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="0.965" stop-color="#FFFFFF" stop-opacity="${s.rim}"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphSpec" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="${s.spec}"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphCore" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="${coreOp}"/><stop offset="0.55" stop-color="#FFFFFF" stop-opacity="${+(0.85*coreOp).toFixed(3)}"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="contactBlur" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024"><feGaussianBlur stdDeviation="12"/></filter>
+    ${liftFilter('lift', 18, 4, 22, 0.55)}
+    ${liftFilter('liftSm', 8, 2, 10, 0.5)}
+    ${glassFilter('cBand', s.fx.band)}
+    ${glassFilter('cRing', s.fx.ring)}
+    ${glassFilter('cHand', s.fx.hand)}
+    ${glassFilter('cFace', s.fx.face)}
+    <filter id="frost" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="${+(40*s.glass).toFixed(2)}" edgeMode="duplicate"/></filter>
+    <mask id="eyes" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#FFF"/>
+      ${eyes}
+    </mask>
+    <mask id="hand" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#FFF"/>
+      ${handMask}
+    </mask>
+    <clipPath id="sq"><rect x="40" y="40" width="944" height="944" rx="210"/></clipPath>
+    <clipPath id="full"><rect x="40" y="40" width="944" height="944"/></clipPath>
+    ${qSegs.map(g => `<clipPath id="${g.id}"><path d="${g.d}"/></clipPath>`).join('')}
+    <filter id="macShadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14"/><feOffset dy="12" result="o"/>
+      <feFlood flood-color="#000" flood-opacity="0.30"/><feComposite in2="o" operator="in" result="sh"/>
+      <feMerge><feMergeNode in="sh"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    ${wallDefs.join('\n    ')}`;
+  const sc = +s.scale;
+  const body = `
+  <g clip-path="url(#${ios ? 'full' : 'sq'})">
+    ${tile}
+    <g transform="translate(512 512) scale(${sc}) translate(-512 -512)">
+      ${wrap('Band', `<g mask="url(#hand)">
+        ${band}
+      </g>`)}
+      ${wrap('Ring', `<g mask="url(#hand)">${ring}</g>`)}
+      ${wrap('Hand', hand)}
+      ${contact}
+      ${wrap('Face', `<g mask="url(#eyes)">
+        ${face}
+      </g>`)}
+    </g>
+    ${bw ? '' : `<rect x="40" y="40" width="944" height="944"${ios ? '' : ' rx="210"'} fill="url(#sheen)"/>`}
+  </g>
+  ${ios || borderOp <= 0 ? '' : `<rect x="41.5" y="41.5" width="941" height="941" rx="208.5" fill="none" stroke="${borderCol}" stroke-opacity="${borderOp}" stroke-width="3"/>`}`;
+  let content;
+  if (frame === 'mac') content = `\n  <g${bw ? '' : ' filter="url(#macShadow)"'}><g transform="translate(100 100) scale(${(824/944).toFixed(6)}) translate(-40 -40)">${body}</g></g>`;
+  else if (ios) content = `\n  <g transform="translate(512 512) scale(${(1024/944).toFixed(6)}) translate(-512 -512)">${body}</g>`;
+  else content = body;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>${defs}
+  </defs>
+  ${pageWall ? wallBody(pageWall) : ''}${content}
+</svg>`;
+}
+
+/* ============================ raster / export ============================ */
+function loadImage(svg){
+  return new Promise((res, rej) => { const url = URL.createObjectURL(new Blob([svg], {type:'image/svg+xml'}));
+    const img = new Image(); img.onload = () => res({img, url}); img.onerror = e => { URL.revokeObjectURL(url); rej(new Error('SVG failed to load')); }; img.src = url; });
+}
+async function rasterize(svg, size, opaque){
+  const {img, url} = await loadImage(svg);
+  let base = Math.max(1024, size);
+  let c = document.createElement('canvas'); c.width = c.height = base;
+  let x = c.getContext('2d'); if (opaque) { x.fillStyle = '#000'; x.fillRect(0,0,base,base); }
+  x.drawImage(img, 0, 0, base, base); URL.revokeObjectURL(url);
+  while (base/2 >= size && base > size) {                     // progressive halving for clean small sizes
+    const n = Math.max(size, Math.round(base/2)), d = document.createElement('canvas'); d.width = d.height = n;
+    const dx = d.getContext('2d'); dx.imageSmoothingQuality = 'high'; dx.drawImage(c, 0, 0, n, n); c = d; base = n;
+  }
+  if (base !== size) { const d = document.createElement('canvas'); d.width = d.height = size; const dx = d.getContext('2d'); dx.imageSmoothingQuality = 'high'; dx.drawImage(c, 0, 0, size, size); c = d; }
+  return c;
+}
+const canvasToBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
+async function pngBytes(svg, size, opaque){ return new Uint8Array(await (await canvasToBlob(await rasterize(svg, size, opaque))).arrayBuffer()); }
+
+const CRC = (() => { const t = new Uint32Array(256); for (let n=0;n<256;n++){ let c=n; for (let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for (let i=0;i<u8.length;i++) c = CRC[(c^u8[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+/** Minimal STORE-only zip writer. files: [{name, data:Uint8Array|string}] */
+function makeZip(files){
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  const d = new Date(), dt = ((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate(), tm = (d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+  for (const f of files) {
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0x0800,true); lh.setUint16(8,0,true);
+    lh.setUint16(10,tm,true); lh.setUint16(12,dt,true); lh.setUint32(14,crc,true); lh.setUint32(18,data.length,true); lh.setUint32(22,data.length,true);
+    lh.setUint16(26,name.length,true); lh.setUint16(28,0,true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true); ch.setUint16(8,0x0800,true); ch.setUint16(10,0,true);
+    ch.setUint16(12,tm,true); ch.setUint16(14,dt,true); ch.setUint32(16,crc,true); ch.setUint32(20,data.length,true); ch.setUint32(24,data.length,true);
+    ch.setUint16(28,name.length,true); ch.setUint32(42,off,true);
+    central.push(new Uint8Array(ch.buffer), name);
+    off += 30 + name.length + data.length;
+  }
+  const csize = central.reduce((a,b)=>a+b.length,0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0,0x06054b50,true); end.setUint16(8,files.length,true); end.setUint16(10,files.length,true); end.setUint32(12,csize,true); end.setUint32(16,off,true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], {type:'application/zip'});
+}
+function makeIcns(entries){            // entries: [[type, pngBytes]]
+  const total = 8 + entries.reduce((a,[,d])=>a+8+d.length,0), out = new Uint8Array(total), dv = new DataView(out.buffer);
+  const tag = (o,s) => { for (let i=0;i<4;i++) out[o+i] = s.charCodeAt(i); };
+  tag(0,'icns'); dv.setUint32(4,total); let o = 8;
+  for (const [t,d] of entries) { tag(o,t); dv.setUint32(o+4, d.length+8); out.set(d, o+8); o += 8+d.length; }
+  return out;
+}
+function makeIco(entries){             // entries: [[size, pngBytes]]
+  const n = entries.length, total = 6 + 16*n + entries.reduce((a,[,d])=>a+d.length,0), out = new Uint8Array(total), dv = new DataView(out.buffer);
+  dv.setUint16(2,1,true); dv.setUint16(4,n,true); let off = 6 + 16*n;
+  entries.forEach(([s,d],i) => { const o = 6+16*i; out[o] = s>=256?0:s; out[o+1] = s>=256?0:s; dv.setUint16(o+4,1,true); dv.setUint16(o+6,32,true);
+    dv.setUint32(o+8,d.length,true); dv.setUint32(o+12,off,true); out.set(d, off); off += d.length; });
+  return out;
+}
+async function exportPackBlob(s = state, progress = () => {}){
+  const flat = buildSVG(s, {frame:'flat'}), mac = buildSVG(s, {frame:'mac'}), ios = buildSVG(s, {frame:'ios'});
+  const files = [{name:'QuotAI/QuotAI.svg', data:flat}, {name:'QuotAI/QuotAI-macos.svg', data:mac}, {name:'QuotAI/QuotAI-ios.svg', data:ios},
+                 {name:'QuotAI/settings.json', data:JSON.stringify(s, null, 2)}];
+  const flatP = {}, macP = {};
+  for (const n of [16,32,48,64,128,180,192,256,512,1024]) { progress(`PNG ${n}`); flatP[n] = await pngBytes(flat, n); files.push({name:`QuotAI/png/quotai-${n}.png`, data:flatP[n]}); }
+  const images = [];
+  for (const p of [16,32,128,256,512]) for (const sc of [1,2]) {
+    const n = p*sc, fn = `icon_${p}x${p}${sc===2?'@2x':''}.png`; macP[n] = macP[n] || await pngBytes(mac, n);
+    files.push({name:`QuotAI/macOS/AppIcon.appiconset/${fn}`, data:macP[n]}); images.push({filename:fn, idiom:'mac', scale:`${sc}x`, size:`${p}x${p}`});
+  }
+  progress('icns');
+  files.push({name:'QuotAI/macOS/AppIcon.appiconset/Contents.json', data:JSON.stringify({images, info:{author:'xcode', version:1}}, null, 2)});
+  files.push({name:'QuotAI/macOS/AppIcon.icns', data:makeIcns([['icp4',macP[16]],['icp5',macP[32]],['ic11',macP[32]],['ic12',macP[64]],['ic07',macP[128]],
+              ['ic13',macP[256]],['ic08',macP[256]],['ic14',macP[512]],['ic09',macP[512]],['ic10',macP[1024]]])});
+  progress('iOS');
+  const ios1024 = await pngBytes(ios, 1024, true);
+  files.push({name:'QuotAI/iOS/AppIcon.appiconset/AppIcon-1024.png', data:ios1024});
+  files.push({name:'QuotAI/iOS/AppIcon.appiconset/Contents.json', data:JSON.stringify({images:[{filename:'AppIcon-1024.png', idiom:'universal', platform:'ios', size:'1024x1024'}], info:{author:'xcode', version:1}}, null, 2)});
+  progress('web');
+  files.push({name:'QuotAI/web/favicon.ico', data:makeIco([[16,flatP[16]],[32,flatP[32]],[48,flatP[48]]])});
+  files.push({name:'QuotAI/web/favicon.svg', data:flat});
+  files.push({name:'QuotAI/web/favicon-16x16.png', data:flatP[16]}, {name:'QuotAI/web/favicon-32x32.png', data:flatP[32]});
+  files.push({name:'QuotAI/web/apple-touch-icon.png', data:await pngBytes(ios, 180, true)});
+  files.push({name:'QuotAI/web/icon-192.png', data:flatP[192]}, {name:'QuotAI/web/icon-512.png', data:flatP[512]});
+  files.push({name:'QuotAI/web/icon-maskable-512.png', data:await pngBytes(ios, 512, true)});
+  files.push({name:'QuotAI/web/site.webmanifest', data:JSON.stringify({name:'QuotAI', short_name:'QuotAI', icons:[
+      {src:'icon-192.png', sizes:'192x192', type:'image/png'}, {src:'icon-512.png', sizes:'512x512', type:'image/png'},
+      {src:'icon-maskable-512.png', sizes:'512x512', type:'image/png', purpose:'maskable'}],
+      theme_color: s.appearance === 'light' ? '#F2F2F2' : '#141418', background_color: s.appearance === 'light' ? '#F2F2F2' : '#141418', display:'standalone'}, null, 2)});
+  progress('zip');
+  return makeZip(files);
+}
+function download(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }
+
+/* ============================ persistence ============================ */
+const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64d = s => decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/'))));
+function sanitize(o){ const s = Object.assign(clone(DEFAULTS), o || {});
+  // back-compat: older settings had one shared capPlacement for rings and hand
+  if (o && o.capPlacement && o.handCapPlacement === undefined) s.handCapPlacement = o.capPlacement; s.fx = Object.assign(clone(DEFAULTS.fx), (o && o.fx) || {});
+  if (!Array.isArray(s.stops) || s.stops.length < 1) s.stops = clone(DEFAULTS.stops);
+  // per-appearance sets: old JSON (no modes) loads into the active appearance, the other one gets its defaults
+  if (s.appearance !== 'light') s.appearance = 'dark';
+  const om = (o && o.modes) || {};
+  s.modes = {dark: Object.assign(modeDefaults('dark'), clone(om.dark || {})), light: Object.assign(modeDefaults('light'), clone(om.light || {}))};
+  s.modes[s.appearance] = pickA(s);      // flat values are the active set
+  return s; }
+function switchAppearance(v){
+  if (v === state.appearance) return;
+  state.modes[state.appearance] = pickA(state);
+  state.appearance = v; Object.assign(state, clone(state.modes[v])); changed();
+}
+function save(){ const j = JSON.stringify(state); try { localStorage.setItem('quotai-icon-studio', j); } catch(e){}
+  try { history.replaceState(null, '', '#s=' + b64e(j)); } catch(e){} }
+function load(){
+  const m = location.hash.match(/s=([^&]+)/);
+  if (m) { try { return sanitize(JSON.parse(b64d(m[1]))); } catch(e){} }
+  try { const j = localStorage.getItem('quotai-icon-studio'); if (j) return sanitize(JSON.parse(j)); } catch(e){}
+  return sanitize({});
+}
+
+/* ============================ UI ============================ */
+const $ = id => document.getElementById(id), panel = $('panel');
+const ctrls = [];   // {sync()}
+function el(tag, attrs = {}, ...kids){ const e = document.createElement(tag); for (const [k,v] of Object.entries(attrs)) { if (k === 'on') for (const [ev,fn] of Object.entries(v)) e.addEventListener(ev, fn); else if (k in e && k !== 'list') e[k] = v; else e.setAttribute(k, v); } kids.forEach(c => e.append(c)); return e; }
+function group(title, open = true){ const g = el('div', {className:'grp'}); panel.append(el('details', {open}, el('summary', {}, title), g)); return g; }
+function set(key, v, after){ state[key] = v; if (after) after(v); changed(); }
+function slider(g, label, key, min, max, step, after){
+  const r = el('input', {type:'range', min, max, step}), n = el('input', {type:'number', min, max, step});
+  const upd = v => set(key, +v, after);
+  r.addEventListener('input', () => { n.value = r.value; upd(r.value); }); n.addEventListener('change', () => { r.value = n.value; upd(n.value); });
+  g.append(el('div', {className:'row'}, el('label', {}, label), r, n)); ctrls.push({sync(){ r.value = state[key]; n.value = state[key]; }});
+}
+// hex entry: #RGB / #RRGGBB, '#' optional -> '#RRGGBB' (null if invalid)
+function normHex(v){ v = String(v).trim().replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(v)) v = v.split('').map(ch => ch + ch).join('');
+  return /^[0-9a-f]{6}$/i.test(v) ? '#' + v.toUpperCase() : null; }
+// two-way hex field for a colour input; get() = current value, put(hex) = apply
+function hexField(c, get, put){
+  const t = el('input', {type:'text', className:'hex', spellcheck:false, maxLength:7, value:get()});
+  const commit = () => { const h = normHex(t.value); if (h) { t.value = h; c.value = h.toLowerCase(); if (h !== get()) put(h); } else t.value = get(); };
+  t.addEventListener('change', commit); t.addEventListener('blur', commit);
+  t.addEventListener('keydown', e => { if (e.key === 'Enter') { commit(); t.blur(); } if (e.key === 'Escape') { t.value = get(); t.blur(); } });
+  c.addEventListener('input', () => { t.value = c.value.toUpperCase(); });
+  return t;
+}
+function color(g, label, key, after){
+  const c = el('input', {type:'color'});
+  const t = hexField(c, () => state[key], h => set(key, h, after));
+  c.addEventListener('input', () => set(key, c.value.toUpperCase(), after));
+  g.append(el('div', {className:'row two'}, el('label', {}, label), el('div', {style:'display:flex;gap:6px;align-items:center'}, c, t)));
+  ctrls.push({sync(){ c.value = state[key].toLowerCase(); t.value = state[key]; }});
+}
+function seg(g, label, key, options, after){
+  const wrap = el('div', {className:'seg'}), btns = options.map(([v, txt]) => { const b = el('button', {type:'button'}, txt); b.addEventListener('click', () => set(key, v, after)); wrap.append(b); return [v,b]; });
+  g.append(el('div', {className:'row two'}, el('label', {}, label), wrap)); ctrls.push({sync(){ btns.forEach(([v,b]) => b.classList.toggle('on', state[key] === v)); }});
+}
+function check(g, label, key, after){
+  const c = el('input', {type:'checkbox'}); c.addEventListener('change', () => set(key, c.checked, after));
+  g.append(el('div', {className:'row two'}, el('label', {}, label), el('div', {}, c))); ctrls.push({sync(){ c.checked = !!state[key]; }});
+}
+function hint(g, txt){ g.append(el('div', {className:'hint'}, txt)); }
+
+function buildPanel(){
+  let g = group('Appearance');
+  { const wrap = el('div', {className:'seg'}), btns = [['dark','Dark'],['light','Light']].map(([v, txt]) => {
+      const b = el('button', {type:'button'}, txt); b.addEventListener('click', () => switchAppearance(v)); wrap.append(b); return [v,b]; });
+    g.append(el('div', {className:'row two'}, el('label', {}, 'Appearance'), wrap));
+    ctrls.push({sync(){ btns.forEach(([v,b]) => b.classList.toggle('on', state.appearance === v)); }}); }
+  hint(g, 'Dark and Light each keep their own colours, mascot, tile, track and glass settings; switching swaps which set you are editing. Geometry, quota gradient, hand, eyes and caps are shared. Export (pack / SVG / PNG) uses the active appearance.');
+  seg(g, 'Colour mode', 'colorMode', [['color','Colour'],['grey','Grey'],['bw','B / W']]);
+  check(g, 'Invert B/W', 'bwInvert');
+  seg(g, 'Tile', 'tileStyle', [['frosted','Frosted'],['black','Black'],['custom','Custom']]);
+  slider(g, 'Glass strength', 'glass', 0, 1.5, 0.05);
+  seg(g, 'Effects', 'fxMode', [['glass','Glass'],['classic','Classic'],['none','Flat']]);
+  hint(g, 'Glass = subtle rim light + soft shadows (clear-b). Classic = v19 drop shadows.');
+
+  g = group('Geometry');
+  slider(g, 'Quota end °', 'quotaEnd', 0, 360, 1);
+  slider(g, 'Elapsed end °', 'elapsedEnd', 0, 360, 1);
+  slider(g, 'Pace hand °', 'handAngle', 0, 360, 1);
+  slider(g, 'Hand length out', 'handOut', -60, 160, 1);
+  slider(g, 'Artwork scale', 'scale', 0.8, 1.45, 0.01);
+  slider(g, 'Gap width', 'gap', 8, 60, 1);
+  slider(g, 'Band width', 'band', 20, 140, 1);
+  slider(g, 'Ring / hand width', 'ring', 10, 70, 1);
+  slider(g, 'Face radius', 'face', 80, 200, 1);
+  slider(g, 'Elapsed end radius', 'ringCap', 0, 1, 0.01);
+  seg(g, 'Elapsed rounded', 'ringCapWhere', [['start','Start'],['end','End'],['both','Both']]);
+  slider(g, 'Quota end radius', 'quotaCap', 0, 1, 0.01);
+  seg(g, 'Quota rounded', 'quotaCapWhere', [['start','Start'],['end','End'],['both','Both']]);
+  slider(g, 'Pace hand end radius', 'handCap', 0, 1, 0.01);
+  seg(g, 'Hand rounded', 'handCapWhere', [['start','Inner'],['end','Outer'],['both','Both']]);
+  seg(g, 'Hand cap placement', 'handCapPlacement', [['outside','Outside (stroke cap)'],['inside','Inside length']]);
+  seg(g, 'Hand cut-out', 'knockout', [['follow','Follow hand'],['slot','Straight slot']]);
+  seg(g, 'Ring cap placement', 'capPlacement', [['outside','Outside (stroke cap)'],['inside','Inside angle']]);
+  hint(g, 'End radius: 0 = square, 1 = fully round (radius = half the ring / band width). Ring cap placement applies to the elapsed ring and quota band; Hand cap placement applies to the pace hand (and its follow-hand cut-out). Outside = rounding grows past the end like a stroke cap (default, original look); Inside = the element ends exactly at its angle / length and the corners are rounded inside. At radius 0 both are square and flush. Quota at 360°: Inside gives a notch at 12:00; Outside draws the end cap over the start, like a gauge that has wrapped around. The gap around the hand is the hand outline offset by the gap width.');
+  hint(g, 'Angles: 0° = 12 o\'clock, clockwise. 270 = 9:00, 135 = 4:30.');
+
+  g = group('Colours');
+  seg(g, 'Quota gradient', 'gradMode', [['ring','Along ring'],['solid','Solid']]);
+  seg(g, 'Interpolation', 'interp', [['oklch','OKLCH'],['srgb','sRGB']]);
+  const stopsBox = el('div', {className:'stops'}), bar = el('div', {className:'gradbar'});
+  g.append(bar, stopsBox, el('button', {className:'btn', type:'button', on:{click(){ const st = state.stops.slice().sort((a,b)=>a[0]-b[0]); const p = st.length>1 ? (st[st.length-2][0]+st[st.length-1][0])/2 : 0.5;
+      state.stops.push([+p.toFixed(3), gradColor(state.stops, p, state.interp)]); renderStops(); changed(); }}}, '+ Add stop'));
+  function renderStops(){
+    stopsBox.innerHTML = '';
+    state.stops.forEach((s, i) => {
+      const c = el('input', {type:'color', value:s[1].toLowerCase()}), r = el('input', {type:'range', min:0, max:1, step:0.001, value:s[0]}), n = el('input', {type:'number', min:0, max:1, step:0.01, value:s[0]});
+      const hx = hexField(c, () => state.stops[i][1].toUpperCase(), h => { state.stops[i][1] = h; changed(); });
+      c.addEventListener('input', () => { state.stops[i][1] = c.value.toUpperCase(); changed(); });
+      r.addEventListener('input', () => { n.value = r.value; state.stops[i][0] = +r.value; changed(); });
+      n.addEventListener('change', () => { r.value = n.value; state.stops[i][0] = +n.value; changed(); });
+      const x = el('button', {className:'x', type:'button', title:'remove'}, '×'); x.addEventListener('click', () => { if (state.stops.length > 1) { state.stops.splice(i,1); renderStops(); changed(); } });
+      stopsBox.append(el('div', {className:'stop'}, c, hx, r, n, x));
+    });
+  }
+  ctrls.push({sync(){ renderStops(); const css = []; for (let i=0;i<=24;i++) css.push(gradColor(state.stops, i/24, state.interp)); bar.style.background = `linear-gradient(90deg, ${css.join(',')})`; }});
+  color(g, 'Pace hand', 'handColor');
+  color(g, 'Elapsed ring', 'ringColor', v => state.ringColor2 = v);
+  color(g, 'Mascot', 'mascotColor', () => state.sphereStops = null);
+  color(g, 'Empty track', 'trackColor');
+  slider(g, 'Track opacity', 'trackOpacity', 0, 1, 0.01);
+  color(g, 'Glass tint', 'tint');
+  color(g, 'Tile border', 'borderColor');
+  color(g, 'Custom tile top', 'tileC1');
+  color(g, 'Custom tile bottom', 'tileC2');
+
+  g = group('Mascot');
+  seg(g, 'Style', 'mascotStyle', [['sphere','3D sphere'],['flat','Flat']]);
+  slider(g, 'Specular', 'spec', 0, 1, 0.01);
+  slider(g, 'Rim light', 'rim', 0, 1, 0.01);
+  slider(g, 'Contact shadow', 'contact', 0, 1, 0.01);
+  check(g, 'Eyes follow hand', 'eyeFollow');
+  slider(g, 'Look direction °', 'lookAngle', 0, 360, 0.5);
+  seg(g, 'Eyes', 'eyeStyle', [['open','Wide open'],['round','Round'],['closed','Closed']]);
+  seg(g, 'Gaze', 'gazeMode', [['classic','Classic'],['sphere','Head turn']]);
+  slider(g, 'Turn amount °', 'turn', 0, 60, 1, () => state.gazeMode = 'sphere');
+  slider(g, 'Perspective', 'persp', 0, 0.9, 0.01);
+  hint(g, 'Head turn projects the eyes onto the sphere: 0° = facing you, 60° = turned to the side. Perspective (head-turn only) makes the far eye smaller: 0 = orthographic. Direction = pace hand when "Eyes follow hand" is on, otherwise the look direction.');
+  slider(g, 'Eye size', 'eyeSize', 0.5, 1.6, 0.01);
+}
+
+/* ============================ rendering ============================ */
+let pending = null, bigUrl = null, wallUrls = [];
+function changed(){ if (state.modes) state.modes[state.appearance] = pickA(state); ctrls.forEach(c => c.sync()); save(); clearTimeout(pending); pending = setTimeout(render, 60); }
+async function render(){
+  const svg = buildSVG(state, {frame:'flat'});
+  if (bigUrl) URL.revokeObjectURL(bigUrl);
+  bigUrl = URL.createObjectURL(new Blob([svg], {type:'image/svg+xml'})); $('bigImg').src = bigUrl;
+  wallUrls.forEach(u => URL.revokeObjectURL(u)); wallUrls = [];
+  const walls = $('walls'); walls.innerHTML = '';
+  for (const w of ['sample','light','dark']) {
+    const u = URL.createObjectURL(new Blob([buildSVG(state, {frame:'flat', wall:w})], {type:'image/svg+xml'})); wallUrls.push(u);
+    walls.append(el('figure', {}, el('img', {src:u, alt:w}), `${w} wallpaper`));
+  }
+  try {
+    const mac = buildSVG(state, {frame:'mac'}), smalls = $('smalls'); smalls.innerHTML = '';
+    for (const n of [128, 64, 32, 16]) { const c = await rasterize(mac, n); c.style.width = c.style.height = n + 'px'; smalls.append(el('figure', {}, c, `${n}`)); }
+  } catch(e) { console.error(e); }
+  document.body.dataset.rendered = String((+document.body.dataset.rendered || 0) + 1);
+}
+function applyPreset(name){ state = sanitize(clone(PRESETS[name])); changed(); }
+function status(t){ $('status').textContent = t; }
+
+buildPanel();
+const pbar = $('presets'); pbar.append(el('span', {style:'color:#6E6E73;margin-right:4px'}, 'Presets:'));
+for (const name of Object.keys(PRESETS)) pbar.append(el('button', {className:'btn', type:'button', on:{click(){ applyPreset(name); }}}, name));
+$('bSvg').onclick = () => download(new Blob([buildSVG(state, {frame:'flat'})], {type:'image/svg+xml'}), 'QuotAI.svg');
+$('bPng').onclick = async () => { const n = +$('pngSize').value, fr = $('pngFrame').value; status('rendering…');
+  const c = await rasterize(buildSVG(state, {frame:fr}), n, fr === 'ios'); download(await canvasToBlob(c), `QuotAI-${fr}-${n}.png`); status(''); };
+$('bPack').onclick = async () => { try { const z = await exportPackBlob(state, t => status('pack: ' + t)); download(z, 'QuotAI-icon-pack.zip'); status(`pack ready (${(z.size/1e6).toFixed(1)} MB)`); } catch(e) { status('export failed: ' + e.message); } };
+$('bCopy').onclick = async () => { const j = JSON.stringify(state, null, 2);
+  try { await navigator.clipboard.writeText(j); status('settings copied'); } catch(e) { openModal('Settings JSON (copy)', j, false); } };
+$('bPaste').onclick = () => openModal('Paste settings JSON', '', true);
+$('bReset').onclick = () => applyPreset('clear-b dark (current)');
+function openModal(title, text, apply){ $('mTitle').textContent = title; $('mText').value = text; $('mApply').style.display = apply ? '' : 'none'; $('modal').classList.add('on'); $('mText').focus(); $('mText').select(); }
+$('mClose').onclick = () => $('modal').classList.remove('on');
+$('mApply').onclick = () => { try { state = sanitize(JSON.parse($('mText').value)); $('modal').classList.remove('on'); changed(); status('settings applied'); } catch(e) { status('invalid JSON: ' + e.message); } };
+
+state = load(); changed();
+/* test hook */
+window.QS = { get state(){ return state; }, set state(v){ state = sanitize(v); changed(); }, DEFAULTS, PRESETS, buildSVG, rasterize, exportPackBlob,
+  applyPreset, pngBytes, makeZip, gradColor,
+  async blobToB64(b){ const u8 = new Uint8Array(await b.arrayBuffer()); let s = ''; for (let i=0;i<u8.length;i+=0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i+0x8000)); return btoa(s); } };
+</script>
+</body>
+</html>
