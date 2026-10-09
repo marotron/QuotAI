@@ -103,8 +103,8 @@
     
   </defs>
   
-  <g filter="url(#macShadow)"><g transform="translate(100 100) scale(0.872881) translate(-40 -40)">
-  <g clip-path="url(#sq)">
+  <g transform="translate(512 512) scale(1.084746) translate(-512 -512)">
+  <g clip-path="url(#full)">
     <rect x="40" y="40" width="944" height="944" fill="url(#tile)"/>
     <rect x="40" y="40" width="944" height="944" fill="url(#tileGlow)"/>
     <g transform="translate(512 512) scale(1.28) translate(-512 -512)">
@@ -514,7 +514,7 @@
         <ellipse cx="456.0" cy="432.0" rx="17.0" ry="12.0" fill="url(#sphCore)" transform="rotate(-35 456.0 432.0)"/>
       </g></g>
     </g>
-    <rect x="40" y="40" width="944" height="944" rx="210" fill="url(#sheen)"/>
+    <rect x="40" y="40" width="944" height="944" fill="url(#sheen)"/>
   </g>
-  <rect x="41.5" y="41.5" width="941" height="941" rx="208.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="3"/></g></g>
+  </g>
 </svg>
