@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2 — 2026-10-09
+
+### Changed
+
+- App icon refresh (clear-b sphere mascot, updated gradient pack for Finder / Dock / About / notifications)
+
 ## 0.9.1 — 2026-10-09
 
 ### Changed
