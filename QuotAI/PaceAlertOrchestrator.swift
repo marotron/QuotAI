@@ -81,6 +81,7 @@ enum PaceAlertOrchestrator {
         let details: [PaceAlertMeterDetail] = decision.alerts.compactMap { alert in
             guard let input = inputs.first(where: { $0.id == alert.id }) else { return nil }
             return PaceAlertMeterDetail(
+                id: alert.id,
                 name: alert.name,
                 kind: alert.kind,
                 percentUsed: input.percentUsed,

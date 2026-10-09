@@ -1,0 +1,85 @@
+{
+  "fill": {
+    "solid": "srgb:1.00000,1.00000,1.00000,0.22000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "4-grey-mascot-light-appearance.svg",
+          "name": "4-grey-mascot-light-appearance",
+          "glass": true
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.4
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.05
+      },
+      "specular": true
+    },
+    {
+      "layers": [
+        {
+          "image-name": "3-pace-hand.svg",
+          "name": "3-pace-hand",
+          "glass": true
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.4
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.05
+      },
+      "specular": true
+    },
+    {
+      "layers": [
+        {
+          "image-name": "2-elapsed-ring-light-appearance.svg",
+          "name": "2-elapsed-ring-light-appearance",
+          "glass": true
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.3
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.05
+      },
+      "specular": true
+    },
+    {
+      "layers": [
+        {
+          "image-name": "1-quota-band.svg",
+          "name": "1-quota-band",
+          "glass": true
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.3
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.05
+      },
+      "specular": true
+    }
+  ],
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
+  }
+}

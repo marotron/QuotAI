@@ -3,6 +3,7 @@
 Type: grilling
 Status: open
 Blocked by:
+GitHub: https://github.com/marotron/QuotAI/issues/12
 
 ## Question
 
@@ -32,3 +33,7 @@ Interval is now a user setting ("Refresh every": 5 / 10 / 15 / 30 min / 1 h, def
 ### 2026-09-19 (~21:15)
 
 Polling was unreliable: `Task.sleep` + App Nap on `LSUIElement`, and re-assigning the interval Picker restarted the sleep from zero. Switched to a main RunLoop `Timer` + `ProcessInfo` activity, ignore same-value `didSet`, and refresh when the menu opens if data is older than the interval.
+
+### 2026-10-09
+
+Mirrored remaining grilling close-out to GitHub [#12](https://github.com/marotron/QuotAI/issues/12). Dynamic refresh (v0.8.0) may have superseded parts of this ticket.
