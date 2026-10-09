@@ -23,22 +23,83 @@ final class QuotaStore: ObservableObject {
     private var displayClockTimer: Timer?
     private var pollActivity: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
+    /// Interval the live poll timer was started with. The minute clock restarts it when this changes.
+    private var activePollInterval: TimeInterval = 0
 
     static let pollIntervalChoices = [5, 10, 15, 30, 60]
+    /// Menu tag for the dynamic schedule. Not stored as `pollIntervalMinutes`.
+    static let dynamicRefreshTag = 0
     private static let pollIntervalKey = "pollIntervalMinutes"
+    private static let dynamicRefreshKey = "dynamicRefresh"
+    private static let refreshScheduleKey = "refreshSchedule"
 
-    /// User-set auto-refresh interval; unofficial endpoints, so 1 h is the ceiling.
+    /// Fixed auto-refresh interval, kept so turning Dynamic off restores it.
     @Published var pollIntervalMinutes: Int {
         didSet {
             guard pollIntervalMinutes != oldValue else { return }
             UserDefaults.standard.set(pollIntervalMinutes, forKey: Self.pollIntervalKey)
+            if !dynamicRefresh {
+                startPolling(refreshNow: false)
+            }
+        }
+    }
+
+    /// When set, cadence comes from `refreshSchedule` instead of `pollIntervalMinutes`.
+    @Published var dynamicRefresh: Bool {
+        didSet {
+            guard dynamicRefresh != oldValue else { return }
+            UserDefaults.standard.set(dynamicRefresh, forKey: Self.dynamicRefreshKey)
             startPolling(refreshNow: false)
         }
+    }
+
+    @Published var refreshSchedule: RefreshSchedule {
+        didSet {
+            guard refreshSchedule != oldValue else { return }
+            guard let data = try? JSONEncoder().encode(refreshSchedule) else { return }
+            let stored = RefreshSchedule.fromStoredJSON(data)
+            if stored != refreshSchedule {
+                refreshSchedule = stored
+                return
+            }
+            UserDefaults.standard.set(data, forKey: Self.refreshScheduleKey)
+            if dynamicRefresh {
+                startPolling(refreshNow: false)
+            }
+        }
+    }
+
+    /// Picker tag: `dynamicRefreshTag` or a fixed minute choice.
+    var refreshEveryTag: Int {
+        get { dynamicRefresh ? Self.dynamicRefreshTag : pollIntervalMinutes }
+        set {
+            if newValue == Self.dynamicRefreshTag {
+                dynamicRefresh = true
+            } else if Self.pollIntervalChoices.contains(newValue) {
+                if pollIntervalMinutes != newValue {
+                    pollIntervalMinutes = newValue
+                }
+                dynamicRefresh = false
+            }
+        }
+    }
+
+    func refreshEveryBinding() -> Binding<Int> {
+        Binding(
+            get: { self.refreshEveryTag },
+            set: { self.refreshEveryTag = $0 }
+        )
     }
 
     init() {
         let stored = UserDefaults.standard.integer(forKey: Self.pollIntervalKey)
         pollIntervalMinutes = Self.pollIntervalChoices.contains(stored) ? stored : 10
+        dynamicRefresh = UserDefaults.standard.bool(forKey: Self.dynamicRefreshKey)
+        if let data = UserDefaults.standard.data(forKey: Self.refreshScheduleKey) {
+            refreshSchedule = RefreshSchedule.fromStoredJSON(data)
+        } else {
+            refreshSchedule = .default
+        }
         startPolling(refreshNow: true)
         startDisplayClock()
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -66,6 +127,7 @@ final class QuotaStore: ObservableObject {
         let timer = Timer(fire: Self.nextMinute(), interval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.displayClock = Date()
+                self?.restartPollingIfIntervalChanged()
             }
         }
         timer.tolerance = 1
@@ -88,7 +150,8 @@ final class QuotaStore: ObservableObject {
             self.pollActivity = nil
         }
 
-        let interval = TimeInterval(max(1, pollIntervalMinutes) * 60)
+        let interval = currentPollInterval()
+        activePollInterval = interval
         let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.refresh()
@@ -108,9 +171,24 @@ final class QuotaStore: ObservableObject {
         }
     }
 
+    /// Fixed choice, or the dynamic schedule against the soonest meter window.
+    private func currentPollInterval(now: Date = Date()) -> TimeInterval {
+        guard dynamicRefresh else {
+            return TimeInterval(max(1, pollIntervalMinutes) * 60)
+        }
+        let ends = [cursorModels.periodEnd, otherModels.periodEnd, grokBot.periodEnd].compactMap { $0 }
+        return refreshSchedule.interval(periodEnds: ends, now: now)
+    }
+
+    /// Minute clock and a finished fetch retune the timer without an extra request.
+    private func restartPollingIfIntervalChanged() {
+        guard currentPollInterval() != activePollInterval else { return }
+        startPolling(refreshNow: false)
+    }
+
     /// Pull now if the last successful fetch is older than the poll interval (or never).
     func refreshIfStale() async {
-        let maxAge = TimeInterval(pollIntervalMinutes * 60)
+        let maxAge = currentPollInterval()
         if let lastRefreshed, Date().timeIntervalSince(lastRefreshed) < maxAge {
             return
         }
@@ -183,6 +261,7 @@ final class QuotaStore: ObservableObject {
         refreshError = nil
         didAttemptAuthFailureReimport = false
         lastRefreshed = Date()
+        restartPollingIfIntervalChanged()
         let includeOther = UserDefaults.standard.bool(forKey: "showOtherModels")
         await PaceAlertOrchestrator.handleSuccessfulRefresh(
             cursor: result.cursorModels,

@@ -4,13 +4,13 @@ macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot
 
 ## Install
 
-**[Download QuotAI-0.7.1.dmg](https://github.com/marotron/QuotAI/releases/download/v0.7.1/QuotAI-0.7.1.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.8.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.8.0/QuotAI-0.8.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image.
 2. Drag **QuotAI** to **Applications**.
 3. Open QuotAI from Applications. It lives in the menu bar.
 
-The 0.7.1 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
+The 0.8.0 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
 
 ## Screenshots
 
@@ -33,10 +33,11 @@ Menu pins, including Open Cursor Spending:
 ## Features
 
 - **Rings** for used % and time to reset: one meter each, nested Cursor (Models + Other), or pace segments.
-- **Nested Cursor** blinks between Models and Other. A smart pace hit blinks the quota ring that crossed the alert.
+- **Nested Cursor** blinks between Models and Other. A smart pace hit blinks the quota ring that crossed the alert; over paints that ring orange on every ring look.
+- **Dynamic refresh** speeds up polling as the soonest quota reset gets closer (fixed interval or a custom schedule under Settings → Account).
 - **Smart pace alerts** use an on-pace band, with a menu blink, a macOS notification, and optional email.
 - **Open Cursor Spending** opens [cursor.com/dashboard/spending](https://cursor.com/dashboard/spending) from the menu.
-- **Settings** cover ring style, beside-meter labels, ring center, alert corridors, and which rows stay pinned.
+- **Settings** cover ring style, beside-meter labels, ring center, refresh cadence, alert corridors, and which rows stay pinned.
 
 ## Requirements
 

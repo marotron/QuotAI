@@ -149,10 +149,11 @@ struct QuotAIApp: App {
                     }
                 }
                 if pinRefreshInterval {
-                    Picker("Refresh every", selection: $store.pollIntervalMinutes) {
+                    Picker("Refresh rate", selection: store.refreshEveryBinding()) {
                         ForEach(QuotaStore.pollIntervalChoices, id: \.self) { minutes in
-                            Text(minutes == 60 ? "1 hour" : "\(minutes) min").tag(minutes)
+                            Text(minutes == 60 ? "every 1 hour" : "every \(minutes) min").tag(minutes)
                         }
+                        Text("Dynamic").tag(QuotaStore.dynamicRefreshTag)
                     }
                 }
                 if pinShowOtherModels {

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0 — 2026-10-09
+
+### Added
+
+- Dynamic refresh: polls faster as the soonest quota reset gets closer, with a schedule edited in minutes, hours, or days (Settings → Account)
+
+### Fixed
+
+- Smart-over (and exhausted) paints alarm orange on every ring look, not only by-pace rings
+
 ## 0.7.1 — 2026-09-24
 
 ### Fixed

@@ -94,7 +94,7 @@ struct SettingsView: View {
             emailTab.tabItem { Label("Email", systemImage: "envelope") }
             pinsTab.tabItem { Label("Menu pins", systemImage: "pin") }
         }
-        .frame(width: 480, height: 620)
+        .frame(width: 460, height: 620)
         .onAppear {
             SettingsWindowElevator.raise()
             smtpPassword = EmailAlertService.loadPassword() ?? ""
@@ -189,10 +189,59 @@ struct SettingsView: View {
                     Text(refreshError)
                         .foregroundStyle(.red)
                 }
-                Button("Refresh now") {
-                    Task { await store.refresh() }
+                VStack(alignment: .leading, spacing: 8) {
+                    menuPicker("Refresh rate", selection: store.refreshEveryBinding()) {
+                        ForEach(QuotaStore.pollIntervalChoices, id: \.self) { minutes in
+                            Text(Self.refreshChoiceTitle(minutes: minutes)).tag(minutes)
+                        }
+                        Text("Dynamic").tag(QuotaStore.dynamicRefreshTag)
+                    }
+                    Button("Refresh now") {
+                        Task { await store.refresh() }
+                    }
+                    .disabled(store.isRefreshing)
                 }
-                .disabled(store.isRefreshing)
+            }
+
+            if store.dynamicRefresh {
+                Section {
+                    ForEach(store.refreshSchedule.steps.indices, id: \.self) { index in
+                        ScheduleRuleRow {
+                            scheduleChip(
+                                title: "time to reset under",
+                                minutes: scheduleUnderBinding(index)
+                            )
+                            Text("→")
+                                .foregroundStyle(.secondary)
+                            scheduleChip(
+                                title: "refresh every",
+                                minutes: scheduleEveryBinding(index)
+                            )
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    scheduleChip(
+                        title: "otherwise refresh every",
+                        minutes: scheduleOtherwiseBinding
+                    )
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                } header: {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Dynamic refresh")
+                        Spacer(minLength: 8)
+                        Button("Reset to default") {
+                            store.refreshSchedule = .default
+                        }
+                        .font(.body.weight(.regular))
+                        .disabled(store.refreshSchedule == .default)
+                    }
+                    .textCase(nil)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } footer: {
+                    JustifiedParagraph(
+                        text: "Follows the soonest reset. Rows are checked from the top, and the reset must be strictly under that row. An interval under 1 minute stays at 1. Two rows with the same threshold restore the default schedule."
+                    )
+                }
             }
 
             Section {
@@ -440,6 +489,10 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
+    private static func refreshChoiceTitle(minutes: Int) -> String {
+        minutes == 60 ? "every 1 hour" : "every \(minutes) min"
+    }
+
     /// Label on the left; fixed-width menu control on the right.
     private func menuPicker<Selection: Hashable, Options: View>(
         _ title: String,
@@ -454,6 +507,66 @@ struct SettingsView: View {
             .pickerStyle(.menu)
             .frame(width: Self.menuControlWidth, alignment: .trailing)
         }
+    }
+
+
+    private func scheduleChip(title: String, minutes: Binding<Int>) -> some View {
+        HStack(spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            ScheduleDurationField(minutes: minutes, label: title)
+        }
+        .padding(.leading, 8)
+        .padding(.trailing, 6)
+        .padding(.vertical, 3)
+        .background {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color.primary.opacity(0.06))
+        }
+        .fixedSize()
+    }
+
+    private func scheduleUnderBinding(_ index: Int) -> Binding<Int> {
+        scheduleStepBinding(index, keyPath: \.underMinutes)
+    }
+
+    private func scheduleEveryBinding(_ index: Int) -> Binding<Int> {
+        scheduleStepBinding(index, keyPath: \.everyMinutes)
+    }
+
+    private func scheduleStepBinding(
+        _ index: Int,
+        keyPath: WritableKeyPath<RefreshSchedule.Step, Int>
+    ) -> Binding<Int> {
+        Binding(
+            get: {
+                guard store.refreshSchedule.steps.indices.contains(index) else { return 1 }
+                return store.refreshSchedule.steps[index][keyPath: keyPath]
+            },
+            set: { newValue in
+                var schedule = store.refreshSchedule
+                guard schedule.steps.indices.contains(index) else { return }
+                let clamped = max(1, newValue)
+                guard schedule.steps[index][keyPath: keyPath] != clamped else { return }
+                schedule.steps[index][keyPath: keyPath] = clamped
+                store.refreshSchedule = schedule
+            }
+        )
+    }
+
+    private var scheduleOtherwiseBinding: Binding<Int> {
+        Binding(
+            get: { store.refreshSchedule.otherwiseMinutes },
+            set: { newValue in
+                var schedule = store.refreshSchedule
+                let clamped = max(1, newValue)
+                guard schedule.otherwiseMinutes != clamped else { return }
+                schedule.otherwiseMinutes = clamped
+                store.refreshSchedule = schedule
+            }
+        )
     }
 
     private var deadZoneSelection: Binding<String> {
@@ -550,6 +663,208 @@ struct SettingsView: View {
         } catch {
             emailStatus = error.localizedDescription
         }
+    }
+}
+
+/// Left chip at the leading edge, right chip at the trailing edge, arrow in the middle of the gap.
+private struct ScheduleRuleRow: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let height = sizes.map(\.height).max() ?? 0
+        let minWidth = sizes.map(\.width).reduce(0, +)
+        return CGSize(width: max(proposal.width ?? minWidth, minWidth), height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 3 else { return }
+        let left = subviews[0].sizeThatFits(.unspecified)
+        let arrow = subviews[1].sizeThatFits(.unspecified)
+        let right = subviews[2].sizeThatFits(.unspecified)
+
+        subviews[0].place(
+            at: CGPoint(x: bounds.minX, y: bounds.midY),
+            anchor: .leading,
+            proposal: ProposedViewSize(left)
+        )
+        subviews[2].place(
+            at: CGPoint(x: bounds.maxX, y: bounds.midY),
+            anchor: .trailing,
+            proposal: ProposedViewSize(right)
+        )
+        let gapMidX = bounds.minX + left.width + (bounds.width - left.width - right.width) / 2
+        subviews[1].place(
+            at: CGPoint(x: gapMidX, y: bounds.midY),
+            anchor: .center,
+            proposal: ProposedViewSize(arrow)
+        )
+    }
+}
+
+/// Justified footer. Full lines spread their words; the first and last lines start at the left edge.
+private struct JustifiedParagraph: View {
+    var text: String
+
+    var body: some View {
+        JustifiedWordLayout {
+            ForEach(Array(text.split(separator: " ").enumerated()), id: \.offset) { _, word in
+                Text(String(word))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct JustifiedWordLayout: Layout {
+    /// Gap used on the last line, and the minimum gap on a full line.
+    var spacing: CGFloat = 4
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        let lines = wrap(subviews, width: width)
+        let height = lines.reduce(CGFloat(0)) { partial, line in
+            partial + lineHeight(line)
+        }
+        let used = lines.map { lineWidth($0) }.max() ?? 0
+        return CGSize(width: width.isFinite ? width : used, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let lines = wrap(subviews, width: bounds.width)
+        var y = bounds.minY
+        for (index, line) in lines.enumerated() {
+            let sizes = line.map { $0.sizeThatFits(.unspecified) }
+            let textWidth = sizes.map(\.width).reduce(0, +)
+            let last = index == lines.count - 1 || line.count < 2
+            let gap = last
+                ? spacing
+                : max(spacing, (bounds.width - textWidth) / CGFloat(line.count - 1))
+            var x = bounds.minX
+            for (i, view) in line.enumerated() {
+                view.place(
+                    at: CGPoint(x: x, y: y),
+                    anchor: .topLeading,
+                    proposal: ProposedViewSize(width: sizes[i].width, height: sizes[i].height)
+                )
+                if i < line.count - 1 { x += sizes[i].width + gap }
+            }
+            y += lineHeight(line)
+        }
+    }
+
+    private func wrap(_ subviews: Subviews, width: CGFloat) -> [[LayoutSubview]] {
+        var lines: [[LayoutSubview]] = []
+        var line: [LayoutSubview] = []
+        var used: CGFloat = 0
+        let limit = width.isFinite ? width : .greatestFiniteMagnitude
+        for view in subviews {
+            let word = view.sizeThatFits(.unspecified).width
+            let gap: CGFloat = line.isEmpty ? 0 : spacing
+            if used + gap + word > limit, !line.isEmpty {
+                lines.append(line)
+                line = [view]
+                used = word
+            } else {
+                line.append(view)
+                used += gap + word
+            }
+        }
+        if !line.isEmpty { lines.append(line) }
+        return lines
+    }
+
+    private func lineHeight(_ line: [LayoutSubview]) -> CGFloat {
+        line.map { $0.sizeThatFits(.unspecified).height }.max() ?? 0
+    }
+
+    private func lineWidth(_ line: [LayoutSubview]) -> CGFloat {
+        let widths = line.map { $0.sizeThatFits(.unspecified).width }
+        return widths.reduce(0, +) + spacing * CGFloat(max(line.count - 1, 0))
+    }
+}
+
+/// Minute span edited as a number plus min / hr / day. Writes through on commit, not each keystroke.
+private struct ScheduleDurationField: View {
+    @Binding var minutes: Int
+    var label: String
+
+    @State private var unit: RefreshUnit
+    @State private var draft: String
+    @FocusState private var focused: Bool
+
+    init(minutes: Binding<Int>, label: String) {
+        _minutes = minutes
+        self.label = label
+        let fitted = RefreshDuration.fitting(minutes.wrappedValue)
+        _unit = State(initialValue: fitted.unit)
+        _draft = State(initialValue: String(fitted.count))
+    }
+
+    var body: some View {
+        HStack(spacing: 2) {
+            TextField("", text: $draft)
+                .labelsHidden()
+                .focused($focused)
+                .multilineTextAlignment(.trailing)
+                .monospacedDigit()
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 30)
+                .accessibilityLabel("\(label) amount")
+                .onSubmit(commitDraft)
+                .onChange(of: focused) { _, isFocused in
+                    if !isFocused { commitDraft() }
+                }
+            Picker("\(label) unit", selection: unitSelection) {
+                ForEach(RefreshUnit.allCases, id: \.self) { choice in
+                    Text(choice.title(count: Self.parse(draft) ?? 1)).tag(choice)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .fixedSize()
+        }
+        .fixedSize(horizontal: true, vertical: false)
+        .onChange(of: minutes) { _, newValue in
+            guard !focused else { return }
+            let shown = RefreshDuration(count: Self.parse(draft) ?? 1, unit: unit).minutes
+            guard shown != newValue else { return }
+            apply(RefreshDuration.fitting(newValue))
+        }
+    }
+
+    private var unitSelection: Binding<RefreshUnit> {
+        Binding(
+            get: { unit },
+            set: { newUnit in
+                guard newUnit != unit else { return }
+                let base = Self.parse(draft).map { RefreshDuration(count: $0, unit: unit) }
+                    ?? RefreshDuration.fitting(minutes)
+                let converted = base.converted(to: newUnit)
+                apply(converted)
+                if minutes != converted.minutes { minutes = converted.minutes }
+            }
+        )
+    }
+
+    private func apply(_ duration: RefreshDuration) {
+        unit = duration.unit
+        draft = String(duration.count)
+    }
+
+    private func commitDraft() {
+        guard let count = Self.parse(draft) else {
+            apply(RefreshDuration.fitting(minutes))
+            return
+        }
+        draft = String(count)
+        let next = RefreshDuration(count: count, unit: unit).minutes
+        if minutes != next { minutes = next }
+    }
+
+    private static func parse(_ draft: String) -> Int? {
+        guard let value = Int(draft.trimmingCharacters(in: .whitespaces)), value >= 1 else {
+            return nil
+        }
+        return min(value, 100_000)
     }
 }
 

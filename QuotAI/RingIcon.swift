@@ -267,8 +267,8 @@ enum RingIcon {
                 onPaceLo: onPaceLo,
                 onPaceHi: onPaceHi
             )
-            let alarmOver = isPace
-                && colorMode != .monochrome
+            // All ring looks: smart over / exhausted → solid alarm orange (blink still dims).
+            let alarmOver = colorMode != .monochrome
                 && index < dial.smartOver.count
                 && dial.smartOver[index]
             let blinkOff = index < dial.blinkOff.count && dial.blinkOff[index]
