@@ -4,6 +4,7 @@ Type: task
 Status: open
 Blocked by:
 Target: next version (after current compact system banners)
+GitHub: https://github.com/marotron/QuotAI/issues/8
 
 ## Question
 
@@ -31,3 +32,7 @@ Replace (or optionally override) stock `UNUserNotification` banners with a **Not
 ### 2026-10-09
 
 User accepted compact system banners for now; asked to schedule custom notifications for the next version.
+
+### 2026-10-09 (later)
+
+Mirrored to GitHub [#8](https://github.com/marotron/QuotAI/issues/8).

@@ -31,12 +31,14 @@ A written product spec plus a working macOS menu-bar app that shows remaining **
 
 ## Not yet specified
 
-- Multi-account support
-- App Store vs personal signing / distribution
-- Official Cursor API migration path detail (when/if one ships)
-- Polling / background refresh cadence (ticket open: [Polling and refresh UX](issues/09-polling-refresh-ux.md))
-- Pace dial visuals (log dial / colors) beyond text pace labels
-- Custom notification banners (top-aligned icon + agent marks) — next version; [issues/10-custom-notification-ui.md](issues/10-custom-notification-ui.md)
+GitHub mirrors (labels `roadmap` / `fog` / `next-version`):
+
+- Multi-account support → [#9](https://github.com/marotron/QuotAI/issues/9)
+- App Store vs personal signing / distribution → [#10](https://github.com/marotron/QuotAI/issues/10)
+- Official Cursor API migration path detail (when/if one ships) → [#11](https://github.com/marotron/QuotAI/issues/11)
+- Polling / background refresh cadence (local grilling still open) → [#12](https://github.com/marotron/QuotAI/issues/12) · [issues/09-polling-refresh-ux.md](issues/09-polling-refresh-ux.md)
+- Pace dial visuals (log dial / colors) beyond text pace labels → [#13](https://github.com/marotron/QuotAI/issues/13)
+- Custom notification banners (top-aligned icon + agent marks) — next version → [#8](https://github.com/marotron/QuotAI/issues/8) · [issues/10-custom-notification-ui.md](issues/10-custom-notification-ui.md)
 
 ## Out of scope
 
