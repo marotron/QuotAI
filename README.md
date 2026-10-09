@@ -1,8 +1,6 @@
 # QuotAI
 
-<img src="docs/brand/app-icon-128.png" width="72" alt="QuotAI app icon" align="left" hspace="12" />
-
-macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot. Pace shows as rings and blinks. The same mark appears in Finder, the Dock (when Settings is open), and About — source art in [`docs/brand/`](docs/brand/).
+<img src="docs/brand/app-icon-128.png" width="40" alt="QuotAI app icon" align="left" hspace="8" />macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot. Pace shows as rings and blinks.
 
 <br clear="all" />
 
