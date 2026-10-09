@@ -1,5 +1,7 @@
 # QuotAI
 
+<p align="center"><img src="docs/brand/app-icon-128.png" width="96" alt="QuotAI app icon"></p>
+
 macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot. Pace shows as rings and blinks.
 
 ## Install
@@ -11,6 +13,20 @@ macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot
 3. Open QuotAI from Applications. It lives in the menu bar.
 
 The 0.9.0 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
+
+## Icons
+
+App icon (Finder / Dock / About):
+
+<p align="center"><img src="docs/brand/app-icon.png" width="160" alt="QuotAI app icon"></p>
+
+Menu-bar ring marks (pace-tinted in the app; white cutouts stay clear):
+
+| Cursor Models / Other | Grok Bot |
+| :---: | :---: |
+| <img src="docs/brand/cursor-mark.png" width="96" alt="Cursor mark"> | <img src="docs/brand/grok-mark.png" width="96" alt="Grok mark"> |
+
+Source SVGs: [`quotai-icon.svg`](docs/brand/quotai-icon.svg) · [`quotai-icon-macos.svg`](docs/brand/quotai-icon-macos.svg). Transparent mark masters: [`docs/reference/avatars/`](docs/reference/avatars/).
 
 ## Screenshots
 
