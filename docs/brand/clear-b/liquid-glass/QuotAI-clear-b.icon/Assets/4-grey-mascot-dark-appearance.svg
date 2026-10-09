@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2B2833"/><stop offset="0.5" stop-color="#0E0D12"/><stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <radialGradient id="tileGlow" cx="0.3" cy="0.2" r="0.9">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.10"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/><stop offset="0.4" stop-color="#FFFFFF" stop-opacity="0.04"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="quota" gradientUnits="userSpaceOnUse" x1="600" y1="190" x2="300" y2="780">
+      <stop offset="0" stop-color="#FFD36B"/><stop offset="0.45" stop-color="#FF7A1F"/><stop offset="1" stop-color="#E0262B"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" gradientUnits="userSpaceOnUse" x1="320" y1="300" x2="700" y2="720">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F3EEE9"/>
+    </linearGradient>
+    <linearGradient id="needleGrad" gradientUnits="userSpaceOnUse" x1="633.6" y1="633.6" x2="792.0" y2="792.0">
+      <stop offset="0" stop-color="#FFB36B"/><stop offset="0.5" stop-color="#FF8A35"/><stop offset="1" stop-color="#E5502A"/>
+    </linearGradient>
+    <radialGradient id="sphere" cx="0.38" cy="0.32" r="0.78" fx="0.34" fy="0.28">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.42" stop-color="#E6E6EA"/>
+      <stop offset="0.85" stop-color="#B4B4BE"/><stop offset="1" stop-color="#8A8A96"/>
+    </radialGradient>
+    <radialGradient id="sphereRim" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.82" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="0.96" stop-color="#FFFFFF" stop-opacity="0.18"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="spec" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.85"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="lift" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="18"/><feOffset dx="4" dy="22" result="o"/>
+      <feFlood flood-color="#000" flood-opacity="0.55"/><feComposite in2="o" operator="in" result="sh"/>
+      <feMerge><feMergeNode in="sh"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="liftSm" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/><feOffset dx="2" dy="10" result="o"/>
+      <feFlood flood-color="#000" flood-opacity="0.5"/><feComposite in2="o" operator="in" result="sh"/>
+      <feMerge><feMergeNode in="sh"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <mask id="eyes" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#FFF"/>
+      <rect x="520" y="514" width="32" height="76" rx="16" fill="#000"/>
+      <rect x="576" y="506" width="32" height="76" rx="16" fill="#000"/>
+    </mask>
+    <mask id="hand" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#FFF"/>
+      <path d="M 645.6 645.6 L 780.0 780.0" fill="none" stroke="#000" stroke-width="98" stroke-linecap="round"/>
+    </mask>
+    <clipPath id="sq"><rect x="40" y="40" width="944" height="944" rx="210"/></clipPath>
+  <linearGradient id="ringDark" gradientUnits="userSpaceOnUse" x1="320" y1="300" x2="700" y2="720">
+      <stop offset="0" stop-color="#46464F"/><stop offset="1" stop-color="#46464F"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(512 512) scale(1.084746) translate(-512 -512) translate(512 512) scale(1.28) translate(-512 -512)"><g mask="url(#eyes)">
+    <circle cx="512" cy="512" r="140" fill="url(#sphere)"/>
+        <circle cx="512" cy="512" r="140" fill="url(#sphereRim)"/>
+        <ellipse cx="462" cy="440" rx="62" ry="40" fill="url(#spec)" transform="rotate(-35 462 440)"/>
+        <circle cx="455" cy="430" r="11" fill="#FFFFFF" fill-opacity="0.9"/>
+  </g></g>
+</svg>

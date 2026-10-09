@@ -5,6 +5,7 @@
 ### Changed
 
 - Pace alert notifications and email use compact copy (`Cursor · Grok over`, `▲ Cursor 74% / 66%`)
+- App icon from QuotAI clear-b pack (grey mascot, frosted clear tile; dark primary for Finder / Dock / About; liquid-glass sources under docs/brand/clear-b)
 
 ## 0.9.0 — 2026-10-09
 
