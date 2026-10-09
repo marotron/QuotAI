@@ -36,6 +36,7 @@ A written product spec plus a working macOS menu-bar app that shows remaining **
 - Official Cursor API migration path detail (when/if one ships)
 - Polling / background refresh cadence (ticket open: [Polling and refresh UX](issues/09-polling-refresh-ux.md))
 - Pace dial visuals (log dial / colors) beyond text pace labels
+- Custom notification banners (top-aligned icon + agent marks) — next version; [issues/10-custom-notification-ui.md](issues/10-custom-notification-ui.md)
 
 ## Out of scope
 

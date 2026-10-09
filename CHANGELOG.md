@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1 — 2026-10-09
+
+### Changed
+
+- Pace alert notifications and email use compact copy (`Cursor · Grok over`, `▲ Cursor 74% / 66%`)
+
 ## 0.9.0 — 2026-10-09
 
 ### Added
