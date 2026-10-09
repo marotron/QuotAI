@@ -20,13 +20,7 @@ App icon (Finder / Dock / About):
 
 <p align="center"><img src="docs/brand/app-icon.png" width="160" alt="QuotAI app icon"></p>
 
-Menu-bar ring marks (pace-tinted in the app; white cutouts stay clear):
-
-| Cursor Models / Other | Grok Bot |
-| :---: | :---: |
-| <img src="docs/brand/cursor-mark.png" width="96" alt="Cursor mark"> | <img src="docs/brand/grok-mark.png" width="96" alt="Grok mark"> |
-
-Source SVGs: [`quotai-icon.svg`](docs/brand/quotai-icon.svg) · [`quotai-icon-macos.svg`](docs/brand/quotai-icon-macos.svg). Transparent mark masters: [`docs/reference/avatars/`](docs/reference/avatars/).
+Source SVGs: [`quotai-icon.svg`](docs/brand/quotai-icon.svg) · [`quotai-icon-macos.svg`](docs/brand/quotai-icon-macos.svg).
 
 ## Screenshots
 
