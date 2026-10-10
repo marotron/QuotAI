@@ -1,0 +1,256 @@
+{
+  "tileStyle": "frosted",
+  "glass": 1,
+  "tileC1": "#2B2833",
+  "tileC2": "#000000",
+  "quotaEnd": 360,
+  "elapsedEnd": 270,
+  "handAngle": 135,
+  "ringCap": 1,
+  "ringCapWhere": "both",
+  "quotaCap": 1,
+  "quotaCapWhere": "both",
+  "handCap": 1,
+  "handCapWhere": "end",
+  "quotaCapPlacement": "outside",
+  "elapsedCapPlacement": "outside",
+  "handCapPlacement": "inside",
+  "quotaTrack": true,
+  "handW": 34,
+  "handWLink": true,
+  "quotaGap": 0,
+  "quotaGapWhere": "end",
+  "quotaGapLink": true,
+  "ringTrack": true,
+  "ringGap": 0,
+  "ringGapWhere": "both",
+  "ringGapLink": true,
+  "knockout": "follow",
+  "handOut": 80,
+  "scale": 1.28,
+  "gap": 8,
+  "band": 96,
+  "ring": 34,
+  "face": 144,
+  "stops": [
+    [
+      0,
+      "#3478F7"
+    ],
+    [
+      1,
+      "#F19A38"
+    ]
+  ],
+  "gradMode": "ring",
+  "interp": "oklch",
+  "handColor": "#F19A38",
+  "mascotStyle": "sphere",
+  "eyeFollow": false,
+  "lookAngle": 120,
+  "eyeSize": 1,
+  "eyeStyle": "open",
+  "eyeRatio": 2.02,
+  "eyeLine": 0.32,
+  "eyeAutoTilt": "head",
+  "eyeTilt": 1.5,
+  "eyeGroupRot": -7.5,
+  "eyeElev": 7,
+  "eyeSpread": 0.24,
+  "eyeScaleHT": 1.6,
+  "eyeWidthHT": 0.97,
+  "autoTiltScale": 0.49,
+  "downTiltDamp": 0,
+  "expr": "custom",
+  "gazeMode": "sphere",
+  "turn": 43,
+  "persp": 0.22,
+  "fxMode": "glass",
+  "colorMode": "color",
+  "bwInvert": false,
+  "eL_style": "inherit",
+  "eL_ratio": 0,
+  "eL_size": 1,
+  "eL_tilt": 0,
+  "eL_dy": 0,
+  "eL_dx": 0,
+  "eL_lid": 0,
+  "eL_slant": 0,
+  "eL_line": 0,
+  "eR_style": "inherit",
+  "eR_ratio": 0,
+  "eR_size": 0.95,
+  "eR_tilt": 3.5,
+  "eR_dy": 0,
+  "eR_dx": 0,
+  "eR_lid": 0,
+  "eR_slant": 0,
+  "eR_line": 0,
+  "appearance": "dark",
+  "ringColor": "#CCCCCC",
+  "ringColor2": "#CCCCCC",
+  "mascotColor": "#CCCCCC",
+  "sphereStops": null,
+  "trackColor": "#FFFFFF",
+  "trackOpacity": 0.1,
+  "ringTrackColor": "#CCCCCC",
+  "ringTrackOpacity": 0.1,
+  "tint": "#FFFFFF",
+  "tintMin": 0,
+  "borderColor": "#FFFFFF",
+  "baseWall": "neutral-dark",
+  "spec": 0.75,
+  "rim": 0.38,
+  "contact": 0.38,
+  "fx": {
+    "band": [
+      0.95,
+      0.45,
+      0.28,
+      1
+    ],
+    "ring": [
+      0.97,
+      0.55,
+      0.3,
+      2
+    ],
+    "hand": [
+      0.97,
+      0.55,
+      0.4,
+      3
+    ],
+    "face": [
+      0.96,
+      0.45,
+      0.45,
+      4
+    ]
+  },
+  "modes": {
+    "dark": {
+      "ringColor": "#CCCCCC",
+      "ringColor2": "#CCCCCC",
+      "mascotColor": "#CCCCCC",
+      "sphereStops": null,
+      "mascotStyle": "sphere",
+      "spec": 0.75,
+      "rim": 0.38,
+      "contact": 0.38,
+      "trackColor": "#FFFFFF",
+      "trackOpacity": 0.1,
+      "ringTrackColor": "#CCCCCC",
+      "ringTrackOpacity": 0.1,
+      "tint": "#FFFFFF",
+      "tintMin": 0,
+      "borderColor": "#FFFFFF",
+      "baseWall": "neutral-dark",
+      "tileStyle": "frosted",
+      "tileC1": "#2B2833",
+      "tileC2": "#000000",
+      "glass": 1,
+      "fxMode": "glass",
+      "fx": {
+        "band": [
+          0.95,
+          0.45,
+          0.28,
+          1
+        ],
+        "ring": [
+          0.97,
+          0.55,
+          0.3,
+          2
+        ],
+        "hand": [
+          0.97,
+          0.55,
+          0.4,
+          3
+        ],
+        "face": [
+          0.96,
+          0.45,
+          0.45,
+          4
+        ]
+      }
+    },
+    "light": {
+      "ringColor": "#6F6F6F",
+      "ringColor2": "#6F6F6F",
+      "mascotColor": "#6F6F6F",
+      "sphereStops": [
+        [
+          0,
+          "#BDBDC2"
+        ],
+        [
+          0.18,
+          "#A6A6AC"
+        ],
+        [
+          0.5,
+          "#6F6F6F"
+        ],
+        [
+          0.8,
+          "#5A5A5F"
+        ],
+        [
+          0.93,
+          "#48484E"
+        ],
+        [
+          1,
+          "#36363B"
+        ]
+      ],
+      "mascotStyle": "sphere",
+      "spec": 0.45,
+      "rim": 0.26,
+      "contact": 0.22,
+      "trackColor": "#DADADA",
+      "trackOpacity": 0.6,
+      "ringTrackColor": "#DADADA",
+      "ringTrackOpacity": 0.6,
+      "tint": "#F2F2F2",
+      "tintMin": 0.42,
+      "borderColor": "#DADADA",
+      "baseWall": "neutral-light",
+      "tileStyle": "frosted",
+      "tileC1": "#2B2833",
+      "tileC2": "#000000",
+      "glass": 1,
+      "fxMode": "glass",
+      "fx": {
+        "band": [
+          0.95,
+          0.45,
+          0.18,
+          1
+        ],
+        "ring": [
+          0.96,
+          0.3,
+          0.16,
+          2
+        ],
+        "hand": [
+          0.97,
+          0.55,
+          0.25,
+          3
+        ],
+        "face": [
+          0.96,
+          0.3,
+          0.16,
+          2
+        ]
+      }
+    }
+  }
+}
