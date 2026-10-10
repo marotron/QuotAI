@@ -68,6 +68,21 @@ make dmg        # package only → dist/QuotAI-<version>.dmg
 make release    # run tests, then package
 ```
 
+**GitHub Release:** push a **signed** tag `vX.Y.Z` matching `MARKETING_VERSION` (e.g. `v0.9.4` for `0.9.4`). GitHub shows **Verified** only for cryptographically signed tags — never use a lightweight `git tag v…` or an unsigned annotated tag for ships.
+
+```bash
+git tag -s v0.9.5 -m "0.9.5"   # signed annotated tag → GitHub Verified
+git verify-tag v0.9.5           # must succeed before push
+git push origin v0.9.5
+```
+
+If global signing config is unset, one-shot:
+
+```bash
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519_github
+git -c gpg.format=ssh -c user.signingkey="$HOME/.ssh/id_ed25519_github" tag -s v0.9.5 -m "0.9.5"
+```
+
 Optional, once a Developer ID certificate and a notary keychain profile exist:
 
 ```bash
