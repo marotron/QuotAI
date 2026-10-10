@@ -1,9 +1,9 @@
-QuotAI clear-b  (sphere mascot, blue→orange quota band, artwork scale 1.35)
+QuotAI clear-b  (sphere mascot, blue→orange quota band, artwork scale 1.33)
 
 Primary (Finder / Dock / About / notifications): DARK appearance from Icon Studio export.
-  Tile: black style with custom purple-black gradient (#390424 → #1B042F)
+  Tile: black charcoal gradient (#2B2833 → #000000)
   Ring: light elapsed track; OKLCH gradient band (#3478F7 → #F19A38); orange pace hand
-  Face: 3D light-grey sphere mascot (look ~122°, eye size 1.4)
+  Face: 3D light-grey sphere mascot (open eyes, look ~125°, eye ratio 1.41, eye size 1)
 
 TOOL
   quotai-icon-studio.html   live SVG generator (open in a browser)

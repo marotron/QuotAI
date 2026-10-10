@@ -1,5 +1,5 @@
 {
-  "tileStyle": "black",
+  "tileStyle": "frosted",
   "glass": 1,
   "tileC1": "#2B2833",
   "tileC2": "#000000",
@@ -16,7 +16,7 @@
   "elapsedCapPlacement": "outside",
   "handCapPlacement": "inside",
   "quotaTrack": true,
-  "handW": 36,
+  "handW": 34,
   "handWLink": true,
   "quotaGap": 0,
   "quotaGapWhere": "end",
@@ -27,10 +27,10 @@
   "ringGapLink": true,
   "knockout": "follow",
   "handOut": 80,
-  "scale": 1.33,
+  "scale": 1.28,
   "gap": 8,
   "band": 96,
-  "ring": 36,
+  "ring": 34,
   "face": 144,
   "stops": [
     [
@@ -146,7 +146,7 @@
       "tintMin": 0,
       "borderColor": "#FFFFFF",
       "baseWall": "neutral-dark",
-      "tileStyle": "black",
+      "tileStyle": "frosted",
       "tileC1": "#2B2833",
       "tileC2": "#000000",
       "glass": 1,

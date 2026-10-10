@@ -1,6 +1,6 @@
 # QuotAI app icon progression
 
-Visual history of the clear-b / Icon Studio packs. Full archives live under [`archive/`](archive/) and shipped flat packs under [`0.9.2/`](0.9.2/), [`0.9.3/`](0.9.3/). Thumbnails here are 128px (and 256px siblings in [`progression/`](progression/)).
+Visual history of the clear-b / Icon Studio packs. Full archives live under [`archive/`](archive/) and shipped flat packs under [`0.9.2/`](0.9.2/), [`0.9.3/`](0.9.3/), [`0.9.4/`](0.9.4/). Thumbnails here are 128px (and 256px siblings in [`progression/`](progression/)).
 
 | Step | When | App / pack | Tile | Scale | Notes |
 |------|------|------------|------|-------|-------|
@@ -9,7 +9,8 @@ Visual history of the clear-b / Icon Studio packs. Full archives live under [`ar
 | 2 | 2026-10-09 | studio pack 1 | frosted | 1.28 | Sphere mascot; frosted clear tile |
 | 3 | 2026-10-09 | **v0.9.2** / pack 2 | black charcoal `#2B2833`→`#000` | 1.28 | Shipped sphere + black tile |
 | 4 | 2026-10-10 | pack 3 (trial) | purple-black `#390424`→`#1B042F` | 1.35 | Same-day trial before pack 4 |
-| 5 | 2026-10-10 | **v0.9.3** / pack 4 | purple-black `#390424`→`#1B042F` | 1.35 | Current live pack |
+| 5 | 2026-10-10 | **v0.9.3** / pack 4 | purple-black `#390424`→`#1B042F` | 1.35 | Purple-black live for 0.9.3 |
+| 6 | 2026-10-10 | **v0.9.4** / pack 6 | black charcoal `#2B2833`→`#000` | 1.33 | Current live: open eyes, ratio 1.41 |
 
 ---
 
@@ -60,18 +61,28 @@ Restored from git `aea4044` (`docs/brand/app-icon-128.png`). Liquid-glass layer 
 
 ---
 
-## 5 — v0.9.3 / pack 4 (current)
+## 5 — v0.9.3 / pack 4
 
 <img src="progression/05-0.9.3-128.png" width="128" height="128" alt="0.9.3 icon 128" />
 <img src="progression/05-0.9.3-256.png" width="256" height="256" alt="0.9.3 icon 256" />
 
 - Scale **1.35**, same purple-black tile family as pack 3 (final studio export)  
-- Live: `../clear-b/` · archive: [`0.9.3/`](0.9.3/) · zip: [`archive/0.9.3-pack-4.zip`](archive/0.9.3-pack-4.zip)
+- Archive: [`0.9.3/`](0.9.3/) · zip: [`archive/0.9.3-pack-4.zip`](archive/0.9.3-pack-4.zip)
+
+---
+
+## 6 — v0.9.4 / pack 6 (current)
+
+<img src="progression/06-0.9.4-128.png" width="128" height="128" alt="0.9.4 icon 128" />
+<img src="progression/06-0.9.4-256.png" width="256" height="256" alt="0.9.4 icon 256" />
+
+- Scale **1.33**, tile **black** `#2B2833` → `#000000`, open eyes (ratio **1.41**), look **125°**, ring/hand **36**  
+- Live: `../clear-b/` · archive: [`0.9.4/`](0.9.4/) · zip: [`archive/0.9.4-pack-6.zip`](archive/0.9.4-pack-6.zip)
 
 ---
 
 ## Side-by-side (128px)
 
-| 1 v4 | 1b 0.9.1 | 2 frosted | 3 0.9.2 | 4 trial | 5 0.9.3 |
-|------|----------|-----------|---------|---------|---------|
-| <img src="progression/01-v4pack-128.png" width="96" height="96" alt="" /> | <img src="progression/01b-0.9.1-128.png" width="96" height="96" alt="" /> | <img src="progression/02-frosted-sphere-128.png" width="96" height="96" alt="" /> | <img src="progression/03-0.9.2-128.png" width="96" height="96" alt="" /> | <img src="progression/04-pack3-trial-128.png" width="96" height="96" alt="" /> | <img src="progression/05-0.9.3-128.png" width="96" height="96" alt="" /> |
+| 1 v4 | 1b 0.9.1 | 2 frosted | 3 0.9.2 | 4 trial | 5 0.9.3 | 6 0.9.4 |
+|------|----------|-----------|---------|---------|---------|---------|
+| <img src="progression/01-v4pack-128.png" width="96" height="96" alt="" /> | <img src="progression/01b-0.9.1-128.png" width="96" height="96" alt="" /> | <img src="progression/02-frosted-sphere-128.png" width="96" height="96" alt="" /> | <img src="progression/03-0.9.2-128.png" width="96" height="96" alt="" /> | <img src="progression/04-pack3-trial-128.png" width="96" height="96" alt="" /> | <img src="progression/05-0.9.3-128.png" width="96" height="96" alt="" /> | <img src="progression/06-0.9.4-128.png" width="96" height="96" alt="" /> |

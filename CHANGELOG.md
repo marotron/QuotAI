@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.4 — 2026-10-10
+
+### Changed
+
+- App icon refresh (clear-b pack 6: scale 1.33, black charcoal tile `#2B2833` → `#000000`, open eyes ratio 1.41)
+
 ## 0.9.3 — 2026-10-10
 
 ### Changed
