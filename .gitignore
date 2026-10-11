@@ -23,3 +23,6 @@ xcuserdata/
 .scratch/quotai/prototype/
 .scratch/RELEASE_NOTES_*.md
 .scratch/.venv-img/
+
+# Private naming notes (local only)
+docs/brand/name-ideas.md
