@@ -39,6 +39,9 @@ GitHub mirrors (labels `roadmap` / `fog` / `next-version`):
 - Polling / background refresh cadence (local grilling still open) → [#12](https://github.com/marotron/QuotAI/issues/12) · [issues/09-polling-refresh-ux.md](issues/09-polling-refresh-ux.md)
 - Pace dial visuals (log dial / colors) beyond text pace labels → [#13](https://github.com/marotron/QuotAI/issues/13)
 - Custom notification banners (top-aligned icon + agent marks) — next version → [#8](https://github.com/marotron/QuotAI/issues/8) · [issues/10-custom-notification-ui.md](issues/10-custom-notification-ui.md)
+- Larger menu-bar dual-line text (used % / remaining; closer to weather-app scale) — next version → [#15](https://github.com/marotron/QuotAI/issues/15) · [issues/11-menu-bar-text-size.md](issues/11-menu-bar-text-size.md)
+- Pace band chart quick view (outside Settings → Alerts) — next version → [#16](https://github.com/marotron/QuotAI/issues/16) · [issues/12-pace-band-quick-view.md](issues/12-pace-band-quick-view.md)
+- Historical used / elapsed trajectories (normalized period) — after quick view → [#17](https://github.com/marotron/QuotAI/issues/17) · [issues/13-pace-history-trajectories.md](issues/13-pace-history-trajectories.md)
 
 ## Out of scope
 
