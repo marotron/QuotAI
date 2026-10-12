@@ -269,7 +269,7 @@ struct SettingsView: View {
                     }
                 }
             } footer: {
-                Text("Colors and labels still use pace ratio r = used ÷ elapsed.")
+                Text("Menu labels use pace ratio r = used ÷ elapsed. Ring/bar color: smart under/over wins when it fires; otherwise this on-pace band (green / blue / orange). Blink only when a smart alert fires.")
             }
         }
     }

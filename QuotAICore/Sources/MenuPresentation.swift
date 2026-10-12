@@ -254,11 +254,21 @@ public enum MenuPresenter {
     }
 
     /// Pace ratio → Under / On / Over colors. Same dead zone as dropdown bands.
+    /// When `smartKind` is under/over/exhausted, that wins over the on-pace ratio band.
     public static func tint(
         pace: PaceResult?,
+        smartKind: PaceAlertKind? = nil,
         onPaceLo: Double = PaceCalculator.greenLo,
         onPaceHi: Double = PaceCalculator.greenHi
     ) -> SymbolTint {
+        if let smartKind {
+            switch smartKind {
+            case .under: return .under
+            case .over: return .warning
+            case .exhausted: return .critical
+            case .quiet: break
+            }
+        }
         guard let pace else { return .neutral }
         if pace.daysToExhaustion == 0 { return .critical } // Exhausted
         guard let r = pace.ratio else { return .neutral }

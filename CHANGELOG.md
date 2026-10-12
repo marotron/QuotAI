@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.5 — 2026-10-13
+
+### Fixed
+
+- Ring/bar chrome: smart under/over wins color (and blinks); if smart is quiet, on-pace band sets solid blue/green/orange (e.g. Other under-corridor → blue blink even when ratio is still in the on-pace band)
+
+### Added
+
+- [Pace chrome](docs/pace-chrome.md) doc — decision order diagram + scenario matrix (linked from README)
+
 ## 0.9.4 — 2026-10-10
 
 ### Changed
