@@ -18,8 +18,8 @@ enum RingIcon {
         var remaining: String?
         /// Which `usedPcts` index drives the beside used % (B Models ↔ Other blink).
         var displayedUsedIndex: Int
-        /// Parallel to `usedPcts`. Smart over (or exhausted) paints every segment solid alarm orange.
-        var smartOver: [Bool] = []
+        /// Parallel to `usedPcts`. Smart under/over/exhausted → solid fill from `brandColors`.
+        var smartSignificant: [Bool] = []
         /// Parallel to `usedPcts`. Off beat of the bar-style significant-pace blink.
         var blinkOff: [Bool] = []
     }
@@ -267,15 +267,17 @@ enum RingIcon {
                 onPaceLo: onPaceLo,
                 onPaceHi: onPaceHi
             )
-            // All ring looks: smart over / exhausted → solid alarm orange (blink still dims).
-            let alarmOver = colorMode != .monochrome
-                && index < dial.smartOver.count
-                && dial.smartOver[index]
+            // Smart under/over/exhausted → solid brand tint (blink still dims).
+            let forceSmart = colorMode != .monochrome
+                && index < dial.smartSignificant.count
+                && dial.smartSignificant[index]
             let blinkOff = index < dial.blinkOff.count && dial.blinkOff[index]
             for arc in arcs {
-                var color = alarmOver
-                    ? paceColor(.warning)
-                    : strokeColor(
+                var color: NSColor
+                if forceSmart, let brand {
+                    color = brand
+                } else {
+                    color = strokeColor(
                         tint: arc.tint,
                         brand: brand,
                         look: look,
@@ -283,6 +285,7 @@ enum RingIcon {
                         ink: ink,
                         paceColor: paceColor
                     )
+                }
                 if blinkOff {
                     color = color.withAlphaComponent(0.35)
                 }
@@ -354,7 +357,7 @@ enum RingIcon {
         case .under: return paceColor(.under)
         // 0 → used when on pace, and 0 → elapsed when mildly over.
         case .ok: return Self.paceQuotaGreen
-        // Elapsed → used. Smart-over repaints both segments before this runs.
+        // Elapsed → used. Smart significant repaints both segments before this runs.
         case .over: return paceColor(.warning)
         // Under only: used → elapsed.
         case .okPale: return Self.paceUnderSlack

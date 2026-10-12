@@ -1,6 +1,6 @@
 # Tech specs — QuotAI
 
-Last updated: 2026-09-26
+Last updated: 2026-10-13
 
 ## Stack
 
@@ -31,6 +31,7 @@ Last updated: 2026-09-26
 | Smart pace alert bands | pure | `PaceAlertBands` over/under corridors; curve dials linear→parabolic (under mirrors across even pace; clamp to endpoint parallels) |
 | Alert decision | pure | `PaceAlertDecision` meters + channels → blink/notify/email + signature |
 | Alert cooldown | pure | `PaceAlertCooldown` edge + cooldown suppress |
+| Pace chrome | pure | `PaceChromeResolver` — smart under/over wins tint + blink; quiet → on-pace solid ([docs/pace-chrome.md](pace-chrome.md)) |
 | Alert message builder | pure | `AlertMessageBuilder` subject/body |
 | Dynamic refresh schedule | pure | `RefreshSchedule.interval(periodEnds:now:)` — soonest reset, first step strictly under the threshold; bad or duplicate JSON → default |
 | Network + Keychain + SMTP + UserNotifications | untested | Thin adapters |

@@ -754,7 +754,7 @@ private struct MenuBarIconLabel: View {
                     elapsedPct: cursorElapsed,
                     remaining: cursorRemaining,
                     displayedUsedIndex: 0,
-                    smartOver: [meterIsSmartOver(cursor)],
+                    smartSignificant: [meterIsSmartSignificant(cursor)],
                     blinkOff: [quotaBlinkOff(cursor)]
                 ),
             ]
@@ -768,7 +768,7 @@ private struct MenuBarIconLabel: View {
                     elapsedPct: cursorElapsed,
                     remaining: cursorRemaining,
                     displayedUsedIndex: 0,
-                    smartOver: [meterIsSmartOver(other)],
+                    smartSignificant: [meterIsSmartSignificant(other)],
                     blinkOff: [quotaBlinkOff(other)]
                 ))
             }
@@ -781,7 +781,7 @@ private struct MenuBarIconLabel: View {
                 elapsedPct: grokElapsed,
                 remaining: grokRemaining,
                 displayedUsedIndex: 0,
-                smartOver: [meterIsSmartOver(grok)],
+                smartSignificant: [meterIsSmartSignificant(grok)],
                 blinkOff: [quotaBlinkOff(grok)]
             ))
             dials = list
@@ -799,8 +799,8 @@ private struct MenuBarIconLabel: View {
                 fills = [paceBarColor(cursor)]
             }
             let cursorSmart: [Bool] = showOtherModels
-                ? [meterIsSmartOver(cursor), meterIsSmartOver(other)]
-                : [meterIsSmartOver(cursor)]
+                ? [meterIsSmartSignificant(cursor), meterIsSmartSignificant(other)]
+                : [meterIsSmartSignificant(cursor)]
             let cursorBlink: [Bool] = showOtherModels
                 ? [quotaBlinkOff(cursor), quotaBlinkOff(other)]
                 : [quotaBlinkOff(cursor)]
@@ -814,7 +814,7 @@ private struct MenuBarIconLabel: View {
                     elapsedPct: cursorElapsed,
                     remaining: cursorRemaining,
                     displayedUsedIndex: showOtherPhase ? 1 : 0,
-                    smartOver: cursorSmart,
+                    smartSignificant: cursorSmart,
                     blinkOff: cursorBlink
                 ),
                 RingIcon.Dial(
@@ -826,7 +826,7 @@ private struct MenuBarIconLabel: View {
                     elapsedPct: grokElapsed,
                     remaining: grokRemaining,
                     displayedUsedIndex: 0,
-                    smartOver: [meterIsSmartOver(grok)],
+                    smartSignificant: [meterIsSmartSignificant(grok)],
                     blinkOff: [quotaBlinkOff(grok)]
                 ),
             ]
@@ -880,7 +880,8 @@ private struct MenuBarIconLabel: View {
 
     private func paceTint(_ meter: QuotaMeter) -> SymbolTint? {
         guard iconColorMode == .byLevel, !meter.isUnavailable else { return nil }
-        let tint = MenuPresenter.tint(pace: meter.pace, onPaceLo: onPaceLo, onPaceHi: onPaceHi)
+        let tint = paceChrome(meter)?.tint
+            ?? MenuPresenter.tint(pace: meter.pace, onPaceLo: onPaceLo, onPaceHi: onPaceHi)
         return tint == .neutral ? nil : tint
     }
 
@@ -890,14 +891,31 @@ private struct MenuBarIconLabel: View {
         return tintColor(tint)
     }
 
-    /// Smart over corridor (or legacy over ratio when smart alerts are off), including exhausted.
-    private func meterIsSmartOver(_ meter: QuotaMeter) -> Bool {
-        guard !meter.isUnavailable else { return false }
+    /// Smart under/over/exhausted → solid brand fill (color already resolved in `paceBarColor`).
+    private func meterIsSmartSignificant(_ meter: QuotaMeter) -> Bool {
+        guard useSmartPaceAlerts, !meter.isUnavailable else { return false }
+        return PaceAlertBands.isSignificant(kind: meterAlertKind(meter) ?? .quiet)
+    }
+
+    /// Smart-on chrome: smart under/over wins tint; blink only when smart is significant.
+    private func paceChrome(_ meter: QuotaMeter) -> PaceChrome? {
+        guard useSmartPaceAlerts, let kind = meterAlertKind(meter) else { return nil }
+        return PaceChromeResolver.resolve(
+            pace: meter.pace,
+            smartKind: kind,
+            onPaceLo: onPaceLo,
+            onPaceHi: onPaceHi,
+            blinkEnabled: blinkSignificantPace
+        )
+    }
+
+    private func meterAlertKind(_ meter: QuotaMeter) -> PaceAlertKind? {
+        guard !meter.isUnavailable else { return nil }
         if let pct = meter.percentUsed,
            let start = meter.periodStart,
            let end = meter.periodEnd,
            let t = PaceCalculator.elapsedFraction(periodStart: start, periodEnd: end) {
-            let kind = PaceAlertBands.evaluate(
+            return PaceAlertBands.evaluate(
                 percentUsed: pct,
                 elapsedFraction: t,
                 thresholds: smartThresholds,
@@ -905,30 +923,17 @@ private struct MenuBarIconLabel: View {
                 legacyUnder: blinkUnderRatio,
                 legacyOver: blinkOverRatio
             )
-            return kind == .over || kind == .exhausted
         }
-        if meter.percentUsed ?? 0 >= 100 { return true }
-        guard let r = meter.pace?.ratio else { return false }
-        return r > blinkOverRatio
+        if meter.percentUsed ?? 0 >= 100 { return .exhausted }
+        return nil
     }
 
     private func meterNeedsBlink(_ meter: QuotaMeter) -> Bool {
         guard blinkSignificantPace, !meter.isUnavailable else { return false }
-        if let pct = meter.percentUsed,
-           let start = meter.periodStart,
-           let end = meter.periodEnd,
-           let t = PaceCalculator.elapsedFraction(periodStart: start, periodEnd: end) {
-            let kind = PaceAlertBands.evaluate(
-                percentUsed: pct,
-                elapsedFraction: t,
-                thresholds: smartThresholds,
-                smart: useSmartPaceAlerts,
-                legacyUnder: blinkUnderRatio,
-                legacyOver: blinkOverRatio
-            )
-            return PaceAlertBands.isSignificant(kind: kind)
+        if let chrome = paceChrome(meter) {
+            return chrome.blink
         }
-        // Exhausted / missing dates → fall back to pace result.
+        // Smart off / missing dates → legacy pace-ratio significance.
         return PaceCalculator.isSignificant(
             pace: meter.pace,
             under: blinkUnderRatio,
