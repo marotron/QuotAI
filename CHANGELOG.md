@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0 — 2026-10-19
+
+### Changed
+
+- Enlarged the dual-line percentages and reset times beside menu-bar rings for easier reading
+
 ## 0.9.5 — 2026-10-13
 
 ### Fixed

@@ -4,13 +4,13 @@ macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot
 
 ## Install
 
-**[Download QuotAI-0.9.5.dmg](https://github.com/marotron/QuotAI/releases/download/v0.9.5/QuotAI-0.9.5.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.10.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.10.0/QuotAI-0.10.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image.
 2. Drag **QuotAI** to **Applications**.
 3. Open QuotAI from Applications. It lives in the menu bar.
 
-The 0.9.5 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
+The 0.10.0 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
 
 ## Screenshots
 
@@ -71,16 +71,16 @@ make release    # run tests, then package
 **GitHub Release:** push a **signed** tag `vX.Y.Z` matching `MARKETING_VERSION` (e.g. `v0.9.4` for `0.9.4`). GitHub shows **Verified** only for cryptographically signed tags — never use a lightweight `git tag v…` or an unsigned annotated tag for ships.
 
 ```bash
-git tag -s v0.9.5 -m "0.9.5"   # signed annotated tag → GitHub Verified
-git verify-tag v0.9.5           # must succeed before push
-git push origin v0.9.5
+git tag -s v0.10.0 -m "0.10.0"   # signed annotated tag → GitHub Verified
+git verify-tag v0.10.0            # must succeed before push
+git push origin v0.10.0
 ```
 
 If global signing config is unset, one-shot:
 
 ```bash
 ssh-add --apple-use-keychain ~/.ssh/id_ed25519_github
-git -c gpg.format=ssh -c user.signingkey="$HOME/.ssh/id_ed25519_github" tag -s v0.9.5 -m "0.9.5"
+git -c gpg.format=ssh -c user.signingkey="$HOME/.ssh/id_ed25519_github" tag -s v0.10.0 -m "0.10.0"
 ```
 
 Optional, once a Developer ID certificate and a notary keychain profile exist:

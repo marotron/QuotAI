@@ -1,7 +1,7 @@
 # Menu bar dual-line text size
 
 Type: task
-Status: open
+Status: resolved
 Blocked by:
 Target: next version
 GitHub: https://github.com/marotron/QuotAI/issues/15
@@ -33,3 +33,17 @@ User asked to schedule larger menu-bar dual text for a future version (compare c
 ### 2026-10-09 (later)
 
 Mirrored to GitHub [#15](https://github.com/marotron/QuotAI/issues/15).
+
+## Answer
+
+Status: resolved
+
+- Increased the dual-stack font from 8pt semibold to 10pt regular, retaining ±4.5pt line centers.
+- Centralized both controls as `dualFontSize` and `dualLineOffset` in `RingIcon.Metrics`; single-line, remaining-column, and ring-center typography are unchanged.
+- Applied consistent tightened tracking to percentage and reset-time labels; percentages use equal emphasis while reset time is faded.
+- Added a debug-only Xcode Canvas preview in `QuotAI/RingIconPreview.swift` with three representative dials on light and dark menu-bar backgrounds.
+- Rendered the three-dial sample at 1× and 2× with no text clipping or ring collision.
+- Checked alternating elapsed/reset phases for one, two, and three dials; their widths remain stable.
+- `make test` and the full QuotAI app build pass.
+
+GitHub issue [#15](https://github.com/marotron/QuotAI/issues/15) remains open for the eventual PR or commit to close.
