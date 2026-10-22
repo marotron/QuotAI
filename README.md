@@ -4,13 +4,13 @@ macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot
 
 ## Install
 
-**[Download QuotAI-0.10.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.10.0/QuotAI-0.10.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.11.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.11.0/QuotAI-0.11.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image.
 2. Drag **QuotAI** to **Applications**.
 3. Open QuotAI from Applications. It lives in the menu bar.
 
-The 0.10.0 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
+The 0.11.0 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
 
 ## Screenshots
 
@@ -38,6 +38,7 @@ Settings → Menu pins which rows stay on the menu, including Open Cursor Spendi
 - **Smart pace alerts** use corridor bands for blink / notification / email; ring color precedence is documented in [pace chrome](docs/pace-chrome.md).
 - **Open Cursor Spending** opens [cursor.com/dashboard/spending](https://cursor.com/dashboard/spending) from the menu.
 - **Settings** cover ring style, beside-meter labels, ring center, refresh cadence, alert corridors, and which rows stay pinned.
+- **About QuotAI** shows version, short commit SHA, in-app changelog, and a link to GitHub Releases.
 
 ## Requirements
 

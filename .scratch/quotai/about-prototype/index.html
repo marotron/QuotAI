@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuotAI About — prototype</title>
+  <style>
+    :root {
+      --bg: #ececec;
+      --panel: #f6f6f6;
+      --text: #1d1d1f;
+      --secondary: #6e6e73;
+      --tertiary: #8e8e93;
+      --link: #0066cc;
+      --divider: #d2d2d7;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --panel: #2a2a2a;
+        --text: #f5f5f7;
+        --secondary: #a1a1a6;
+        --tertiary: #8e8e93;
+        --link: #2997ff;
+        --divider: #3a3a3c;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      gap: 32px;
+      padding: 40px 16px;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+    }
+    .chrome {
+      width: 400px;
+      background: var(--panel);
+      border-radius: 10px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+    }
+    .titlebar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--secondary);
+      border-bottom: 1px solid var(--divider);
+      background: color-mix(in srgb, var(--panel) 92%, var(--text));
+    }
+    .about {
+      padding: 28px;
+      text-align: center;
+    }
+    .icon {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 16px;
+      border-radius: 22%;
+      background: #000 url("../../docs/brand/app-icon-128.png") center / cover no-repeat;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .version, .commit {
+      margin: 0;
+      font-size: 13px;
+      color: var(--secondary);
+      font-variant-numeric: tabular-nums;
+      user-select: text;
+    }
+    .commit { margin-top: 2px; }
+    .blurb {
+      margin: 16px auto 0;
+      max-width: 340px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .blurb .tagline { margin: 0 0 6px; }
+    .blurb .summary {
+      margin: 0;
+      color: var(--secondary);
+      font-size: 12px;
+    }
+    .actions {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    button, a.button {
+      appearance: none;
+      border: 1px solid var(--divider);
+      background: color-mix(in srgb, var(--panel) 80%, white);
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    button:hover, a.button:hover { filter: brightness(1.05); }
+    a.link {
+      color: var(--link);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    a.link:hover { text-decoration: underline; }
+    .copy {
+      margin-top: 16px;
+      font-size: 11px;
+      color: var(--tertiary);
+    }
+    .changelog {
+      display: none;
+      width: min(520px, 100%);
+      max-height: 560px;
+      background: var(--panel);
+      border-radius: 10px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+      flex-direction: column;
+    }
+    .changelog.open { display: flex; }
+    .changelog .body {
+      padding: 20px;
+      overflow: auto;
+      text-align: left;
+    }
+    .release { margin-bottom: 28px; }
+    .release h2 {
+      margin: 0 0 12px;
+      font-size: 15px;
+    }
+    .release h3 {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--secondary);
+      text-transform: none;
+    }
+    .release ul {
+      margin: 0 0 12px;
+      padding-left: 1.1em;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .note {
+      max-width: 520px;
+      font-size: 12px;
+      color: var(--secondary);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <p class="note">HTML prototype for QuotAI About / Changelog — approve layout &amp; copy before Swift. Not shipped.</p>
+
+  <div class="chrome" id="about">
+    <div class="titlebar">About QuotAI</div>
+    <div class="about">
+      <div class="icon" role="img" aria-label="QuotAI icon"></div>
+      <h1>QuotAI</h1>
+      <p class="version">Version 0.11.0 (18)</p>
+      <p class="commit">Commit a1b2c3d</p>
+      <div class="blurb">
+        <p class="tagline">Cursor Spending quotas in the menu bar.</p>
+        <p class="summary">Cursor Models, Other Models, and Grok Bot — pace as rings and blinks. Data stays on this Mac.</p>
+      </div>
+      <div class="actions">
+        <button type="button" id="open-changelog">View changelog…</button>
+        <a class="link" href="https://github.com/marotron/QuotAI/releases" target="_blank" rel="noopener">Release notes on GitHub…</a>
+      </div>
+      <p class="copy">Copyright © 2026 marotron. Licensed under MIT.</p>
+    </div>
+  </div>
+
+  <div class="changelog" id="changelog">
+    <div class="titlebar">QuotAI Changelog</div>
+    <div class="body">
+      <section class="release">
+        <h2>0.11.0 — 2026-10-21</h2>
+        <h3>Added</h3>
+        <ul>
+          <li>About QuotAI window (version, short commit SHA, changelog, GitHub Releases link)</li>
+        </ul>
+      </section>
+      <section class="release">
+        <h2>0.10.0 — 2026-10-19</h2>
+        <h3>Changed</h3>
+        <ul>
+          <li>Enlarged dual-line percentages and reset times beside menu-bar rings</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const changelog = document.getElementById("changelog");
+    document.getElementById("open-changelog").addEventListener("click", () => {
+      changelog.classList.add("open");
+      changelog.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  </script>
+</body>
+</html>
