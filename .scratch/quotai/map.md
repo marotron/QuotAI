@@ -15,8 +15,9 @@ A written product spec plus a working macOS menu-bar app that shows remaining **
 - Em dash ban does not apply to vault idea docs or this map.
 - Always offer a link to the Spending webpage; unofficial fetch path is acceptable and flaky until Cursor ships an official API.
 - Idea case: `~/Personal/04-ideas/05-quotai/`
-- Plan: live Connect fetch wired in Swift app (Keychain + vscdb + URLSession); polling UX still fog (`issues/09-polling-refresh-ux.md`).
+- Plan: live Connect fetch wired in Swift app (Keychain + vscdb + URLSession); polling locked (see Decisions).
 - 2026-09-19 handoff: Wayfinder decisions 01–08 done; build session owns live fetch (not blocked on polling).
+- 2026-10-24: About window shipped (#21); CI/CD pipeline on `feat/ci-cd-pipeline` (`docs/agents/ci-cd.md`).
 
 ## Decisions so far
 
@@ -28,16 +29,18 @@ A written product spec plus a working macOS menu-bar app that shows remaining **
 - **Product spec outline** → `docs/pr.md` + `docs/tech-specs.md` in QuotAI repo. See [issues/06-product-spec-outline.md](issues/06-product-spec-outline.md).
 - **Production seams for TDD** → Test parse / pace / presentation; not network/Keychain in v1. See [issues/07-production-tdd-seams.md](issues/07-production-tdd-seams.md).
 - **Scaffold production app shell** → Swift XcodeGen `MenuBarExtra` + `QuotAICore` (5 tests green). See [issues/08-scaffold-app-shell.md](issues/08-scaffold-app-shell.md).
-- **Larger menu-bar dual-line text** → 10pt regular dual stack at ±4.5pt line centers with consistent tight tracking and faded reset time; debug preview covers three dials on light/dark backgrounds. See [issues/11-menu-bar-text-size.md](issues/11-menu-bar-text-size.md) / GitHub [#15](https://github.com/marotron/QuotAI/issues/15).
+- **Larger menu-bar dual-line text** → 10pt regular dual stack at ±4.5pt line centers with consistent tight tracking and faded reset time; debug preview covers three dials on light/dark backgrounds. Shipped `ae78731` / GitHub [#15](https://github.com/marotron/QuotAI/issues/15) closed. See [issues/11-menu-bar-text-size.md](issues/11-menu-bar-text-size.md).
+- **Polling / refresh UX** → default poll 10 min (Settings: 5 / 10 / 15 / 30 min / 1 h); wake refresh; explicit **Refresh**; menu-open refresh if stale; RunLoop `Timer` + `ProcessInfo` activity (not `Task.sleep`). Pace sample still once/local day. See [issues/09-polling-refresh-ux.md](issues/09-polling-refresh-ux.md) / GitHub [#12](https://github.com/marotron/QuotAI/issues/12).
+- **About QuotAI window** → version, short commit SHA, in-app changelog, GitHub Releases link; HTML prototype under `about-prototype/` (shipped). Merged [#21](https://github.com/marotron/QuotAI/pull/21).
+- **CI/CD** → PR + `main` → `make test` (`ci.yml`); tag `v*` → `make test` then `make dmg` → GitHub Release. See [issues/14-ci-cd-pipeline.md](issues/14-ci-cd-pipeline.md) · [docs/agents/ci-cd.md](../../docs/agents/ci-cd.md).
 
 ## Not yet specified
 
 GitHub mirrors (labels `roadmap` / `fog` / `next-version`):
 
 - Multi-account support → [#9](https://github.com/marotron/QuotAI/issues/9)
-- App Store vs personal signing / distribution → [#10](https://github.com/marotron/QuotAI/issues/10)
+- App Store vs personal signing / distribution → [#10](https://github.com/marotron/QuotAI/issues/10) (Release already supports optional `QUOTAI_SIGN_IDENTITY` / `QUOTAI_NOTARY_PROFILE`; product choice still open)
 - Official Cursor API migration path detail (when/if one ships) → [#11](https://github.com/marotron/QuotAI/issues/11)
-- Polling / background refresh cadence (local grilling still open) → [#12](https://github.com/marotron/QuotAI/issues/12) · [issues/09-polling-refresh-ux.md](issues/09-polling-refresh-ux.md)
 - Pace dial visuals (log dial / colors) beyond text pace labels → [#13](https://github.com/marotron/QuotAI/issues/13)
 - Custom notification banners (top-aligned icon + agent marks) — next version → [#8](https://github.com/marotron/QuotAI/issues/8) · [issues/10-custom-notification-ui.md](issues/10-custom-notification-ui.md)
 - Pace band chart quick view (outside Settings → Alerts) — next version → [#16](https://github.com/marotron/QuotAI/issues/16) · [issues/12-pace-band-quick-view.md](issues/12-pace-band-quick-view.md)

@@ -21,6 +21,9 @@ jobs:
           brew untap aws/tap || true
           brew install xcodegen
 
+      - name: Test
+        run: make test
+
       - name: Build DMG
         env:
           RELEASE_TAG: ${{ github.ref_name }}

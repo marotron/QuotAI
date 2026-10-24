@@ -46,4 +46,4 @@ Status: resolved
 - Checked alternating elapsed/reset phases for one, two, and three dials; their widths remain stable.
 - `make test` and the full QuotAI app build pass.
 
-GitHub issue [#15](https://github.com/marotron/QuotAI/issues/15) remains open for the eventual PR or commit to close.
+GitHub issue [#15](https://github.com/marotron/QuotAI/issues/15) closed 2026-10-24 — shipped on `main` as `ae78731`.
