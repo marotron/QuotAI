@@ -4,13 +4,13 @@ macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot
 
 ## Install
 
-**[Download QuotAI-0.9.5.dmg](https://github.com/marotron/QuotAI/releases/download/v0.9.5/QuotAI-0.9.5.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.11.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.11.0/QuotAI-0.11.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image.
 2. Drag **QuotAI** to **Applications**.
 3. Open QuotAI from Applications. It lives in the menu bar.
 
-The 0.9.5 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
+The 0.11.0 build is ad-hoc signed (hardened runtime off). If macOS blocks the first launch, right-click **QuotAI** in Applications → **Open**, then confirm.
 
 ## Screenshots
 
@@ -38,6 +38,7 @@ Settings → Menu pins which rows stay on the menu, including Open Cursor Spendi
 - **Smart pace alerts** use corridor bands for blink / notification / email; ring color precedence is documented in [pace chrome](docs/pace-chrome.md).
 - **Open Cursor Spending** opens [cursor.com/dashboard/spending](https://cursor.com/dashboard/spending) from the menu.
 - **Settings** cover ring style, beside-meter labels, ring center, refresh cadence, alert corridors, and which rows stay pinned.
+- **About QuotAI** shows version, short commit SHA, in-app changelog, and a link to GitHub Releases.
 
 ## Requirements
 
@@ -68,26 +69,29 @@ make dmg        # package only → dist/QuotAI-<version>.dmg
 make release    # run tests, then package
 ```
 
-**GitHub Release:** push a **signed** tag `vX.Y.Z` matching `MARKETING_VERSION` (e.g. `v0.9.4` for `0.9.4`). GitHub shows **Verified** only for cryptographically signed tags — never use a lightweight `git tag v…` or an unsigned annotated tag for ships.
+**GitHub Release:** push a **signed** tag `vX.Y.Z` matching `MARKETING_VERSION` (e.g. `v0.11.0` for `0.11.0`). The [Release workflow](.github/workflows/release.yml) builds the DMG, publishes **QuotAI X.Y.Z**, and attaches the disk image. Notes come from `CHANGELOG.md` plus [`.github/RELEASE_BODY.md`](.github/RELEASE_BODY.md). Optional repo secrets: `QUOTAI_SIGN_IDENTITY`, `QUOTAI_NOTARY_PROFILE`.
+
+GitHub shows **Verified** only for cryptographically signed tags — never use a lightweight `git tag v…` or an unsigned annotated tag for ships.
 
 ```bash
-git tag -s v0.9.5 -m "0.9.5"   # signed annotated tag → GitHub Verified
-git verify-tag v0.9.5           # must succeed before push
-git push origin v0.9.5
+git tag -s v0.11.0 -m "0.11.0"   # signed annotated tag → GitHub Verified
+git verify-tag v0.11.0            # must succeed before push
+git push origin v0.11.0
 ```
 
 If global signing config is unset, one-shot:
 
 ```bash
 ssh-add --apple-use-keychain ~/.ssh/id_ed25519_github
-git -c gpg.format=ssh -c user.signingkey="$HOME/.ssh/id_ed25519_github" tag -s v0.9.5 -m "0.9.5"
+git -c gpg.format=ssh -c user.signingkey="$HOME/.ssh/id_ed25519_github" tag -s v0.11.0 -m "0.11.0"
 ```
 
-Optional, once a Developer ID certificate and a notary keychain profile exist:
+Optional local ship (same as CI), once a Developer ID certificate and a notary keychain profile exist:
 
 ```bash
 export QUOTAI_SIGN_IDENTITY='Developer ID Application: …'
 export QUOTAI_NOTARY_PROFILE='quotai-notary'
+make dmg
 ```
 
 Without those, the DMG is ad-hoc signed and needs the right-click → Open step above.

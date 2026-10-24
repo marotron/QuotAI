@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.11.0 — 2026-10-21
+
+### Added
+
+- About QuotAI window (version, short commit SHA, in-app changelog, GitHub Releases link)
+
+## 0.10.0 — 2026-10-19
+
+### Changed
+
+- Enlarged the dual-line percentages and reset times beside menu-bar rings for easier reading
+
 ## 0.9.5 — 2026-10-13
 
 ### Fixed

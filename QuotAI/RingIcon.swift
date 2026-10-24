@@ -42,16 +42,19 @@ enum RingIcon {
         let ringGapStroke: CGFloat = 0.55
         var singleStroke: CGFloat { quotaStroke * 2 }
         var paceSingleStroke: CGFloat { paceQuotaStroke * 2 }
-        /// Dual used+elapsed stack beside the ring.
-        let dualFont: NSFont = .monospacedDigitSystemFont(ofSize: 8, weight: .semibold)
+        /// Changes the glyph size in a dual-value stack beside the ring.
+        let dualFontSize: CGFloat = 10
+        /// Distance from the row midpoint to each dual-stack baseline; lower values close the line gap.
+        let dualLineOffset: CGFloat = 4.5
+        var dualFont: NSFont { .monospacedDigitSystemFont(ofSize: dualFontSize, weight: .regular) }
         /// Single percent beside the ring (used or elapsed only).
-        let singleFont: NSFont = .monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
-        let besideRemainingFont: NSFont = .monospacedDigitSystemFont(ofSize: 9, weight: .semibold)
-        let centerFont: NSFont = .systemFont(ofSize: 8.5, weight: .medium)
+        let singleFont: NSFont = .monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+        let besideRemainingFont: NSFont = .monospacedDigitSystemFont(ofSize: 9, weight: .regular)
+        let centerFont: NSFont = .systemFont(ofSize: 8.5, weight: .regular)
         /// Tighten remaining-time glyphs inside the ring.
         let centerKern: CGFloat = -0.9
-        /// Beside % at 8pt. Scaled with font size in `tracking(for:font:)`.
-        let percentKern: CGFloat = -0.8
+        /// Beside text at 8pt. Scaled with font size in `tracking(for:font:)`.
+        let besideKern: CGFloat = -0.8
     }
 
     static func image(
@@ -88,7 +91,7 @@ enum RingIcon {
                 let elapsedText = dial.elapsedPct.map { "\(QuotaPercent.display($0))%" } ?? "—"
                 let rem = dial.remaining ?? ""
                 let remText = rem.isEmpty ? "—" : rem
-                lines.append((showRem ? remText : elapsedText, !showRem))
+                lines.append((showRem ? remText : elapsedText, showRem))
                 // Keep column width stable across phases.
                 widthExtras.append(contentsOf: [elapsedText, remText])
             } else {
@@ -132,7 +135,7 @@ enum RingIcon {
                 } else {
                     font = m.besideRemainingFont
                 }
-                return textWidth(texts, font: font, percentKern: m.percentKern)
+                return textWidth(texts, font: font, besideKern: m.besideKern)
             }
         }()
 
@@ -187,14 +190,14 @@ enum RingIcon {
                     let labelX = x + m.metricGap
                     let colWidth = columnWidths[col]
                     if lines.count == 2 {
-                        drawText(lines[0].text, x: labelX, midY: m.midY - 4.5, font: m.dualFont, ink: ink, percentKern: m.percentKern)
+                        drawText(lines[0].text, x: labelX, midY: m.midY - m.dualLineOffset, font: m.dualFont, ink: ink, besideKern: m.besideKern)
                         drawText(
                             lines[1].text,
                             x: labelX,
-                            midY: m.midY + 4.5,
+                            midY: m.midY + m.dualLineOffset,
                             font: m.dualFont,
                             ink: lines[1].faded ? ink.withAlphaComponent(0.72) : ink,
-                            percentKern: m.percentKern
+                            besideKern: m.besideKern
                         )
                     } else if let only = lines.first {
                         let loneColumn = columns.count == 1
@@ -205,7 +208,7 @@ enum RingIcon {
                             midY: m.midY,
                             font: font,
                             ink: only.faded ? ink.withAlphaComponent(0.85) : ink,
-                            percentKern: m.percentKern
+                            besideKern: m.besideKern
                         )
                     }
                     x += m.metricGap + colWidth
@@ -535,16 +538,16 @@ enum RingIcon {
         attributed.draw(at: NSPoint(x: c.x - size.width / 2, y: c.y - size.height / 2))
     }
 
-    /// Negative tracking on `%` labels only, scaled from the 8pt dual-stack kern.
-    private static func tracking(for text: String, font: NSFont, percentKern: CGFloat) -> CGFloat {
-        text.contains("%") ? percentKern * (font.pointSize / 8) : 0
+    /// Negative tracking on beside labels, scaled from the 8pt dual-stack kern.
+    private static func tracking(for text: String, font: NSFont, besideKern: CGFloat) -> CGFloat {
+        besideKern * (font.pointSize / 8)
     }
 
-    private static func textWidth(_ texts: [String], font: NSFont, percentKern: CGFloat) -> CGFloat {
+    private static func textWidth(_ texts: [String], font: NSFont, besideKern: CGFloat) -> CGFloat {
         ceil(texts.map { text in
             NSAttributedString(string: text, attributes: [
                 .font: font,
-                .kern: tracking(for: text, font: font, percentKern: percentKern),
+                .kern: tracking(for: text, font: font, besideKern: besideKern),
             ]).size().width
         }.max() ?? 0)
     }
@@ -555,12 +558,12 @@ enum RingIcon {
         midY: CGFloat,
         font: NSFont,
         ink: NSColor,
-        percentKern: CGFloat
+        besideKern: CGFloat
     ) {
         let attributed = NSAttributedString(string: text, attributes: [
             .font: font,
             .foregroundColor: ink,
-            .kern: tracking(for: text, font: font, percentKern: percentKern),
+            .kern: tracking(for: text, font: font, besideKern: besideKern),
         ])
         attributed.draw(at: NSPoint(x: x, y: midY - attributed.size().height / 2))
     }

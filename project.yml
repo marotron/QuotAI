@@ -46,11 +46,24 @@ targets:
           SRC="${SRCROOT}/docs/brand/AppIcon.icns"
           DST="${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AppIcon.icns"
           cp -f "$SRC" "$DST"
+    # After Info.plist is written: changelog resource + build-time short SHA.
+    postbuildScripts:
+      - name: Embed CHANGELOG and git commit
+        basedOnDependencyAnalysis: false
+        script: |
+          set -euo pipefail
+          RES="${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          mkdir -p "$RES"
+          cp -f "${SRCROOT}/CHANGELOG.md" "$RES/CHANGELOG.md"
+          COMMIT="$(git -C "${SRCROOT}" rev-parse --short=7 HEAD 2>/dev/null || echo unknown)"
+          PLIST="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
+          /usr/libexec/PlistBuddy -c "Add :QuotAIGitCommit string ${COMMIT}" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :QuotAIGitCommit ${COMMIT}" "$PLIST"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.marotron.QuotAI
-        MARKETING_VERSION: "0.9.5"
-        CURRENT_PROJECT_VERSION: 16
+        MARKETING_VERSION: "0.11.0"
+        CURRENT_PROJECT_VERSION: 18
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: QuotAI
         INFOPLIST_KEY_LSUIElement: YES
