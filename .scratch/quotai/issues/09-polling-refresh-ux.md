@@ -1,7 +1,7 @@
 # Polling and refresh UX
 
 Type: grilling
-Status: open
+Status: resolved
 Blocked by:
 GitHub: https://github.com/marotron/QuotAI/issues/12
 
@@ -37,3 +37,17 @@ Polling was unreliable: `Task.sleep` + App Nap on `LSUIElement`, and re-assignin
 ### 2026-10-09
 
 Mirrored remaining grilling close-out to GitHub [#12](https://github.com/marotron/QuotAI/issues/12). Dynamic refresh (v0.8.0) may have superseded parts of this ticket.
+
+### 2026-10-24
+
+Marked resolved: shipped behavior matches the 2026-09-19 answers (interval setting, wake + Refresh + stale menu-open, Timer/`ProcessInfo`). Closing GitHub [#12](https://github.com/marotron/QuotAI/issues/12).
+
+## Answer
+
+Status: resolved
+
+- Automatic poll: user setting **Refresh every** — 5 / 10 / 15 / 30 min / 1 h (default **10 min**); 1 h is the ceiling.
+- Also refresh on wake from sleep; explicit **Refresh** menu action.
+- Opening the dropdown refreshes only if data is older than the interval (not every open).
+- Pace sample remains **one per meter per local calendar day**; live `%` / days may update more often.
+- Implementation: main RunLoop `Timer` + `ProcessInfo` activity (not `Task.sleep` / App Nap), ignore same-value interval `didSet`.

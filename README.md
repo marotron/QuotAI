@@ -62,6 +62,8 @@ open QuotAI.xcodeproj
 
 The app is `QuotAI/` and `QuotAICore/`. Paths under `.scratch/` are not part of the build.
 
+**CI:** pull requests and pushes to `main` run `make test` on GitHub Actions ([workflow](.github/workflows/ci.yml)). Full where/when map: [`docs/agents/ci-cd.md`](docs/agents/ci-cd.md).
+
 ## Release
 
 ```bash
@@ -69,7 +71,8 @@ make dmg        # package only → dist/QuotAI-<version>.dmg
 make release    # run tests, then package
 ```
 
-**GitHub Release:** push a **signed** tag `vX.Y.Z` matching `MARKETING_VERSION` (e.g. `v0.11.0` for `0.11.0`). The [Release workflow](.github/workflows/release.yml) builds the DMG, publishes **QuotAI X.Y.Z**, and attaches the disk image. Notes come from `CHANGELOG.md` plus [`.github/RELEASE_BODY.md`](.github/RELEASE_BODY.md). Optional repo secrets: `QUOTAI_SIGN_IDENTITY`, `QUOTAI_NOTARY_PROFILE`.
+**GitHub Release:** push a **signed** tag `vX.Y.Z` matching `MARKETING_VERSION` (e.g. `v0.11.0` for `0.11.0`). The [Release workflow](.github/workflows/release.yml) runs `make test`, builds the DMG, publishes **QuotAI X.Y.Z**, and attaches the disk image. Notes come from `CHANGELOG.md` plus [`.github/RELEASE_BODY.md`](.github/RELEASE_BODY.md). Optional repo secrets: `QUOTAI_SIGN_IDENTITY`, `QUOTAI_NOTARY_PROFILE`. Details: [`docs/agents/ci-cd.md`](docs/agents/ci-cd.md).
+
 
 GitHub shows **Verified** only for cryptographically signed tags — never use a lightweight `git tag v…` or an unsigned annotated tag for ships.
 
