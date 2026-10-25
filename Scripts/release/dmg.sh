@@ -22,7 +22,7 @@ BG_PNG="$ASSETS_DIR/background.png"
 
 # Finder window content matches background logical size (552×461; PNG is 2× Retina). Titlebar ≈ 28px.
 WIN_W=552
-WIN_H=489
+WIN_H=499
 ICON_SIZE=64
 # Icon centers over empty slots in export.html (zone-drag only).
 ICON_APP_X=184

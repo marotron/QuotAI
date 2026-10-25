@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.2 — 2026-10-25
+
+### Fixed
+
+- DMG step 1 card: more clearance below QuotAI / Applications icons
+
 ## 0.12.1 — 2026-10-25
 
 ### Fixed
