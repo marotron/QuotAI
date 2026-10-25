@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>QuotAI DMG background</title>
+  <!-- Logical canvas: 720×552 (Finder content; titlebar separate). render-background.swift exports 2× Retina PNG. Icon slots empty for live Finder icons. -->
+  <style>
+    :root {
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      --w: 720px;
+      --h: 552px;
+      --ink: #2c333a;
+      --mute: #5a6570;
+      --card: rgba(255,255,255,.92);
+      --accent: #007aff;
+      --frag-bg: #eceef1;
+      --opt: #8a6d3b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: var(--w);
+      height: var(--h);
+      overflow: hidden;
+      font-family: var(--font);
+      background: transparent;
+    }
+    .bg {
+      width: var(--w);
+      height: var(--h);
+      background:
+        radial-gradient(ellipse 90% 70% at 50% 0%, #f7f9fb 0%, #e4ebf2 45%, #d2dbe5 100%);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      padding: 22px 14px 12px;
+      gap: 8px;
+      position: relative;
+    }
+    .flow-title {
+      position: absolute;
+      left: 16px;
+      top: 8px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mute);
+    }
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .step-badge .n {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+    .step-badge.opt .n { background: var(--opt); }
+    .icon-slot {
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+    }
+    .flow {
+      flex: 1;
+      display: grid;
+      grid-template-rows: 168px auto auto minmax(0, 1fr) auto;
+      gap: 6px;
+      margin-top: 6px;
+      min-height: 0;
+    }
+    .top {
+      display: grid;
+      grid-template-columns: 1.35fr 0.7fr 1.15fr;
+      gap: 8px;
+      min-height: 0;
+    }
+    .zone-drag,
+    .zone-open,
+    .zone-privacy {
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      position: relative;
+      border-radius: 10px;
+      padding: 26px 10px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .zone-drag {
+      border: 1.5px dashed rgba(90, 101, 112, 0.28);
+      background: rgba(255,255,255,.35);
+      gap: 14px;
+    }
+    .zone-drag .step-badge,
+    .zone-open .step-badge,
+    .zone-privacy .step-badge {
+      position: absolute;
+      left: 8px;
+      top: 6px;
+    }
+    .zone-drag .arrow {
+      flex: 0 0 40px;
+      width: 40px;
+      height: 22px;
+      opacity: 0.5;
+    }
+    .zone-drag .arrow svg { width: 100%; height: 100%; display: block; }
+    .zone-open {
+      border: 1.5px dashed rgba(0, 122, 255, 0.35);
+      background: rgba(255,255,255,.55);
+      flex-direction: column;
+      gap: 2px;
+    }
+    .zone-privacy {
+      border: 1.5px dashed rgba(138, 109, 59, 0.4);
+      background: rgba(255,250,240,.55);
+      flex-direction: column;
+      gap: 2px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(0,0,0,.06);
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.06);
+      min-width: 0;
+      min-height: 0;
+      position: relative;
+    }
+    .card > .step-badge {
+      position: static;
+      margin-bottom: 2px;
+      flex-shrink: 0;
+    }
+    .card .frag {
+      flex: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--frag-bg);
+      min-height: 0;
+      position: relative;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+    }
+    .card .frag > img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      padding: 3px;
+    }
+    .card .callout {
+      font-size: 9px;
+      line-height: 1.25;
+      color: var(--mute);
+      flex-shrink: 0;
+    }
+    .card .callout strong { color: var(--ink); }
+    .card.kc-step {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 10px;
+      min-height: 0;
+    }
+    .card.kc-step .frag {
+      flex: 1;
+      background: transparent;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 0;
+    }
+    .card.kc-step .frag > img {
+      position: static;
+      width: 100%;
+      height: auto;
+      max-height: 100%;
+      padding: 0;
+      object-fit: contain;
+      object-position: center;
+      border-radius: 10px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, .32), 0 0 0 1px rgba(0, 0, 0, .06);
+    }
+    .why-block {
+      font-size: 10px;
+      line-height: 1.4;
+      color: var(--mute);
+      padding: 2px 4px;
+    }
+    .why-block strong { color: var(--ink); }
+    .why-block .action {
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .opt-label {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--opt);
+      padding-top: 10px;
+      margin-top: 4px;
+      border-top: 1px solid rgba(90, 101, 112, 0.22);
+    }
+    .opt-row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr repeat(3, 1fr);
+      gap: 6px;
+      min-height: 0;
+    }
+    .opt-row > .card .frag > img {
+      width: 101%;
+      height: 101%;
+      max-width: none;
+      inset: unset;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+      object-position: center center;
+      padding: 0;
+    }
+    .opt-row > .card .frag > img.frag-open-anyway {
+      width: 160%;
+      height: 160%;
+      max-width: none;
+      inset: unset;
+      top: 50%;
+      left: 50%;
+      transform: translate(-62%, -48%);
+      object-fit: cover;
+      object-position: 92% 70%;
+      padding: 0;
+    }
+    .opt-row > .card .frag > img.frag-zoom-in {
+      width: 112%;
+      height: 112%;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg" id="canvas">
+    <div class="flow-title">Install QuotAI</div>
+    <div class="flow">
+      <div class="top">
+        <div class="zone-drag">
+          <div class="step-badge"><span class="n">1</span> Drag QuotAI → Applications</div>
+          <div class="icon-slot" data-slot="app" aria-hidden="true"></div>
+          <div class="arrow" aria-hidden="true">
+            <svg viewBox="0 0 120 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 18h88" stroke="#4a5560" stroke-width="4" stroke-linecap="round"/>
+              <path d="M86 6l22 12-22 12" stroke="#4a5560" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="icon-slot" data-slot="apps" aria-hidden="true"></div>
+        </div>
+
+        <!-- Live Finder icon: Open QuotAI.app -->
+        <div class="zone-open">
+          <div class="step-badge"><span class="n">2</span> Open QuotAI</div>
+          <div class="icon-slot" data-slot="open" aria-hidden="true"></div>
+        </div>
+
+        <div class="card kc-step">
+          <div class="step-badge"><span class="n">3</span> Keychain</div>
+          <div class="frag">
+            <img src="shots/frags/keychain-card.png" alt="" />
+          </div>
+          <div class="callout">Enter system <strong>password</strong> and Click <strong>Always Allow</strong></div>
+        </div>
+      </div>
+
+      <div class="why-block">
+        QuotAI stores API keys in the macOS <strong>Keychain</strong>. Expect this after each new install / version. Not a Gatekeeper block — choose <strong>Always Allow</strong>.
+      </div>
+
+      <div class="opt-label">If blocked (optional)</div>
+
+      <div class="opt-row">
+        <div class="card">
+          <div class="step-badge opt"><span class="n">4</span> Done</div>
+          <div class="frag"><img src="shots/frags/01-dialog.png" alt="" /></div>
+          <div class="callout">Click <strong>Done</strong></div>
+        </div>
+        <!-- Live Finder icon: Privacy & Security.app -->
+        <div class="zone-privacy">
+          <div class="step-badge opt"><span class="n">5</span> Settings</div>
+          <div class="icon-slot" data-slot="privacy" aria-hidden="true"></div>
+        </div>
+        <div class="card">
+          <div class="step-badge opt"><span class="n">6</span> Settings</div>
+          <div class="frag"><img class="frag-open-anyway" src="shots/02-privacy-open-anyway.png" alt="" /></div>
+          <div class="callout">Click <strong>Open Anyway</strong></div>
+        </div>
+        <div class="card">
+          <div class="step-badge opt"><span class="n">7</span> Confirm</div>
+          <div class="frag"><img class="frag-zoom-in" src="shots/frags/03-confirm.png" alt="" /></div>
+          <div class="callout">Click <strong>Open Anyway</strong></div>
+        </div>
+        <div class="card">
+          <div class="step-badge opt"><span class="n">8</span> Unlock</div>
+          <div class="frag"><img class="frag-zoom-in" src="shots/frags/04-auth.png" alt="" /></div>
+          <div class="callout">Use <strong>Touch ID</strong> / <strong>password</strong></div>
+        </div>
+      </div>
+
+      <div class="why-block">
+        QuotAI isn’t Apple-notarized yet, so Gatekeeper may block the first open (“Not Opened”). That’s macOS protecting you — not QuotAI asking for permission. Open <strong>Privacy &amp; Security</strong> → <strong>Open Anyway</strong> once; skip if the app launches fine.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # GitHub release notes: CHANGELOG section(s) since the previous tag through this
-# version, then install / Gatekeeper body.
+# version, then install / Keychain body.
 #
 # QuotAI headers: ## X.Y.Z — YYYY-MM-DD (no brackets).
 #

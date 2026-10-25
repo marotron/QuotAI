@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0 — 2026-10-25
+
+### Added
+
+- Pretty DMG install window: Keychain flow (drag → open → **Always Allow**) plus optional Gatekeeper strip (**Done** → **Privacy & Security** → **Open Anyway**), with live **Open QuotAI** and **Privacy & Security** shortcuts on the disk image
+
 ## 0.11.0 — 2026-10-21
 
 ### Added
