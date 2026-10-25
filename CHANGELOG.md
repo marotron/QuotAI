@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0 — 2026-10-25
+
+### Added
+
+- DMG **Open QuotAI** Finder alias (launches the app from Applications after drag-install)
+
+### Changed
+
+- DMG install row: drag → Applications (2/3) beside Open QuotAI (1/3)
+
 ## 0.12.3 — 2026-10-25
 
 ### Fixed

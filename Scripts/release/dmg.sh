@@ -20,15 +20,19 @@ APP_NAME=QuotAI
 ASSETS_DIR="$ROOT/Scripts/release/dmg-assets"
 BG_PNG="$ASSETS_DIR/background.png"
 
-# Finder window content matches background logical size (552×461; PNG is 2× Retina). Titlebar ≈ 28px.
+# Finder window content matches background logical size (552×421; PNG is 2× Retina). Titlebar ≈ 28px.
 WIN_W=552
-WIN_H=499
+WIN_H=449
 ICON_SIZE=64
-# Icon centers over empty slots in export.html (zone-drag only).
-ICON_APP_X=184
+# Icon centers over empty slots in export.html (2/3 drag + 1/3 Open alias).
+ICON_APP_X=114
 ICON_APP_Y=102
-ICON_APPS_X=368
+ICON_APPS_X=258
 ICON_APPS_Y=102
+ICON_OPEN_X=451
+ICON_OPEN_Y=107
+OPEN_ALIAS_SRC="$ASSETS_DIR/Open QuotAI"
+OPEN_ALIAS_NAME="Open QuotAI"
 
 VERSION="$(
   sed -n 's/^[[:space:]]*MARKETING_VERSION:[[:space:]]*"\([^"]*\)".*/\1/p' project.yml | head -1
@@ -113,6 +117,17 @@ rm -rf "$STAGE_DIR"
 mkdir -p "$STAGE_DIR"
 cp -R "$APP_PATH" "$STAGE_DIR/"
 ln -s /Applications "$STAGE_DIR/Applications"
+# Finder alias → /Applications/QuotAI.app (post-install open shortcut).
+# Must preserve FinderInfo (type fapa / creator MACS); plain `cp` drops it and
+# double-click opens the bookmark bytes as a text document.
+if [[ -f "$OPEN_ALIAS_SRC" ]]; then
+  ditto "$OPEN_ALIAS_SRC" "$STAGE_DIR/$OPEN_ALIAS_NAME"
+  if command -v SetFile >/dev/null 2>&1; then
+    SetFile -t fapa -c MACS "$STAGE_DIR/$OPEN_ALIAS_NAME"
+  fi
+else
+  echo "warning: missing ${OPEN_ALIAS_SRC}; DMG will have no Open QuotAI alias" >&2
+fi
 
 rm -f "$RW_DMG" "$DMG_PATH"
 echo "→ hdiutil create (UDWR staging)"
@@ -177,6 +192,16 @@ tell application "Finder"
     set background picture of viewOptions to file ".background:background.png"
     set position of item "${APP_NAME}.app" of container window to {$ICON_APP_X, $ICON_APP_Y}
     set position of item "Applications" of container window to {$ICON_APPS_X, $ICON_APPS_Y}
+    -- Prefer a Finder-made alias (typed fapa/MACS). Staged bookmark is a fallback for CI.
+    try
+      if exists item "$OPEN_ALIAS_NAME" then
+        delete item "$OPEN_ALIAS_NAME"
+      end if
+    end try
+    try
+      make new alias file at container window to (POSIX file "/Applications/${APP_NAME}.app") with properties {name:"$OPEN_ALIAS_NAME"}
+      set position of item "$OPEN_ALIAS_NAME" of container window to {$ICON_OPEN_X, $ICON_OPEN_Y}
+    end try
     try
       set position of item ".background" of container window to {2000, 2000}
     end try
