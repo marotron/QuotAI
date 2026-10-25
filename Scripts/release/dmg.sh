@@ -19,26 +19,16 @@ APP_NAME=QuotAI
 
 ASSETS_DIR="$ROOT/Scripts/release/dmg-assets"
 BG_PNG="$ASSETS_DIR/background.png"
-# AppleScript applet — opens /Applications/QuotAI.app (Step 2 click target).
-OPEN_APP_SRC="$ASSETS_DIR/Open QuotAI.app"
-OPEN_APP_NAME="Open QuotAI.app"
-# AppleScript applet — System Settings → Privacy & Security (Step 5 click target).
-PRIVACY_APP_SRC="$ASSETS_DIR/Privacy & Security.app"
-PRIVACY_APP_NAME="Privacy & Security.app"
 
-# Finder window content matches background logical size (720×552; PNG is 2× Retina). Titlebar ≈ 28px.
-WIN_W=720
-WIN_H=580
+# Finder window content matches background logical size (552×461; PNG is 2× Retina). Titlebar ≈ 28px.
+WIN_W=552
+WIN_H=489
 ICON_SIZE=64
-# Icon centers over empty slots in export.html (from render-background.swift slot measure).
-ICON_APP_X=87
-ICON_APP_Y=120
-ICON_APPS_X=227
-ICON_APPS_Y=120
-ICON_OPEN_X=381
-ICON_OPEN_Y=120
-ICON_PRIVACY_X=227
-ICON_PRIVACY_Y=396
+# Icon centers over empty slots in export.html (zone-drag only).
+ICON_APP_X=184
+ICON_APP_Y=102
+ICON_APPS_X=368
+ICON_APPS_Y=102
 
 VERSION="$(
   sed -n 's/^[[:space:]]*MARKETING_VERSION:[[:space:]]*"\([^"]*\)".*/\1/p' project.yml | head -1
@@ -58,14 +48,6 @@ fi
 
 if [[ ! -f "$BG_PNG" ]]; then
   echo "error: missing ${BG_PNG} (run: swift Scripts/release/dmg-assets/render-background.swift)" >&2
-  exit 1
-fi
-if [[ ! -d "$OPEN_APP_SRC" ]]; then
-  echo "error: missing ${OPEN_APP_SRC}" >&2
-  exit 1
-fi
-if [[ ! -d "$PRIVACY_APP_SRC" ]]; then
-  echo "error: missing ${PRIVACY_APP_SRC}" >&2
   exit 1
 fi
 
@@ -131,8 +113,6 @@ rm -rf "$STAGE_DIR"
 mkdir -p "$STAGE_DIR"
 cp -R "$APP_PATH" "$STAGE_DIR/"
 ln -s /Applications "$STAGE_DIR/Applications"
-cp -R "$OPEN_APP_SRC" "$STAGE_DIR/$OPEN_APP_NAME"
-cp -R "$PRIVACY_APP_SRC" "$STAGE_DIR/$PRIVACY_APP_NAME"
 
 rm -f "$RW_DMG" "$DMG_PATH"
 echo "→ hdiutil create (UDWR staging)"
@@ -197,8 +177,6 @@ tell application "Finder"
     set background picture of viewOptions to file ".background:background.png"
     set position of item "${APP_NAME}.app" of container window to {$ICON_APP_X, $ICON_APP_Y}
     set position of item "Applications" of container window to {$ICON_APPS_X, $ICON_APPS_Y}
-    set position of item "$OPEN_APP_NAME" of container window to {$ICON_OPEN_X, $ICON_OPEN_Y}
-    set position of item "$PRIVACY_APP_NAME" of container window to {$ICON_PRIVACY_X, $ICON_PRIVACY_Y}
     try
       set position of item ".background" of container window to {2000, 2000}
     end try

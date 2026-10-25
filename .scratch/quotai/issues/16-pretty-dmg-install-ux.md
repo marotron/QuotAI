@@ -43,9 +43,8 @@ User ask: put **all steps inside `.bg`** (embedded miniatures / key fragments), 
 
 ## Answer
 
-Shipped in **0.12.0** on `feat/pretty-dmg-install-ux` (merged + tagged `v0.12.0`):
+Shipped **0.12.0** dual-flow with helper applets; **0.12.1** simplified after Gatekeeper also blocked **Open QuotAI** / **Privacy & Security** applets:
 
-- Prototype **Variant A** approved: steps 1–3 Keychain on top; optional Gatekeeper cards 4–8 below (ungrouped).
-- Assets: `Scripts/release/dmg-assets/` (`background.png` 720×552 logical, `Open QuotAI.app`, `Privacy & Security.app`, `export.html`, renderer).
-- `Scripts/release/dmg.sh` mounts RW DMG, applies background + icon layout (AppleScript locally; checked-in `DS_Store` for CI when present).
-- README + `.github/RELEASE_BODY.md` document Keychain **Always Allow** (usual) and Gatekeeper **Open Anyway** (optional if blocked).
+- Live icons: **QuotAI.app** + **Applications** only (drag step).
+- Background copy: Keychain **Always Allow** + optional Gatekeeper Open Anyway steps (no clickable helpers).
+- Assets: `Scripts/release/dmg-assets/` (`background.png` 720×460 logical, `export.html`, renderer).

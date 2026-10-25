@@ -1,11 +1,10 @@
 ## Install
 
 1. Download `QuotAI-*.dmg` below.
-2. Open the disk image — the window walks through install, Keychain, and (if needed) Gatekeeper steps.
-3. Drag **QuotAI** → **Applications**.
-4. Double-click **Open QuotAI** on the DMG (or open QuotAI from Applications). Menu bar only — no Dock icon by default.
-5. When Keychain asks for your login password, enter it and press **Always Allow**.
-6. If Gatekeeper blocks the first open, follow the optional strip on the DMG (or the steps below).
+2. Open the disk image — the window shows drag-to-Applications plus Keychain / Gatekeeper notes.
+3. Drag **QuotAI** → **Applications**, then open QuotAI from Applications. Menu bar only — no Dock icon by default.
+4. When Keychain asks for your login password, enter it and press **Always Allow**.
+5. If Gatekeeper blocks the first open, follow the optional steps on the DMG (or below).
 
 ## Keychain prompt
 
@@ -18,7 +17,7 @@ QuotAI stores LLM API keys in the macOS **Keychain**. Expect this after each new
 **Bypass (once):**
 
 1. In the block dialog click **Done** (not Move to Bin).
-2. Double-click **Privacy & Security** on the DMG (or open **System Settings → Privacy & Security**).
+2. Open **System Settings → Privacy & Security**.
 3. Press **Open Anyway**, confirm, then unlock with **Touch ID** or an administrator **password**.
 
 On older macOS, right-click **QuotAI** → **Open** → confirm may still work.
