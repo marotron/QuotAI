@@ -9,11 +9,13 @@ Used by `Scripts/release/dmg.sh` for the Finder install window (drag → Applica
 | `export.html` + `shots/` | Source for re-rendering the background |
 | `render-background.swift` | Regenerates `background.png` (also prints icon-slot centers) |
 
-Live Finder icons on the volume: **QuotAI.app** and **Applications** only. No helper applets — unsigned helpers get Gatekeeper-blocked the same way as the app.
+Live Finder icons on the volume: **QuotAI.app**, **Applications**, and **Open QuotAI** — a Finder alias to `/Applications/QuotAI.app`. No helper applets.
+
+**Alias caveat:** plain `cp` strips `FinderInfo` (`fapa`/`MACS`) so the file becomes a Document and opens as raw bookmark text. Stage with `ditto` + `SetFile`, and prefer remaking the alias via Finder AppleScript during layout.
 
 ## Install steps on the background
 
-1. Drag **QuotAI** → **Applications**, then open QuotAI from Applications
+1. Drag **QuotAI** → **Applications**, then double-click **Open QuotAI** (or open from Applications)
 2. Keychain → enter login password → **Always Allow** (usual after each new install)
 3. If Gatekeeper blocks (optional): **Done** → System Settings → Privacy & Security → **Open Anyway**
 
