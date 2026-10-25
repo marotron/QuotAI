@@ -118,12 +118,14 @@ mkdir -p "$STAGE_DIR"
 cp -R "$APP_PATH" "$STAGE_DIR/"
 ln -s /Applications "$STAGE_DIR/Applications"
 # Finder alias → /Applications/QuotAI.app (post-install open shortcut).
-# Must preserve FinderInfo (type fapa / creator MACS); plain `cp` drops it and
-# double-click opens the bookmark bytes as a text document.
+# Git checkout drops FinderInfo. Restoring type/creator alone is not enough:
+# without the alias bit (-a A / FinderInfo 0x80) Finder shows a blank document
+# and "Item … is used by macOS and can't be opened".
+# plain `cp` also strips FinderInfo — always ditto + SetFile -a A -t fapa -c MACS.
 if [[ -f "$OPEN_ALIAS_SRC" ]]; then
   ditto "$OPEN_ALIAS_SRC" "$STAGE_DIR/$OPEN_ALIAS_NAME"
   if command -v SetFile >/dev/null 2>&1; then
-    SetFile -t fapa -c MACS "$STAGE_DIR/$OPEN_ALIAS_NAME"
+    SetFile -a A -t fapa -c MACS "$STAGE_DIR/$OPEN_ALIAS_NAME"
   fi
 else
   echo "warning: missing ${OPEN_ALIAS_SRC}; DMG will have no Open QuotAI alias" >&2
@@ -170,6 +172,18 @@ chflags nohidden "$VOLUME/.background" 2>/dev/null || true
 
 DS_STORE_SRC="$ASSETS_DIR/DS_Store"
 LAYOUT_OK=0
+# Remake a live Finder alias only when the post-install target exists. On CI
+# /Applications/QuotAI.app is usually missing — deleting the staged bookmark
+# first left step 2 empty (0.13.0). Keep staged unless remake succeeds.
+OPEN_ALIAS_TARGET="/Applications/${APP_NAME}.app"
+REMAKE_OPEN_ALIAS=0
+if [[ -d "$OPEN_ALIAS_TARGET" ]]; then
+  REMAKE_OPEN_ALIAS=1
+  echo "→ will remake Open alias → ${OPEN_ALIAS_TARGET}"
+else
+  echo "→ keep staged Open alias (no ${OPEN_ALIAS_TARGET}; typical CI)"
+fi
+
 # Prefer live Finder layout (correct bounds + background). Fall back to checked-in
 # DS_Store for headless CI when AppleScript cannot drive Finder.
 # Support folders are parked far outside the window so they stay out of view even
@@ -192,14 +206,19 @@ tell application "Finder"
     set background picture of viewOptions to file ".background:background.png"
     set position of item "${APP_NAME}.app" of container window to {$ICON_APP_X, $ICON_APP_Y}
     set position of item "Applications" of container window to {$ICON_APPS_X, $ICON_APPS_Y}
-    -- Prefer a Finder-made alias (typed fapa/MACS). Staged bookmark is a fallback for CI.
+    -- Remake only when target exists. Never delete staged until remake works.
+    if $REMAKE_OPEN_ALIAS is 1 then
+      try
+        make new alias file at container window to (POSIX file "$OPEN_ALIAS_TARGET") with properties {name:"${OPEN_ALIAS_NAME}.new"}
+        try
+          if exists item "$OPEN_ALIAS_NAME" then
+            delete item "$OPEN_ALIAS_NAME"
+          end if
+        end try
+        set name of item "${OPEN_ALIAS_NAME}.new" to "$OPEN_ALIAS_NAME"
+      end try
+    end if
     try
-      if exists item "$OPEN_ALIAS_NAME" then
-        delete item "$OPEN_ALIAS_NAME"
-      end if
-    end try
-    try
-      make new alias file at container window to (POSIX file "/Applications/${APP_NAME}.app") with properties {name:"$OPEN_ALIAS_NAME"}
       set position of item "$OPEN_ALIAS_NAME" of container window to {$ICON_OPEN_X, $ICON_OPEN_Y}
     end try
     try
@@ -232,6 +251,23 @@ if [[ "$LAYOUT_OK" -eq 0 ]]; then
     hdiutil detach "$VOLUME" -force 2>/dev/null || hdiutil detach "$DEVICE" -force 2>/dev/null || true
     exit 1
   fi
+fi
+
+if [[ ! -e "$VOLUME/$OPEN_ALIAS_NAME" ]]; then
+  echo "error: missing ${OPEN_ALIAS_NAME} on volume after layout (step 2 would be empty)" >&2
+  hdiutil detach "$VOLUME" -force 2>/dev/null || hdiutil detach "$DEVICE" -force 2>/dev/null || true
+  exit 1
+fi
+echo "→ Open alias present: ${VOLUME}/${OPEN_ALIAS_NAME}"
+if command -v GetFileInfo >/dev/null 2>&1; then
+  OPEN_ALIAS_ATTRS="$(GetFileInfo -a "$VOLUME/$OPEN_ALIAS_NAME" 2>/dev/null || true)"
+  # First flag char must be capital A (alias bit) — required for double-click.
+  if [[ "${OPEN_ALIAS_ATTRS:0:1}" != "A" ]]; then
+    echo "error: ${OPEN_ALIAS_NAME} missing alias bit (GetFileInfo -a → ${OPEN_ALIAS_ATTRS:-empty}); need SetFile -a A" >&2
+    hdiutil detach "$VOLUME" -force 2>/dev/null || hdiutil detach "$DEVICE" -force 2>/dev/null || true
+    exit 1
+  fi
+  echo "→ Open alias FinderInfo OK (${OPEN_ALIAS_ATTRS})"
 fi
 
 # Hide support folders after layout (icons already parked off-canvas).

@@ -6,12 +6,13 @@ Used by `Scripts/release/dmg.sh` for the Finder install window (drag → Applica
 |------|------|
 | `background.png` | Finder window background (2× Retina @ 144 DPI; height measured from `#canvas`) |
 | `DS_Store` | Optional Finder layout blob (written by first local `make dmg`; used on CI) |
+| `Open QuotAI` | Fallback Finder alias → `/Applications/QuotAI.app` (CI / when AppleScript cannot remake it) |
 | `export.html` + `shots/` | Source for re-rendering the background |
 | `render-background.swift` | Regenerates `background.png` (also prints icon-slot centers) |
 
-Live Finder icons on the volume: **QuotAI.app**, **Applications**, and **Open QuotAI** — a Finder alias to `/Applications/QuotAI.app`. No helper applets.
+Live Finder icons on the volume: **QuotAI.app**, **Applications**, and **Open QuotAI**. No helper applets.
 
-**Alias caveat:** plain `cp` strips `FinderInfo` (`fapa`/`MACS`) so the file becomes a Document and opens as raw bookmark text. Stage with `ditto` + `SetFile`, and prefer remaking the alias via Finder AppleScript during layout.
+**Alias caveats:** plain `cp` strips `FinderInfo` so the file becomes a Document and opens as raw bookmark text. Git checkout also drops FinderInfo. Stage with `ditto` + `SetFile -a A -t fapa -c MACS` — type/creator alone is not enough; without the alias bit Finder shows a blank icon and “used by macOS and can’t be opened.” Remake via Finder AppleScript only when `/Applications/QuotAI.app` exists; otherwise keep the staged bookmark (CI). Never delete the staged alias before remake succeeds.
 
 ## Install steps on the background
 

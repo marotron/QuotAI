@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.1 — 2026-10-25
+
+### Fixed
+
+- DMG **Open QuotAI** alias survives CI: do not delete the staged bookmark before remaking when `/Applications/QuotAI.app` is missing (empty step 2 on 0.13.0)
+- DMG **Open QuotAI** alias: set Finder alias bit (`SetFile -a A`) when staging so CI builds are double-clickable (blank icon / “used by macOS” without it)
+
 ## 0.13.0 — 2026-10-25
 
 ### Added
