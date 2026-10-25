@@ -19,7 +19,7 @@ A written product spec plus a working macOS menu-bar app that shows remaining **
 - 2026-09-19 handoff: Wayfinder decisions 01–08 done; build session owns live fetch (not blocked on polling).
 - 2026-10-24: About window shipped (#21); CI/CD on `main` (`docs/agents/ci-cd.md`).
 - 2026-10-24: Signing / distribution strategy grilled and locked (GitHub #10 closed). Pretty DMG + Gatekeeper docs next ([issues/16-pretty-dmg-install-ux.md](issues/16-pretty-dmg-install-ux.md)).
-- 2026-10-25: Pretty DMG 0.12.0 — Keychain Always Allow (usual) + optional Gatekeeper Open Anyway strip (`Scripts/release/dmg-assets/`).
+- 2026-10-25: Pretty DMG simplified in 0.12.1 — drag → Applications only; Keychain / Gatekeeper stay as background copy (helper applets were Gatekeeper-blocked).
 
 ## Decisions so far
 
@@ -36,7 +36,7 @@ A written product spec plus a working macOS menu-bar app that shows remaining **
 - **About QuotAI window** → version, short commit SHA, in-app changelog, GitHub Releases link; HTML prototype under `about-prototype/` (shipped). Merged [#21](https://github.com/marotron/QuotAI/pull/21).
 - **CI/CD** → PR + `main` → `make test` (`ci.yml`); tag `v*` → `make test` then `make dmg` → GitHub Release. See [issues/14-ci-cd-pipeline.md](issues/14-ci-cd-pipeline.md) · [docs/agents/ci-cd.md](../../docs/agents/ci-cd.md).
 - **Signing / distribution** → Near-term: GitHub Releases, ad-hoc DMGs, manual updates; notarization deferred. Eventual: website landing → Release DMG first (Homebrew + App Store stay options). Optional `QUOTAI_SIGN_*` unused until enroll. See [issues/15-signing-distribution-strategy.md](issues/15-signing-distribution-strategy.md) · GitHub [#10](https://github.com/marotron/QuotAI/issues/10) closed.
-- **Pretty DMG + Keychain / Gatekeeper docs** → Dual-flow background (Keychain 1–3 + optional Gatekeeper 4–8) with live **Open QuotAI** and **Privacy & Security** applets in `Scripts/release/dmg-assets/`; README / RELEASE_BODY match. See [issues/16-pretty-dmg-install-ux.md](issues/16-pretty-dmg-install-ux.md).
+- **Pretty DMG + Keychain / Gatekeeper docs** → Drag → Applications + Keychain / Open Anyway copy on the background (`Scripts/release/dmg-assets/`); no helper applets (Gatekeeper blocks those too). See [issues/16-pretty-dmg-install-ux.md](issues/16-pretty-dmg-install-ux.md).
 
 ## Not yet specified
 

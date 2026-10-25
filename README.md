@@ -4,15 +4,14 @@ macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot
 
 ## Install
 
-**[Download QuotAI-0.12.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.12.0/QuotAI-0.12.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.12.1.dmg](https://github.com/marotron/QuotAI/releases/download/v0.12.1/QuotAI-0.12.1.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image (install steps are on the window background).
-2. Drag **QuotAI** → **Applications**.
-3. Double-click **Open QuotAI** on the DMG (or open QuotAI from Applications). It lives in the menu bar.
-4. When Keychain asks for your login password, enter it and press **Always Allow** so QuotAI can read encrypted API keys without prompting every launch.
-5. If Gatekeeper blocks the first open, use the DMG’s **Privacy & Security** shortcut → **Open Anyway** (optional; skip when the app launches fine).
+2. Drag **QuotAI** → **Applications**, then open QuotAI from Applications. It lives in the menu bar.
+3. When Keychain asks for your login password, enter it and press **Always Allow** so QuotAI can read encrypted API keys without prompting every launch.
+4. If Gatekeeper blocks the first open, use System Settings → Privacy & Security → **Open Anyway** (optional; skip when the app launches fine).
 
-The 0.12.0 build is ad-hoc signed (hardened runtime off) unless the release was notarized.
+The 0.12.1 build is ad-hoc signed (hardened runtime off) unless the release was notarized.
 
 ## Screenshots
 
@@ -73,22 +72,22 @@ make dmg        # package only → dist/QuotAI-<version>.dmg
 make release    # run tests, then package
 ```
 
-**GitHub Release:** push a **signed** tag `vX.Y.Z` matching `MARKETING_VERSION` (e.g. `v0.12.0` for `0.12.0`). The [Release workflow](.github/workflows/release.yml) runs `make test`, builds the DMG, publishes **QuotAI X.Y.Z**, and attaches the disk image. Notes come from `CHANGELOG.md` plus [`.github/RELEASE_BODY.md`](.github/RELEASE_BODY.md). Optional repo secrets: `QUOTAI_SIGN_IDENTITY`, `QUOTAI_NOTARY_PROFILE`. Details: [`docs/agents/ci-cd.md`](docs/agents/ci-cd.md).
+**GitHub Release:** push a **signed** tag `vX.Y.Z` matching `MARKETING_VERSION` (e.g. `v0.12.1` for `0.12.1`). The [Release workflow](.github/workflows/release.yml) runs `make test`, builds the DMG, publishes **QuotAI X.Y.Z**, and attaches the disk image. Notes come from `CHANGELOG.md` plus [`.github/RELEASE_BODY.md`](.github/RELEASE_BODY.md). Optional repo secrets: `QUOTAI_SIGN_IDENTITY`, `QUOTAI_NOTARY_PROFILE`. Details: [`docs/agents/ci-cd.md`](docs/agents/ci-cd.md).
 
 
 GitHub shows **Verified** only for cryptographically signed tags — never use a lightweight `git tag v…` or an unsigned annotated tag for ships.
 
 ```bash
-git tag -s v0.12.0 -m "0.12.0"   # signed annotated tag → GitHub Verified
-git verify-tag v0.12.0            # must succeed before push
-git push origin v0.12.0
+git tag -s v0.12.1 -m "0.12.1"   # signed annotated tag → GitHub Verified
+git verify-tag v0.12.1            # must succeed before push
+git push origin v0.12.1
 ```
 
 If global signing config is unset, one-shot:
 
 ```bash
 ssh-add --apple-use-keychain ~/.ssh/id_ed25519_github
-git -c gpg.format=ssh -c user.signingkey="$HOME/.ssh/id_ed25519_github" tag -s v0.12.0 -m "0.12.0"
+git -c gpg.format=ssh -c user.signingkey="$HOME/.ssh/id_ed25519_github" tag -s v0.12.1 -m "0.12.1"
 ```
 
 Optional local ship (same as CI), once a Developer ID certificate and a notary keychain profile exist:

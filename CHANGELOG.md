@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.1 — 2026-10-25
+
+### Fixed
+
+- Simplified DMG to drag → Applications only (unsigned helper applets were Gatekeeper-blocked too); Keychain and Open Anyway guidance stay as background copy
+
 ## 0.12.0 — 2026-10-25
 
 ### Added
