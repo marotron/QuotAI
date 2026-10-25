@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.2 — 2026-10-25
+
+### Fixed
+
+- DMG install row: align **Open QuotAI** icon slot with the drag-row icons (matched padding/border; Finder overlay Y)
+
 ## 0.13.1 — 2026-10-25
 
 ### Fixed
