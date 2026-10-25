@@ -17,6 +17,29 @@ DERIVED_DATA="${DERIVED_DATA:-.build/DerivedData}"
 CONFIG=Release
 APP_NAME=QuotAI
 
+ASSETS_DIR="$ROOT/Scripts/release/dmg-assets"
+BG_PNG="$ASSETS_DIR/background.png"
+# AppleScript applet — opens /Applications/QuotAI.app (Step 2 click target).
+OPEN_APP_SRC="$ASSETS_DIR/Open QuotAI.app"
+OPEN_APP_NAME="Open QuotAI.app"
+# AppleScript applet — System Settings → Privacy & Security (Step 5 click target).
+PRIVACY_APP_SRC="$ASSETS_DIR/Privacy & Security.app"
+PRIVACY_APP_NAME="Privacy & Security.app"
+
+# Finder window content matches background logical size (720×552; PNG is 2× Retina). Titlebar ≈ 28px.
+WIN_W=720
+WIN_H=580
+ICON_SIZE=64
+# Icon centers over empty slots in export.html (from render-background.swift slot measure).
+ICON_APP_X=87
+ICON_APP_Y=120
+ICON_APPS_X=227
+ICON_APPS_Y=120
+ICON_OPEN_X=381
+ICON_OPEN_Y=120
+ICON_PRIVACY_X=227
+ICON_PRIVACY_Y=396
+
 VERSION="$(
   sed -n 's/^[[:space:]]*MARKETING_VERSION:[[:space:]]*"\([^"]*\)".*/\1/p' project.yml | head -1
 )"
@@ -33,8 +56,22 @@ if [[ -n "${RELEASE_TAG:-}" ]]; then
   fi
 fi
 
+if [[ ! -f "$BG_PNG" ]]; then
+  echo "error: missing ${BG_PNG} (run: swift Scripts/release/dmg-assets/render-background.swift)" >&2
+  exit 1
+fi
+if [[ ! -d "$OPEN_APP_SRC" ]]; then
+  echo "error: missing ${OPEN_APP_SRC}" >&2
+  exit 1
+fi
+if [[ ! -d "$PRIVACY_APP_SRC" ]]; then
+  echo "error: missing ${PRIVACY_APP_SRC}" >&2
+  exit 1
+fi
+
 DIST_DIR="$ROOT/dist"
 STAGE_DIR="$DIST_DIR/stage"
+RW_DMG="$DIST_DIR/${APP_NAME}-${VERSION}-rw.dmg"
 DMG_PATH="$DIST_DIR/${APP_NAME}-${VERSION}.dmg"
 
 sign_app_bundle() {
@@ -94,23 +131,122 @@ rm -rf "$STAGE_DIR"
 mkdir -p "$STAGE_DIR"
 cp -R "$APP_PATH" "$STAGE_DIR/"
 ln -s /Applications "$STAGE_DIR/Applications"
+cp -R "$OPEN_APP_SRC" "$STAGE_DIR/$OPEN_APP_NAME"
+cp -R "$PRIVACY_APP_SRC" "$STAGE_DIR/$PRIVACY_APP_NAME"
 
-rm -f "$DMG_PATH"
-echo "→ hdiutil create ${DMG_PATH}"
+rm -f "$RW_DMG" "$DMG_PATH"
+echo "→ hdiutil create (UDWR staging)"
 hdiutil create \
   -volname "$APP_NAME" \
   -srcfolder "$STAGE_DIR" \
   -ov \
-  -format UDZO \
-  "$DMG_PATH"
+  -format UDRW \
+  -fs HFS+ \
+  "$RW_DMG"
+
+# Headroom for .background + .DS_Store (srcfolder images are tight).
+RW_SIZE_KB="$(hdiutil resize -limits "$RW_DMG" | awk 'END {print int($2)}')"
+TARGET_KB=$((RW_SIZE_KB + 20480))
+hdiutil resize -size "${TARGET_KB}k" "$RW_DMG"
+
+echo "→ mount + Finder layout"
+# Mount under /Volumes so Finder resolves the volume reliably (avoid name clashes
+# with other QuotAI images by reading the actual mount point from attach output).
+ATTACH_OUT="$(hdiutil attach -readwrite -noverify -noautoopen "$RW_DMG")"
+DEVICE="$(printf '%s\n' "$ATTACH_OUT" | awk 'NR==1 {print $1}')"
+VOLUME="$(printf '%s\n' "$ATTACH_OUT" | awk -F'\t' '/\/Volumes\// {print $NF; exit}')"
+if [[ -z "$VOLUME" || ! -d "$VOLUME" ]]; then
+  echo "error: could not find mounted volume for ${RW_DMG}" >&2
+  echo "$ATTACH_OUT" >&2
+  hdiutil detach "$DEVICE" -force 2>/dev/null || true
+  exit 1
+fi
+DISK_NAME="$(basename "$VOLUME")"
+echo "   mounted at ${VOLUME} (disk \"${DISK_NAME}\")"
+
+mkdir -p "$VOLUME/.background"
+cp "$BG_PNG" "$VOLUME/.background/background.png"
+# Stop FSEvents logging on this volume.
+rm -rf "$VOLUME/.fseventsd"
+mkdir -p "$VOLUME/.fseventsd"
+touch "$VOLUME/.fseventsd/no_log"
+# Unhide while AppleScript sets the background picture (POSIX/hidden often fails).
+chflags nohidden "$VOLUME/.background" 2>/dev/null || true
+
+DS_STORE_SRC="$ASSETS_DIR/DS_Store"
+LAYOUT_OK=0
+# Prefer live Finder layout (correct bounds + background). Fall back to checked-in
+# DS_Store for headless CI when AppleScript cannot drive Finder.
+# Support folders are parked far outside the window so they stay out of view even
+# when the user has “Show Hidden Files” (Cmd+Shift+.) enabled.
+if osascript <<EOF
+tell application "Finder"
+  tell disk "$DISK_NAME"
+    open
+    delay 0.8
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    try
+      set pathbar visible of container window to false
+    end try
+    set the bounds of container window to {100, 100, $((100 + WIN_W)), $((100 + WIN_H))}
+    set viewOptions to the icon view options of container window
+    set arrangement of viewOptions to not arranged
+    set icon size of viewOptions to $ICON_SIZE
+    set background picture of viewOptions to file ".background:background.png"
+    set position of item "${APP_NAME}.app" of container window to {$ICON_APP_X, $ICON_APP_Y}
+    set position of item "Applications" of container window to {$ICON_APPS_X, $ICON_APPS_Y}
+    set position of item "$OPEN_APP_NAME" of container window to {$ICON_OPEN_X, $ICON_OPEN_Y}
+    set position of item "$PRIVACY_APP_NAME" of container window to {$ICON_PRIVACY_X, $ICON_PRIVACY_Y}
+    try
+      set position of item ".background" of container window to {2000, 2000}
+    end try
+    try
+      set position of item ".fseventsd" of container window to {2200, 2000}
+    end try
+    update without registering applications
+    delay 2
+    close
+  end tell
+end tell
+EOF
+then
+  LAYOUT_OK=1
+  echo "→ AppleScript Finder layout applied"
+  if [[ -f "$VOLUME/.DS_Store" ]]; then
+    cp "$VOLUME/.DS_Store" "$DS_STORE_SRC"
+    echo "→ saved ${DS_STORE_SRC} for CI / headless builds"
+  fi
+fi
+
+if [[ "$LAYOUT_OK" -eq 0 ]]; then
+  if [[ -f "$DS_STORE_SRC" ]]; then
+    echo "→ AppleScript unavailable; applying checked-in .DS_Store"
+    cp "$DS_STORE_SRC" "$VOLUME/.DS_Store"
+  else
+    echo "error: Finder layout failed and no ${DS_STORE_SRC}" >&2
+    hdiutil detach "$VOLUME" -force 2>/dev/null || hdiutil detach "$DEVICE" -force 2>/dev/null || true
+    exit 1
+  fi
+fi
+
+# Hide support folders after layout (icons already parked off-canvas).
+chflags hidden "$VOLUME/.background" "$VOLUME/.fseventsd" 2>/dev/null || true
+
+sync
+hdiutil detach "$VOLUME" || hdiutil detach "$DEVICE" -force
+
+echo "→ hdiutil convert UDZO → ${DMG_PATH}"
+hdiutil convert "$RW_DMG" -format UDZO -imagekey zlib-level=9 -o "$DMG_PATH"
+rm -f "$RW_DMG"
+rm -rf "$STAGE_DIR"
 
 if [[ -n "${QUOTAI_NOTARY_PROFILE:-}" ]]; then
   echo "→ notarize (${QUOTAI_NOTARY_PROFILE})"
   xcrun notarytool submit "$DMG_PATH" --keychain-profile "$QUOTAI_NOTARY_PROFILE" --wait
   xcrun stapler staple "$DMG_PATH"
 fi
-
-rm -rf "$STAGE_DIR"
 
 echo ""
 echo "Created: ${DMG_PATH}"

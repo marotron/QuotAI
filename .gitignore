@@ -21,6 +21,8 @@ xcuserdata/
 # Local icon scratch / experiments (CHANGELOG.md is the release record)
 .scratch/icons/
 .scratch/quotai/prototype/
+.scratch/quotai/about-prototype/
+.scratch/quotai/dmg-prototype/
 .scratch/RELEASE_NOTES_*.md
 .scratch/.venv-img/
 
