@@ -4,14 +4,14 @@ macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot
 
 ## Install
 
-**[Download QuotAI-0.13.1.dmg](https://github.com/marotron/QuotAI/releases/download/v0.13.1/QuotAI-0.13.1.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.13.2.dmg](https://github.com/marotron/QuotAI/releases/download/v0.13.2/QuotAI-0.13.2.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image (install steps are on the window background).
 2. Drag **QuotAI** → **Applications**, then double-click **Open QuotAI** (or open it from Applications). It lives in the menu bar.
 3. When Keychain asks for your login password, enter it and press **Always Allow** so QuotAI can read encrypted API keys without prompting every launch.
 4. If Gatekeeper blocks the first open, use System Settings → Privacy & Security → **Open Anyway** (optional; skip when the app launches fine).
 
-The 0.13.1 build is ad-hoc signed (hardened runtime off) unless the release was notarized.
+The 0.13.2 build is ad-hoc signed (hardened runtime off) unless the release was notarized.
 
 ## Screenshots
 
