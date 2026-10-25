@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.3 — 2026-10-25
+
+### Fixed
+
+- About no longer opens the Changelog window at the same time (menu click / resurrected closed window)
+
+### Changed
+
+- Menu labels shortened (Settings / About / Quit) with separators between them; About actions use Changelog / Release notes
+
 ## 0.12.2 — 2026-10-25
 
 ### Fixed

@@ -882,7 +882,9 @@ enum SettingsWindowElevator {
     static func raise() {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-        for window in NSApp.windows where window.styleMask.contains(.titled) {
+        // Only already-visible titled windows — closed About/Changelog hosts stay
+        // in NSApp.windows (`isReleasedWhenClosed = false`) and must not resurrect.
+        for window in NSApp.windows where window.styleMask.contains(.titled) && window.isVisible {
             window.collectionBehavior.insert(.moveToActiveSpace)
             window.makeKeyAndOrderFront(nil)
             window.orderFrontRegardless()
@@ -894,7 +896,7 @@ struct MenuSettingsButton: View {
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
-        Button("Settings…") {
+        Button("Settings") {
             SettingsWindowElevator.show { openSettings() }
         }
     }

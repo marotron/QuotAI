@@ -187,9 +187,11 @@ struct QuotAIApp: App {
             }
             Divider()
             MenuSettingsButton()
-            Button("About QuotAI") {
+            Divider()
+            Button("About") {
                 AboutWindowHost.shared.showAbout()
             }
+            Divider()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }

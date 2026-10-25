@@ -10,7 +10,12 @@ final class AboutWindowHost {
     private var changelog: NSWindow?
 
     func showAbout() {
-        SettingsWindowElevator.show { presentAbout() }
+        // Defer past the menu-item mouse-up so it cannot land on Changelog.
+        SettingsWindowElevator.show {
+            DispatchQueue.main.async { [weak self] in
+                self?.presentAbout()
+            }
+        }
     }
 
     func showChangelog() {
@@ -23,7 +28,7 @@ final class AboutWindowHost {
             install(root, in: about)
         } else {
             about = makeWindow(
-                title: "About QuotAI",
+                title: "About",
                 size: NSSize(width: 400, height: 420),
                 resizable: false,
                 root: root
@@ -38,7 +43,7 @@ final class AboutWindowHost {
             install(root, in: changelog)
         } else {
             changelog = makeWindow(
-                title: "QuotAI Changelog",
+                title: "Changelog",
                 size: NSSize(width: 520, height: 560),
                 resizable: true,
                 root: root
@@ -85,8 +90,20 @@ final class AboutWindowHost {
         if window.isMiniaturized {
             window.deminiaturize(nil)
         }
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        window.collectionBehavior.insert(.moveToActiveSpace)
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
-        SettingsWindowElevator.raise()
+        // Do not call SettingsWindowElevator.raise() — it would front every
+        // visible titled window (e.g. reopen Changelog beside About).
+        DispatchQueue.main.async {
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+        }
     }
 }

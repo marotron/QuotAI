@@ -41,6 +41,9 @@ enum QuotAIAboutInfo {
 }
 
 struct QuotAIAboutView: View {
+    /// Blocks the menu-item mouse-up from firing Changelog when About first appears.
+    @State private var actionsEnabled = false
+
     var body: some View {
         VStack(spacing: 16) {
             if let icon = NSApplication.shared.applicationIconImage {
@@ -70,14 +73,16 @@ struct QuotAIAboutView: View {
             .frame(maxWidth: 340)
 
             VStack(spacing: 8) {
-                Button("View changelog…") {
+                Button("Changelog") {
                     AboutWindowHost.shared.showChangelog()
                 }
+                .disabled(!actionsEnabled)
 
-                Button("Release notes on GitHub…") {
+                Button("Release notes") {
                     NSWorkspace.shared.open(QuotAIAboutInfo.githubReleasesURL)
                 }
                 .buttonStyle(.link)
+                .disabled(!actionsEnabled)
             }
 
             Text(QuotAIAboutInfo.copyright)
@@ -88,6 +93,12 @@ struct QuotAIAboutView: View {
         .frame(maxWidth: .infinity)
         .padding(28)
         .frame(width: 400)
+        .onAppear {
+            actionsEnabled = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                actionsEnabled = true
+            }
+        }
     }
 }
 
