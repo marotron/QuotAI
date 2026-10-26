@@ -12,46 +12,90 @@ enum CursorConnectClient {
         case badPayload
     }
 
+    enum FetchScope: Equatable, Sendable {
+        case all
+        case cursor
+        case grok
+    }
+
+    /// Meters present for the requested scope; others are nil (caller keeps existing).
     struct FetchResult {
-        var cursorModels: QuotaMeter
-        var otherModels: QuotaMeter
-        var grokBot: QuotaMeter
+        var cursorModels: QuotaMeter?
+        var otherModels: QuotaMeter?
+        var grokBot: QuotaMeter?
         var credentials: QuotAIKeychain.Credentials
     }
 
     static func fetchMeters(
         credentials: QuotAIKeychain.Credentials,
+        scope: FetchScope = .all,
         session: URLSession = .shared,
         now: Date = Date()
     ) async throws -> FetchResult {
         var creds = credentials
         do {
-            return try await fetchOnce(credentials: creds, session: session, now: now)
+            return try await fetchOnce(credentials: creds, scope: scope, session: session, now: now)
         } catch ClientError.unauthorized {
             creds = try await refresh(credentials: creds, session: session)
-            return try await fetchOnce(credentials: creds, session: session, now: now)
+            return try await fetchOnce(credentials: creds, scope: scope, session: session, now: now)
         }
     }
 
     private static func fetchOnce(
         credentials: QuotAIKeychain.Credentials,
+        scope: FetchScope,
         session: URLSession,
         now: Date
     ) async throws -> FetchResult {
-        let periodData = try await connectPost(
-            url: URL(string: "https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage")!,
-            accessToken: credentials.accessToken,
-            session: session
+        let wantCursor = scope == .all || scope == .cursor
+        let wantGrok = scope == .all || scope == .grok
+
+        var periodData: Data?
+        var sandData: Data?
+
+        if wantCursor && wantGrok {
+            async let period = connectPost(
+                url: URL(string: "https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage")!,
+                accessToken: credentials.accessToken,
+                session: session
+            )
+            async let sand = connectPost(
+                url: URL(string: "https://api2.cursor.sh/aiserver.v1.DashboardService/GetSandUsageStatus")!,
+                accessToken: credentials.accessToken,
+                session: session
+            )
+            periodData = try await period
+            sandData = try await sand
+        } else if wantCursor {
+            periodData = try await connectPost(
+                url: URL(string: "https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage")!,
+                accessToken: credentials.accessToken,
+                session: session
+            )
+        } else if wantGrok {
+            sandData = try await connectPost(
+                url: URL(string: "https://api2.cursor.sh/aiserver.v1.DashboardService/GetSandUsageStatus")!,
+                accessToken: credentials.accessToken,
+                session: session
+            )
+        }
+
+        var cursor: QuotaMeter?
+        var other: QuotaMeter?
+        var grok: QuotaMeter?
+        if let periodData {
+            cursor = try QuotaResponseParser.cursorModels(from: periodData, now: now)
+            other = try QuotaResponseParser.otherModels(from: periodData, now: now)
+        }
+        if let sandData {
+            grok = try QuotaResponseParser.grokBot(from: sandData, now: now)
+        }
+        return FetchResult(
+            cursorModels: cursor,
+            otherModels: other,
+            grokBot: grok,
+            credentials: credentials
         )
-        let sandData = try await connectPost(
-            url: URL(string: "https://api2.cursor.sh/aiserver.v1.DashboardService/GetSandUsageStatus")!,
-            accessToken: credentials.accessToken,
-            session: session
-        )
-        let cursor = try QuotaResponseParser.cursorModels(from: periodData, now: now)
-        let other = try QuotaResponseParser.otherModels(from: periodData, now: now)
-        let grok = try QuotaResponseParser.grokBot(from: sandData, now: now)
-        return FetchResult(cursorModels: cursor, otherModels: other, grokBot: grok, credentials: credentials)
     }
 
     private static func connectPost(url: URL, accessToken: String, session: URLSession) async throws -> Data {
