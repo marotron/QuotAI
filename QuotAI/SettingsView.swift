@@ -37,6 +37,9 @@ struct SettingsView: View {
     @AppStorage("smtpTo") private var smtpTo = ""
     @AppStorage("smtpUseTLS") private var smtpUseTLS = true
 
+    @AppStorage("pinRefreshAll") private var pinRefreshAll = true
+    @AppStorage("pinRefreshCursor") private var pinRefreshCursor = false
+    @AppStorage("pinRefreshGrok") private var pinRefreshGrok = false
     @AppStorage("pinRefreshInterval") private var pinRefreshInterval = true
     @AppStorage("pinColorMode") private var pinColorMode = false
     @AppStorage("pinIconLook") private var pinIconLook = false
@@ -170,18 +173,8 @@ struct SettingsView: View {
     private var accountTab: some View {
         settingsForm {
             Section {
-                if store.isRefreshing {
-                    Text("Refreshing…")
-                        .foregroundStyle(.secondary)
-                } else if let when = store.lastRefreshed {
-                    LabeledContent("Last updated") {
-                        Text(when.formatted(date: .omitted, time: .shortened))
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    Text("Not refreshed yet")
-                        .foregroundStyle(.secondary)
-                }
+                Text(store.lastRefreshStatusLine)
+                    .foregroundStyle(.secondary)
                 if let authError = store.authError {
                     Text(authError)
                         .foregroundStyle(.red)
@@ -196,8 +189,16 @@ struct SettingsView: View {
                         }
                         Text("Dynamic").tag(QuotaStore.dynamicRefreshTag)
                     }
-                    Button("Refresh now") {
-                        Task { await store.refresh() }
+                    HStack(spacing: 8) {
+                        Button("Refresh all") {
+                            Task { await store.refresh(.all) }
+                        }
+                        Button("Refresh Cursor") {
+                            Task { await store.refresh(.cursor) }
+                        }
+                        Button("Refresh Grok Bot") {
+                            Task { await store.refresh(.grok) }
+                        }
                     }
                     .disabled(store.isRefreshing)
                 }
@@ -239,7 +240,7 @@ struct SettingsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } footer: {
                     JustifiedParagraph(
-                        text: "Follows the soonest reset. Rows are checked from the top, and the reset must be strictly under that row. An interval under 1 minute stays at 1. Two rows with the same threshold restore the default schedule."
+                        text: "Each quota uses this schedule from its own time to reset. Rows are checked from the top, and the reset must be strictly under that row. An interval under 1 minute stays at 1. Two rows with the same threshold restore the default schedule."
                     )
                 }
             }
@@ -446,6 +447,9 @@ struct SettingsView: View {
     private var pinsTab: some View {
         settingsForm {
             Section {
+                Toggle("Refresh all", isOn: $pinRefreshAll)
+                Toggle("Refresh Cursor", isOn: $pinRefreshCursor)
+                Toggle("Refresh Grok Bot", isOn: $pinRefreshGrok)
                 Toggle("Refresh interval", isOn: $pinRefreshInterval)
                 Toggle("Menu bar style", isOn: $pinIconLook)
                 Toggle("Color mode", isOn: $pinColorMode)

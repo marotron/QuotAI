@@ -6,6 +6,12 @@ import SwiftUI
 
 @MainActor
 final class QuotaStore: ObservableObject {
+    enum RefreshScope: Equatable {
+        case all
+        case cursor
+        case grok
+    }
+
     @Published var cursorModels = QuotaMeter(name: "Cursor Models")
     @Published var otherModels = QuotaMeter(name: "Other Models", isUnavailable: true)
     @Published var grokBot = QuotaMeter(name: "Grok Bot", isUnavailable: true)
@@ -14,7 +20,8 @@ final class QuotaStore: ObservableObject {
     /// Last fetch failed. Shown in the menu; the rings stay up with the previous meters.
     @Published var refreshError: String?
     @Published var isRefreshing = false
-    @Published var lastRefreshed: Date?
+    @Published var lastCursorRefreshed: Date?
+    @Published var lastGrokRefreshed: Date?
     /// Dropdown + menu-bar reset countdown. Moves at most once a minute.
     @Published private(set) var displayClock = Date()
 
@@ -23,8 +30,8 @@ final class QuotaStore: ObservableObject {
     private var displayClockTimer: Timer?
     private var pollActivity: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
-    /// Interval the live poll timer was started with. The minute clock restarts it when this changes.
-    private var activePollInterval: TimeInterval = 0
+    /// Next scheduled poll fire; minute clock reschedules when the planner moves this.
+    private var scheduledPollFire: Date?
 
     static let pollIntervalChoices = [5, 10, 15, 30, 60]
     /// Menu tag for the dynamic schedule. Not stored as `pollIntervalMinutes`.
@@ -91,6 +98,16 @@ final class QuotaStore: ObservableObject {
         )
     }
 
+    /// Menu + Settings status line (24-hour times).
+    var lastRefreshStatusLine: String {
+        LastRefreshStatus.line(
+            cursor: lastCursorRefreshed,
+            grok: lastGrokRefreshed,
+            isRefreshing: isRefreshing,
+            formatTime: { LastRefreshStatus.format24Hour($0) }
+        )
+    }
+
     init() {
         let stored = UserDefaults.standard.integer(forKey: Self.pollIntervalKey)
         pollIntervalMinutes = Self.pollIntervalChoices.contains(stored) ? stored : 10
@@ -105,7 +122,7 @@ final class QuotaStore: ObservableObject {
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            Task { await self?.refresh() }
+            Task { await self?.refresh(.all) }
         }
     }
 
@@ -127,7 +144,7 @@ final class QuotaStore: ObservableObject {
         let timer = Timer(fire: Self.nextMinute(), interval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.displayClock = Date()
-                self?.restartPollingIfIntervalChanged()
+                self?.restartPollingIfFireChanged()
             }
         }
         timer.tolerance = 1
@@ -142,60 +159,114 @@ final class QuotaStore: ObservableObject {
         return Date(timeIntervalSince1970: fire)
     }
 
-    /// Menu-bar apps nap hard; RunLoop timer + activity keep the cadence honest.
+    /// One-shot timer to the planner’s next fire; Dynamic may refresh only due families.
     private func startPolling(refreshNow: Bool) {
-        pollTimer?.invalidate()
         if let pollActivity {
             ProcessInfo.processInfo.endActivity(pollActivity)
             self.pollActivity = nil
         }
-
-        let interval = currentPollInterval()
-        activePollInterval = interval
-        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                await self?.refresh()
-            }
-        }
-        timer.tolerance = min(30, interval * 0.1)
-        RunLoop.main.add(timer, forMode: .common)
-        pollTimer = timer
 
         pollActivity = ProcessInfo.processInfo.beginActivity(
             options: [.userInitiatedAllowingIdleSystemSleep],
             reason: "QuotAI quota polling"
         )
 
+        scheduleNextPoll()
+
         if refreshNow {
-            Task { await self.refresh() }
+            Task { await self.refresh(.all) }
         }
     }
 
-    /// Fixed choice, or the dynamic schedule against the soonest meter window.
-    private func currentPollInterval(now: Date = Date()) -> TimeInterval {
-        guard dynamicRefresh else {
-            return TimeInterval(max(1, pollIntervalMinutes) * 60)
+    private func scheduleNextPoll() {
+        pollTimer?.invalidate()
+        let now = Date()
+        let fire = plannerNextFire(now: now)
+        scheduledPollFire = fire
+        let delay = max(1, fire.timeIntervalSince(now))
+        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                await self?.handlePollTimer()
+            }
         }
-        let ends = [cursorModels.periodEnd, otherModels.periodEnd, grokBot.periodEnd].compactMap { $0 }
-        return refreshSchedule.interval(periodEnds: ends, now: now)
+        timer.tolerance = min(30, delay * 0.1)
+        RunLoop.main.add(timer, forMode: .common)
+        pollTimer = timer
+    }
+
+    private func handlePollTimer() async {
+        if dynamicRefresh {
+            let due = plannerDueFamilies(now: Date())
+            if due.contains(.cursor) && due.contains(.grok) {
+                await refresh(.all)
+            } else if due.contains(.cursor) {
+                await refresh(.cursor)
+            } else if due.contains(.grok) {
+                await refresh(.grok)
+            }
+        } else {
+            await refresh(.all)
+        }
+        scheduleNextPoll()
+    }
+
+    private var cursorPeriodEnds: [Date] {
+        [cursorModels.periodEnd, otherModels.periodEnd].compactMap { $0 }
+    }
+
+    private var grokPeriodEnds: [Date] {
+        [grokBot.periodEnd].compactMap { $0 }
+    }
+
+    private func plannerDueFamilies(now: Date) -> [RefreshFamily] {
+        RefreshPlanner.dueFamilies(
+            dynamic: dynamicRefresh,
+            fixedMinutes: pollIntervalMinutes,
+            schedule: refreshSchedule,
+            cursorPeriodEnds: cursorPeriodEnds,
+            grokPeriodEnds: grokPeriodEnds,
+            lastCursor: lastCursorRefreshed,
+            lastGrok: lastGrokRefreshed,
+            now: now
+        )
+    }
+
+    private func plannerNextFire(now: Date) -> Date {
+        RefreshPlanner.nextFire(
+            dynamic: dynamicRefresh,
+            fixedMinutes: pollIntervalMinutes,
+            schedule: refreshSchedule,
+            cursorPeriodEnds: cursorPeriodEnds,
+            grokPeriodEnds: grokPeriodEnds,
+            lastCursor: lastCursorRefreshed,
+            lastGrok: lastGrokRefreshed,
+            now: now
+        )
     }
 
     /// Minute clock and a finished fetch retune the timer without an extra request.
-    private func restartPollingIfIntervalChanged() {
-        guard currentPollInterval() != activePollInterval else { return }
-        startPolling(refreshNow: false)
-    }
-
-    /// Pull now if the last successful fetch is older than the poll interval (or never).
-    func refreshIfStale() async {
-        let maxAge = currentPollInterval()
-        if let lastRefreshed, Date().timeIntervalSince(lastRefreshed) < maxAge {
+    private func restartPollingIfFireChanged() {
+        let fire = plannerNextFire(now: Date())
+        if let scheduledPollFire, abs(scheduledPollFire.timeIntervalSince(fire)) < 0.5 {
             return
         }
-        await refresh()
+        scheduleNextPoll()
     }
 
-    func refresh(forceReimport: Bool = false) async {
+    /// Pull families that are stale by their own interval (or never fetched).
+    func refreshIfStale() async {
+        let due = plannerDueFamilies(now: Date())
+        if due.isEmpty { return }
+        if due.contains(.cursor) && due.contains(.grok) {
+            await refresh(.all)
+        } else if due.contains(.cursor) {
+            await refresh(.cursor)
+        } else {
+            await refresh(.grok)
+        }
+    }
+
+    func refresh(_ scope: RefreshScope = .all, forceReimport: Bool = false) async {
         guard !isRefreshing else { return }
         isRefreshing = true
         authError = nil
@@ -203,11 +274,11 @@ final class QuotaStore: ObservableObject {
         defer { isRefreshing = false }
 
         do {
-            try await fetchAndApply(forceReimport: forceReimport)
+            try await fetchAndApply(scope: scope, forceReimport: forceReimport)
         } catch CursorConnectClient.ClientError.unauthorized,
                 CursorConnectClient.ClientError.shouldLogout,
                 CursorConnectClient.ClientError.refreshFailed {
-            await handleAuthFailure()
+            await handleAuthFailure(scope: scope)
         } catch {
             refreshError = Self.refreshFailureMessage(error)
         }
@@ -215,7 +286,7 @@ final class QuotaStore: ObservableObject {
 
     func reauthFromCursor() async {
         didAttemptAuthFailureReimport = false
-        await refresh(forceReimport: true)
+        await refresh(.all, forceReimport: true)
     }
 
     func pasteAccessToken(_ accessToken: String, refreshToken: String?) {
@@ -230,7 +301,7 @@ final class QuotaStore: ObservableObject {
             try KeychainStore.save(creds)
             authError = nil
             refreshError = nil
-            Task { await self.refresh() }
+            Task { await self.refresh(.all) }
         } catch {
             authError = "Could not save token"
         }
@@ -250,35 +321,54 @@ final class QuotaStore: ObservableObject {
         throw CursorConnectClient.ClientError.unauthorized
     }
 
-    private func fetchAndApply(forceReimport: Bool) async throws {
+    private func connectScope(for scope: RefreshScope) -> CursorConnectClient.FetchScope {
+        switch scope {
+        case .all: return .all
+        case .cursor: return .cursor
+        case .grok: return .grok
+        }
+    }
+
+    private func fetchAndApply(scope: RefreshScope, forceReimport: Bool) async throws {
         let credentials = try await resolveCredentials(forceReimport: forceReimport)
-        let result = try await CursorConnectClient.fetchMeters(credentials: credentials)
+        let result = try await CursorConnectClient.fetchMeters(
+            credentials: credentials,
+            scope: connectScope(for: scope)
+        )
         try KeychainStore.save(result.credentials)
-        cursorModels = result.cursorModels
-        otherModels = result.otherModels
-        grokBot = result.grokBot
+        let stamp = Date()
+        if let cursor = result.cursorModels {
+            cursorModels = cursor
+            lastCursorRefreshed = stamp
+        }
+        if let other = result.otherModels {
+            otherModels = other
+        }
+        if let grok = result.grokBot {
+            grokBot = grok
+            lastGrokRefreshed = stamp
+        }
         authError = nil
         refreshError = nil
         didAttemptAuthFailureReimport = false
-        lastRefreshed = Date()
-        restartPollingIfIntervalChanged()
+        restartPollingIfFireChanged()
         let includeOther = UserDefaults.standard.bool(forKey: "showOtherModels")
         await PaceAlertOrchestrator.handleSuccessfulRefresh(
-            cursor: result.cursorModels,
-            other: includeOther ? result.otherModels : nil,
-            grok: result.grokBot
+            cursor: cursorModels,
+            other: includeOther ? otherModels : nil,
+            grok: grokBot
         )
     }
 
-    /// One re-read of the Cursor session, then a real fetch. Calling `refresh()` here
+    /// One re-read of the Cursor session, then a real fetch. Calling `refresh` here
     /// no-ops because this attempt is already in flight.
-    private func handleAuthFailure() async {
+    private func handleAuthFailure(scope: RefreshScope) async {
         if !didAttemptAuthFailureReimport {
             didAttemptAuthFailureReimport = true
             if let imported = try? CursorVscdbImporter.importCredentials() {
                 try? KeychainStore.save(imported)
                 do {
-                    try await fetchAndApply(forceReimport: false)
+                    try await fetchAndApply(scope: scope, forceReimport: false)
                     return
                 } catch CursorConnectClient.ClientError.unauthorized,
                         CursorConnectClient.ClientError.shouldLogout,

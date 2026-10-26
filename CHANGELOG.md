@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.14.0 — 2026-10-26
+
+### Added
+
+- Per-family Dynamic refresh: one schedule, independent Cursor vs Grok Bot cadence; Refresh all / Refresh Cursor / Refresh Grok Bot
+- Status line `Last refresh: Cursor {HH:mm} · Grok Bot {HH:mm}` (24-hour) in menu and Settings → Account
+- Menu pins for Refresh all (on by default), Refresh Cursor, and Refresh Grok Bot
+
+### Changed
+
+- Dynamic help copy: each quota uses the schedule from its own time to reset (no longer “soonest reset” only)
+
 ## 0.13.2 — 2026-10-25
 
 ### Fixed

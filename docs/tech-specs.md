@@ -33,7 +33,9 @@ Last updated: 2026-10-13
 | Alert cooldown | pure | `PaceAlertCooldown` edge + cooldown suppress |
 | Pace chrome | pure | `PaceChromeResolver` — smart under/over wins tint + blink; quiet → on-pace solid ([docs/pace-chrome.md](pace-chrome.md)) |
 | Alert message builder | pure | `AlertMessageBuilder` subject/body |
-| Dynamic refresh schedule | pure | `RefreshSchedule.interval(periodEnds:now:)` — soonest reset, first step strictly under the threshold; bad or duplicate JSON → default |
+| Dynamic refresh schedule | pure | `RefreshSchedule.interval(periodEnds:now:)` — per-family period ends, first step strictly under the threshold; bad or duplicate JSON → default |
+| Per-meter refresh planner | pure | `RefreshPlanner` due families + next fire from shared schedule/fixed minutes and dual last-fetch times |
+| Last refresh status line | pure | `LastRefreshStatus.line` — `Last refresh: Cursor {HH:mm} · Grok Bot {HH:mm}` (24-hour; `—` when nil) |
 | Network + Keychain + SMTP + UserNotifications | untested | Thin adapters |
 
 ## Modules (initial)

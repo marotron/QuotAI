@@ -33,6 +33,7 @@ A written product spec plus a working macOS menu-bar app that shows remaining **
 - **Scaffold production app shell** → Swift XcodeGen `MenuBarExtra` + `QuotAICore` (5 tests green). See [issues/08-scaffold-app-shell.md](issues/08-scaffold-app-shell.md).
 - **Larger menu-bar dual-line text** → 10pt regular dual stack at ±4.5pt line centers with consistent tight tracking and faded reset time; debug preview covers three dials on light/dark backgrounds. Shipped `ae78731` / GitHub [#15](https://github.com/marotron/QuotAI/issues/15) closed. See [issues/11-menu-bar-text-size.md](issues/11-menu-bar-text-size.md).
 - **Polling / refresh UX** → default poll 10 min (Settings: 5 / 10 / 15 / 30 min / 1 h); wake refresh; explicit **Refresh**; menu-open refresh if stale; RunLoop `Timer` + `ProcessInfo` activity (not `Task.sleep`). Pace sample still once/local day. See [issues/09-polling-refresh-ux.md](issues/09-polling-refresh-ux.md) / GitHub [#12](https://github.com/marotron/QuotAI/issues/12).
+- **Per-meter Dynamic refresh** → one schedule, independent Cursor vs Grok cadence; dual last-refresh timestamps (24-hour status line); Refresh all / Cursor / Grok Bot; Fixed timer still both. Prototype verdict C + 24h. See [issues/18-per-meter-dynamic-refresh.md](issues/18-per-meter-dynamic-refresh.md).
 - **About QuotAI window** → version, short commit SHA, in-app changelog, GitHub Releases link; HTML prototype under `about-prototype/` (shipped). Merged [#21](https://github.com/marotron/QuotAI/pull/21).
 - **CI/CD** → PR + `main` → `make test` (`ci.yml`); tag `v*` → `make test` then `make dmg` → GitHub Release. See [issues/14-ci-cd-pipeline.md](issues/14-ci-cd-pipeline.md) · [docs/agents/ci-cd.md](../../docs/agents/ci-cd.md).
 - **Signing / distribution** → Near-term: GitHub Releases, ad-hoc DMGs, manual updates; notarization deferred. Eventual: website landing → Release DMG first (Homebrew + App Store stay options). Optional `QUOTAI_SIGN_*` unused until enroll. See [issues/15-signing-distribution-strategy.md](issues/15-signing-distribution-strategy.md) · GitHub [#10](https://github.com/marotron/QuotAI/issues/10) closed.
@@ -48,6 +49,7 @@ GitHub mirrors (labels `roadmap` / `fog` / `next-version`):
 - Custom notification banners (top-aligned icon + agent marks) — next version → [#8](https://github.com/marotron/QuotAI/issues/8) · [issues/10-custom-notification-ui.md](issues/10-custom-notification-ui.md)
 - Pace band chart quick view (outside Settings → Alerts) — next version → [#16](https://github.com/marotron/QuotAI/issues/16) · [issues/12-pace-band-quick-view.md](issues/12-pace-band-quick-view.md)
 - Historical used / elapsed trajectories (normalized period) — after quick view → [#17](https://github.com/marotron/QuotAI/issues/17) · [issues/13-pace-history-trajectories.md](issues/13-pace-history-trajectories.md)
+- Quiet hours for auto-refresh (+ Refresh on wake toggle) — next version → [#31](https://github.com/marotron/QuotAI/issues/31) · [issues/17-quiet-hours-refresh.md](issues/17-quiet-hours-refresh.md)
 
 ## Out of scope
 

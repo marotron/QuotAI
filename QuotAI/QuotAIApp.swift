@@ -30,6 +30,9 @@ struct QuotAIApp: App {
     @AppStorage("overCurvePct") private var overCurvePct = 0
     @AppStorage("underCurvePct") private var underCurvePct = 0
 
+    @AppStorage("pinRefreshAll") private var pinRefreshAll = true
+    @AppStorage("pinRefreshCursor") private var pinRefreshCursor = false
+    @AppStorage("pinRefreshGrok") private var pinRefreshGrok = false
     @AppStorage("pinRefreshInterval") private var pinRefreshInterval = true
     @AppStorage("pinColorMode") private var pinColorMode = false
     @AppStorage("pinIconLook") private var pinIconLook = false
@@ -91,13 +94,11 @@ struct QuotAIApp: App {
     var body: some Scene {
         // `.menu` → native NSMenu (Wi‑Fi / VPN style). Avoid `.window` chrome for buttons/pickers.
         MenuBarExtra {
-            if store.isRefreshing {
-                Text("Refreshing…")
-            } else if let when = store.lastRefreshed {
-                Text("Updated \(when.formatted(date: .omitted, time: .shortened))")
-            } else {
-                Text("QuotAI")
-            }
+            Text(store.lastRefreshStatusLine)
+                .onAppear {
+                    store.snapDisplayClock()
+                    Task { await store.refreshIfStale() }
+                }
             Divider()
             ForEach(presentation.notices, id: \.self) { notice in
                 Text(notice)
@@ -112,17 +113,27 @@ struct QuotAIApp: App {
                     Button(note) {}
                 }
             }
-            Divider()
-            Button("Refresh") {
-                Task { await store.refresh() }
-            }
-            .onAppear {
-                store.snapDisplayClock()
-                Task { await store.refreshIfStale() }
-            }
-            if pinOpenCursorSpending {
-                Button("Open Cursor Spending") {
-                    NSWorkspace.shared.open(MenuPresenter.spendingURL)
+            if pinRefreshAll || pinRefreshCursor || pinRefreshGrok || pinOpenCursorSpending {
+                Divider()
+                if pinRefreshAll {
+                    Button("Refresh all") {
+                        Task { await store.refresh(.all) }
+                    }
+                }
+                if pinRefreshCursor {
+                    Button("Refresh Cursor") {
+                        Task { await store.refresh(.cursor) }
+                    }
+                }
+                if pinRefreshGrok {
+                    Button("Refresh Grok Bot") {
+                        Task { await store.refresh(.grok) }
+                    }
+                }
+                if pinOpenCursorSpending {
+                    Button("Open Cursor Spending") {
+                        NSWorkspace.shared.open(MenuPresenter.spendingURL)
+                    }
                 }
             }
             if hasPinnedPrefs {
