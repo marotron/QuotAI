@@ -73,7 +73,8 @@ public enum RefreshPlanner {
         return min(cursorFire, grokFire)
     }
 
-    private static func interval(
+    /// Seconds until this family's next poll under dynamic schedule or fixed minutes.
+    public static func interval(
         dynamic: Bool,
         fixedMinutes: Int,
         schedule: RefreshSchedule,

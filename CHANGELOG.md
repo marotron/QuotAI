@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.1 — 2026-11-02
+
+### Changed
+
+- Status-row ago chips are per-family freshness badges: age-tinted inverse pie, hover SF Symbol refresh, click refreshes Cursor or Grok Bot without blanking the row
+- Meter used / elapsed / pace / reset facts align in fixed trailing columns across rows
+
 ## 0.15.0 — 2026-11-02
 
 ### Added

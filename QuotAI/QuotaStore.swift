@@ -20,6 +20,8 @@ final class QuotaStore: ObservableObject {
     /// Last fetch failed. Shown in the menu; the rings stay up with the previous meters.
     @Published var refreshError: String?
     @Published var isRefreshing = false
+    /// Which family (or `.all`) is mid-refresh; drives badge spin without blanking the status row.
+    @Published private(set) var refreshingScope: RefreshScope?
     @Published var lastCursorRefreshed: Date?
     @Published var lastGrokRefreshed: Date?
     /// Dropdown + menu-bar reset countdown. Moves at most once a minute.
@@ -273,9 +275,13 @@ final class QuotaStore: ObservableObject {
     func refresh(_ scope: RefreshScope = .all, forceReimport: Bool = false) async {
         guard !isRefreshing else { return }
         isRefreshing = true
+        refreshingScope = scope
         authError = nil
         refreshError = nil
-        defer { isRefreshing = false }
+        defer {
+            isRefreshing = false
+            refreshingScope = nil
+        }
 
         do {
             try await fetchAndApply(scope: scope, forceReimport: forceReimport)
@@ -285,6 +291,31 @@ final class QuotaStore: ObservableObject {
             await handleAuthFailure(scope: scope)
         } catch {
             refreshError = Self.refreshFailureMessage(error)
+        }
+    }
+
+    /// Current poll interval seconds for a single family (dynamic schedule or fixed minutes).
+    func pollIntervalSeconds(for family: RefreshFamily, now: Date = Date()) -> TimeInterval {
+        let ends: [Date]
+        switch family {
+        case .cursor: ends = cursorPeriodEnds
+        case .grok: ends = grokPeriodEnds
+        }
+        return RefreshPlanner.interval(
+            dynamic: dynamicRefresh,
+            fixedMinutes: pollIntervalMinutes,
+            schedule: refreshSchedule,
+            periodEnds: ends,
+            now: now
+        )
+    }
+
+    func isRefreshingFamily(_ family: RefreshFamily) -> Bool {
+        switch refreshingScope {
+        case .all: return true
+        case .cursor: return family == .cursor
+        case .grok: return family == .grok
+        case nil: return false
         }
     }
 
