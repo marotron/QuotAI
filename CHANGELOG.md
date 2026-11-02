@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.2 — 2026-11-02
+
+### Changed
+
+- Header version chip uses the same white-on-blue hover/press as panel action rows
+
 ## 0.15.1 — 2026-11-02
 
 ### Changed

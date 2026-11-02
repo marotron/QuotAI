@@ -110,17 +110,7 @@ struct MenuBarWindowPanel: View {
                 }
             }
             Spacer(minLength: 8)
-            Button {
-                AboutWindowHost.shared.showChangelog()
-            } label: {
-                Text("v\(QuotAIAboutInfo.marketingVersion)")
-                    .monospacedDigit()
-                    .opacity(0.72)
-            }
-            .buttonStyle(.plain)
-            .help("Release notes")
-            .accessibilityLabel("Version \(QuotAIAboutInfo.marketingVersion)")
-            .accessibilityHint("Opens release notes")
+            VersionChangelogButton(idleForeground: secondaryText)
         }
         .font(.system(size: 11))
         .foregroundStyle(secondaryText)
@@ -453,8 +443,45 @@ private struct PanelActionRow: View {
     }
 }
 
+/// Header version chip: same white-on-blue hover/press as action rows; opens changelog.
+private struct VersionChangelogButton: View {
+    var idleForeground: Color
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button {
+            AboutWindowHost.shared.showChangelog()
+        } label: {
+            Text("v\(QuotAIAboutInfo.marketingVersion)")
+                .monospacedDigit()
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(
+            PanelActionButtonStyle(
+                isHovered: isHovered,
+                idleForeground: idleForeground.opacity(0.72)
+            )
+        )
+        .help("Release notes")
+        .accessibilityLabel("Version \(QuotAIAboutInfo.marketingVersion)")
+        .accessibilityHint("Opens release notes")
+        .onContinuousHover { phase in
+            switch phase {
+            case .active:
+                isHovered = true
+            case .ended:
+                isHovered = false
+            }
+        }
+    }
+}
+
 private struct PanelActionButtonStyle: ButtonStyle {
     var isHovered: Bool
+    var idleForeground: Color? = nil
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
 
@@ -469,7 +496,7 @@ private struct PanelActionButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let highlighted = isEnabled && (configuration.isPressed || isHovered)
         return configuration.label
-            .foregroundStyle(highlighted ? Color.white : normalText)
+            .foregroundStyle(highlighted ? Color.white : (idleForeground ?? normalText))
             .background(
                 RoundedRectangle(cornerRadius: 4)
                     .fill(highlighted ? Self.menuHover : Color.clear)
