@@ -15,10 +15,6 @@ struct SettingsView: View {
     @AppStorage("ringCenterContent") private var ringCenterContent: RingCenterContent = .remaining
     @AppStorage("showOtherModels") private var showOtherModels = false
     @AppStorage("blinkSignificantPace") private var blinkSignificantPace = false
-    @AppStorage("blinkUnderPercent") private var blinkUnderPercent = 75
-    @AppStorage("blinkOverPercent") private var blinkOverPercent = 130
-    @AppStorage("paceOnLoPercent") private var paceOnLoPercent = 90
-    @AppStorage("paceOnHiPercent") private var paceOnHiPercent = 110
 
     @AppStorage("useSmartPaceAlerts") private var useSmartPaceAlerts = true
     @AppStorage("overMaxStartPct") private var overMaxStartPct = 25
@@ -59,11 +55,6 @@ struct SettingsView: View {
     @State private var notifyStatus = ""
     @State private var dialAlertTask: Task<Void, Never>?
 
-    private static let blinkUnderChoices = [50, 60, 70, 75, 80, 85]
-    private static let blinkOverChoices = [115, 120, 125, 130, 140, 150]
-    private static let deadZonePresets: [(lo: Int, hi: Int)] = [
-        (95, 105), (90, 110), (85, 115), (80, 120),
-    ]
     /// Shared width for menu pickers so every dropdown control aligns on the right.
     private static let menuControlWidth: CGFloat = 180
 
@@ -92,7 +83,6 @@ struct SettingsView: View {
         TabView {
             displayTab.tabItem { Label("Display", systemImage: "paintpalette") }
             accountTab.tabItem { Label("Account", systemImage: "person.crop.circle") }
-            paceTab.tabItem { Label("Pace", systemImage: "gauge.with.dots.needle.33percent") }
             alertsTab.tabItem { Label("Alerts", systemImage: "bell") }
             emailTab.tabItem { Label("Email", systemImage: "envelope") }
             pinsTab.tabItem { Label("Menu pins", systemImage: "pin") }
@@ -261,20 +251,6 @@ struct SettingsView: View {
         }
     }
 
-    private var paceTab: some View {
-        settingsForm {
-            Section {
-                menuPicker("On-pace band", selection: deadZoneSelection) {
-                    ForEach(Self.deadZonePresets, id: \.lo) { preset in
-                        Text("\(preset.lo)–\(preset.hi)%").tag("\(preset.lo)-\(preset.hi)")
-                    }
-                }
-            } footer: {
-                Text("Menu labels use pace ratio r = used ÷ elapsed. Ring/bar color: smart under/over wins when it fires; otherwise this on-pace band (green / blue / orange). Blink only when a smart alert fires.")
-            }
-        }
-    }
-
     private var alertsTab: some View {
         settingsForm {
             Section {
@@ -312,7 +288,7 @@ struct SettingsView: View {
             }
 
             Section {
-                Toggle("Use smart pace alerts", isOn: $useSmartPaceAlerts)
+                Toggle("Use corridor alerts", isOn: $useSmartPaceAlerts)
 
                 if useSmartPaceAlerts {
                     HStack(alignment: .top, spacing: 8) {
@@ -399,17 +375,12 @@ struct SettingsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
                 } else {
-                    menuPicker("Blink under", selection: $blinkUnderPercent) {
-                        ForEach(Self.blinkUnderChoices, id: \.self) { pct in
-                            Text("Below \(pct)% pace").tag(pct)
-                        }
-                    }
-                    menuPicker("Blink over", selection: $blinkOverPercent) {
-                        ForEach(Self.blinkOverChoices, id: \.self) { pct in
-                            Text("Above \(pct)% pace").tag(pct)
-                        }
-                    }
+                    Text("Corridor alerts off — ring/bar stay neutral; panel alert icons stay empty.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
+            } footer: {
+                Text("Tint and blink follow corridor under / over / exhausted only. Quiet or alerts off → neutral.")
             }
         }
         .onAppear {
@@ -569,18 +540,6 @@ struct SettingsView: View {
                 guard schedule.otherwiseMinutes != clamped else { return }
                 schedule.otherwiseMinutes = clamped
                 store.refreshSchedule = schedule
-            }
-        )
-    }
-
-    private var deadZoneSelection: Binding<String> {
-        Binding(
-            get: { "\(paceOnLoPercent)-\(paceOnHiPercent)" },
-            set: { tag in
-                let parts = tag.split(separator: "-").compactMap { Int($0) }
-                guard parts.count == 2 else { return }
-                paceOnLoPercent = parts[0]
-                paceOnHiPercent = parts[1]
             }
         )
     }

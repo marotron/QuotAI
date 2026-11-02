@@ -78,7 +78,7 @@ struct QuotAIAboutView: View {
                 }
                 .disabled(!actionsEnabled)
 
-                Button("Release notes") {
+                Button("GitHub release notes") {
                     NSWorkspace.shared.open(QuotAIAboutInfo.githubReleasesURL)
                 }
                 .buttonStyle(.link)

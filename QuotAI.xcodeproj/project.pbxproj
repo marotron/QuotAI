@@ -16,11 +16,13 @@
 		24FC94F331FBF0E4CB21DDED /* PaceAlertBandChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */; };
 		258406DDBA6376123299D5BF /* QuotaPercentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */; };
 		28B3DD16EFBC515D41661A4C /* QuotAICore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; };
+		2984654BBD4D766F7C6150E5 /* PaceHistoryChartModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442F33986FCB2D359079BCF4 /* PaceHistoryChartModel.swift */; };
 		29F5287C1AF7B0766A79F8AC /* PaceAlertDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = C656D72D3DC80308EE35332A /* PaceAlertDecision.swift */; };
 		3498F01BB3B5BCDC98192BAE /* CursorVscdbImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */; };
 		37031A88F12F70098989B788 /* PercentDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BA1B979CE208DC53FD1E1A /* PercentDial.swift */; };
 		3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65831D21C9C2B6C291737D22 /* QuotaPercent.swift */; };
 		3F5777DF22D0C5E36DCED8D9 /* MenuPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACFFF12333707318644EED0 /* MenuPresenterTests.swift */; };
+		41254106484CD48E3D6CA36D /* PaceMeterPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */; };
 		45B7311F1C6A719C83C89586 /* RingIconPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D196ED81F1692DCDD4A5447 /* RingIconPreview.swift */; };
 		533F866C08085583414D271B /* CursorAuthActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42221A63599893EAE95BCF0C /* CursorAuthActions.swift */; };
 		53AC03AF4844D781A5C76CAE /* QuotAICore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -29,8 +31,10 @@
 		6BE89DE482D0BC87A8FB7BDA /* AlertMessageBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E43043E693935CE5D71BAB9 /* AlertMessageBuilderTests.swift */; };
 		6D7CE40B79A4F097A6203104 /* PaceAlertBands.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38663DAC42813CB673B58AA /* PaceAlertBands.swift */; };
 		70EB91F8217E0C081AADF89C /* RingDialSegmentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01892621FA6BA723ADCA5EBE /* RingDialSegmentsTests.swift */; };
+		743C92E109E1CC3BE7E83E12 /* PaceHistorySampleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */; };
 		7807B1E1EEC18A885C4FE5B1 /* QuotaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A145FDCDD83F3F7243FAD8 /* QuotaStore.swift */; };
 		7C068AB0E5F7802F60CA7DA1 /* IconLookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD54EF9FAB7890CB1EC1A309 /* IconLookTests.swift */; };
+		7C251FC78CCBE2A72385F893 /* PaceHistoryChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA93C4905C6D4098659DE62 /* PaceHistoryChart.swift */; };
 		821C73A1D04EF95FDAF632E2 /* QuotAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A84478A2DFA344FC905215F /* QuotAIApp.swift */; };
 		8300A6A914B59BA2F7ECEE61 /* RefreshPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CECF6449BA30923428C5B11 /* RefreshPlannerTests.swift */; };
 		8A1A5C17C106C3838084CDA4 /* AboutWindowHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BF38C8A35CA757AEEEC0B21 /* AboutWindowHost.swift */; };
@@ -44,22 +48,28 @@
 		9DF1B0F9D9FFCB1D5DE6DA79 /* NotificationAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */; };
 		A487EB3BC1A47752B67FC828 /* RefreshPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 192A550779A20E36529262CD /* RefreshPlanner.swift */; };
 		A4C0B1482CC682B10F1055CA /* RingIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F68F209DE9B284DFAE003A /* RingIcon.swift */; };
+		A84BDA50449824D9F4EB2445 /* PaceMeterPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AF376352ED7DAC78952FF8E /* PaceMeterPresentation.swift */; };
 		AB2BB7A3F81DE014F8DB300C /* PaceAlertCooldownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C32FF53DBE2300A57A24E9C /* PaceAlertCooldownTests.swift */; };
 		AD18FB2510286FE5965DBA74 /* LastRefreshStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384DBDA8A5819994DC483BDC /* LastRefreshStatus.swift */; };
 		BAF66F190A8C5BBDCFD56DE2 /* PaceAlertBandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */; };
 		BBEABA081CA2F226610DB285 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */; };
+		C6448794FDF1AD2A9FA7942D /* PaceHistoryTipPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */; };
 		CE7A9064D2EA35C569483CE2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172E517E55BB1919952F6374 /* SettingsView.swift */; };
 		D0A82923EF1EA1BFA9361ED0 /* MenuPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0248EF36AED12752B7A8D9 /* MenuPresentation.swift */; };
+		D3170FE07F5DD7F1B5FD9E03 /* PaceHistorySampleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */; };
 		D83D8CB5C694C04497BDF2AC /* CursorConnectClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE812ED1CB4BE4CF91A26E25 /* CursorConnectClient.swift */; };
 		DC5676AEC84F8C26CB786FAB /* RemainingTimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F0F40FD1FE615DF92CCF71 /* RemainingTimeTests.swift */; };
 		DCE51FCCEA2E00D48A69D5DF /* QuotAIKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B666266F381CBC367A25A8 /* QuotAIKeychain.swift */; };
 		E393E83A82F30644CA12D231 /* ChangelogParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B131DB8CC45D74DB94B929E5 /* ChangelogParser.swift */; };
+		E64A5BAF9FE516C09322F46B /* PaceHistoryTipPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B2202564AF01C5E6670DC28 /* PaceHistoryTipPresentation.swift */; };
 		EA0F18D359C87E60676BC492 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D65735D0AC0BD39999794D7 /* KeychainStore.swift */; };
 		EB01905B593C403716152CE0 /* LastRefreshStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0447CCB4161A89612D76A3F /* LastRefreshStatusTests.swift */; };
+		EBE0E039627341EE7BC52CD5 /* PaceHistoryChartModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4F4D22979B55C7E8491E85 /* PaceHistoryChartModelTests.swift */; };
 		EE5979F53B73F0A78D294E27 /* QuotAICore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; };
 		F1310C7DC5CE0CE3576CD98D /* PaceChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB305BE65819B58250DECEB2 /* PaceChrome.swift */; };
 		F28AD5664ACC9393705BEB82 /* ChangelogParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E479756FEDB5131AA3048CDB /* ChangelogParserTests.swift */; };
 		F6B16EE2F78F625179F0AD15 /* PaceCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AAFD417E417B50DE713398C /* PaceCalculatorTests.swift */; };
+		F87BC6F64C7E45348B7CAE2B /* MenuBarWindowPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177F1B250D9995BAEA6FE038 /* MenuBarWindowPanel.swift */; };
 		FC46F47230ABED25B689B290 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B38E8042E5851CC0AACB82BC /* Assets.xcassets */; };
 		FD24C4805DBDBBB0AFC5BA3F /* QuotaResponseParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D5560D8CAD91D26D28FC1C /* QuotaResponseParser.swift */; };
 /* End PBXBuildFile section */
@@ -108,21 +118,30 @@
 
 /* Begin PBXFileReference section */
 		01892621FA6BA723ADCA5EBE /* RingDialSegmentsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingDialSegmentsTests.swift; sourceTree = "<group>"; };
+		0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryTipPresentationTests.swift; sourceTree = "<group>"; };
 		09A98BF53179A39771BBE07A /* RingDialSegments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingDialSegments.swift; sourceTree = "<group>"; };
 		100900970A7EB9E28EF6C831 /* RemainingTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTime.swift; sourceTree = "<group>"; };
+		143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySampleStore.swift; sourceTree = "<group>"; };
 		172E517E55BB1919952F6374 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		177F1B250D9995BAEA6FE038 /* MenuBarWindowPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarWindowPanel.swift; sourceTree = "<group>"; };
 		192A550779A20E36529262CD /* RefreshPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshPlanner.swift; sourceTree = "<group>"; };
+		1AF376352ED7DAC78952FF8E /* PaceMeterPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceMeterPresentation.swift; sourceTree = "<group>"; };
 		1D196ED81F1692DCDD4A5447 /* RingIconPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingIconPreview.swift; sourceTree = "<group>"; };
 		22F0F40FD1FE615DF92CCF71 /* RemainingTimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTimeTests.swift; sourceTree = "<group>"; };
+		27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySampleStoreTests.swift; sourceTree = "<group>"; };
 		2D65735D0AC0BD39999794D7 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		384DBDA8A5819994DC483BDC /* LastRefreshStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastRefreshStatus.swift; sourceTree = "<group>"; };
 		38C2B193AFD31A76A03414C6 /* RefreshScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshScheduleTests.swift; sourceTree = "<group>"; };
 		3ABB5D0F4B699BEDF9A4B8B6 /* PaceAlertOrchestrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertOrchestrator.swift; sourceTree = "<group>"; };
+		3B2202564AF01C5E6670DC28 /* PaceHistoryTipPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryTipPresentation.swift; sourceTree = "<group>"; };
 		3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBandChart.swift; sourceTree = "<group>"; };
 		41246CF6E708CBB9C7E79255 /* AlertMessageBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertMessageBuilder.swift; sourceTree = "<group>"; };
 		42221A63599893EAE95BCF0C /* CursorAuthActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorAuthActions.swift; sourceTree = "<group>"; };
+		442F33986FCB2D359079BCF4 /* PaceHistoryChartModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartModel.swift; sourceTree = "<group>"; };
 		4AAFD417E417B50DE713398C /* PaceCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceCalculatorTests.swift; sourceTree = "<group>"; };
+		4C4F4D22979B55C7E8491E85 /* PaceHistoryChartModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartModelTests.swift; sourceTree = "<group>"; };
 		4E43043E693935CE5D71BAB9 /* AlertMessageBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertMessageBuilderTests.swift; sourceTree = "<group>"; };
+		4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceMeterPresentationTests.swift; sourceTree = "<group>"; };
 		5BCD6BD67F062EB51D2E62F2 /* QuotAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C43130568DD9233B80DB58F /* EmailAlertService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailAlertService.swift; sourceTree = "<group>"; };
 		5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBandsTests.swift; sourceTree = "<group>"; };
@@ -152,6 +171,7 @@
 		C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorVscdbImporter.swift; sourceTree = "<group>"; };
 		C656D72D3DC80308EE35332A /* PaceAlertDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertDecision.swift; sourceTree = "<group>"; };
 		C7A145FDCDD83F3F7243FAD8 /* QuotaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaStore.swift; sourceTree = "<group>"; };
+		CCA93C4905C6D4098659DE62 /* PaceHistoryChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChart.swift; sourceTree = "<group>"; };
 		D38663DAC42813CB673B58AA /* PaceAlertBands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBands.swift; sourceTree = "<group>"; };
 		D42C45002964F1D37AEF7A57 /* PaceAlertDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertDecisionTests.swift; sourceTree = "<group>"; };
 		DACFFF12333707318644EED0 /* MenuPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPresenterTests.swift; sourceTree = "<group>"; };
@@ -217,6 +237,10 @@
 				D42C45002964F1D37AEF7A57 /* PaceAlertDecisionTests.swift */,
 				4AAFD417E417B50DE713398C /* PaceCalculatorTests.swift */,
 				A17414D5B95FCA174737FB00 /* PaceChromeTests.swift */,
+				4C4F4D22979B55C7E8491E85 /* PaceHistoryChartModelTests.swift */,
+				27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */,
+				0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */,
+				4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */,
 				7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */,
 				782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */,
 				8CECF6449BA30923428C5B11 /* RefreshPlannerTests.swift */,
@@ -246,9 +270,11 @@
 				C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */,
 				5C43130568DD9233B80DB58F /* EmailAlertService.swift */,
 				2D65735D0AC0BD39999794D7 /* KeychainStore.swift */,
+				177F1B250D9995BAEA6FE038 /* MenuBarWindowPanel.swift */,
 				779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */,
 				3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */,
 				3ABB5D0F4B699BEDF9A4B8B6 /* PaceAlertOrchestrator.swift */,
+				CCA93C4905C6D4098659DE62 /* PaceHistoryChart.swift */,
 				67BA1B979CE208DC53FD1E1A /* PercentDial.swift */,
 				E364CC587B574EDA89401BE2 /* QuotAIAboutView.swift */,
 				8A84478A2DFA344FC905215F /* QuotAIApp.swift */,
@@ -272,6 +298,10 @@
 				C656D72D3DC80308EE35332A /* PaceAlertDecision.swift */,
 				E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */,
 				BB305BE65819B58250DECEB2 /* PaceChrome.swift */,
+				442F33986FCB2D359079BCF4 /* PaceHistoryChartModel.swift */,
+				143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */,
+				3B2202564AF01C5E6670DC28 /* PaceHistoryTipPresentation.swift */,
+				1AF376352ED7DAC78952FF8E /* PaceMeterPresentation.swift */,
 				A1B666266F381CBC367A25A8 /* QuotAIKeychain.swift */,
 				65831D21C9C2B6C291737D22 /* QuotaPercent.swift */,
 				B4D5560D8CAD91D26D28FC1C /* QuotaResponseParser.swift */,
@@ -456,6 +486,10 @@
 				29F5287C1AF7B0766A79F8AC /* PaceAlertDecision.swift in Sources */,
 				0892FE50EFCD8B19A5562708 /* PaceCalculator.swift in Sources */,
 				F1310C7DC5CE0CE3576CD98D /* PaceChrome.swift in Sources */,
+				2984654BBD4D766F7C6150E5 /* PaceHistoryChartModel.swift in Sources */,
+				743C92E109E1CC3BE7E83E12 /* PaceHistorySampleStore.swift in Sources */,
+				E64A5BAF9FE516C09322F46B /* PaceHistoryTipPresentation.swift in Sources */,
+				A84BDA50449824D9F4EB2445 /* PaceMeterPresentation.swift in Sources */,
 				DCE51FCCEA2E00D48A69D5DF /* QuotAIKeychain.swift in Sources */,
 				3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */,
 				FD24C4805DBDBBB0AFC5BA3F /* QuotaResponseParser.swift in Sources */,
@@ -480,6 +514,10 @@
 				9317637690F297E552B2924E /* PaceAlertDecisionTests.swift in Sources */,
 				F6B16EE2F78F625179F0AD15 /* PaceCalculatorTests.swift in Sources */,
 				9068D6720D88199A9B6C838E /* PaceChromeTests.swift in Sources */,
+				EBE0E039627341EE7BC52CD5 /* PaceHistoryChartModelTests.swift in Sources */,
+				D3170FE07F5DD7F1B5FD9E03 /* PaceHistorySampleStoreTests.swift in Sources */,
+				C6448794FDF1AD2A9FA7942D /* PaceHistoryTipPresentationTests.swift in Sources */,
+				41254106484CD48E3D6CA36D /* PaceMeterPresentationTests.swift in Sources */,
 				258406DDBA6376123299D5BF /* QuotaPercentTests.swift in Sources */,
 				8F53C68CC8303EDA7842DF5B /* QuotaResponseParserTests.swift in Sources */,
 				8300A6A914B59BA2F7ECEE61 /* RefreshPlannerTests.swift in Sources */,
@@ -500,9 +538,11 @@
 				3498F01BB3B5BCDC98192BAE /* CursorVscdbImporter.swift in Sources */,
 				61B41F97E9FD3001E1BE1196 /* EmailAlertService.swift in Sources */,
 				EA0F18D359C87E60676BC492 /* KeychainStore.swift in Sources */,
+				F87BC6F64C7E45348B7CAE2B /* MenuBarWindowPanel.swift in Sources */,
 				9DF1B0F9D9FFCB1D5DE6DA79 /* NotificationAlertService.swift in Sources */,
 				24FC94F331FBF0E4CB21DDED /* PaceAlertBandChart.swift in Sources */,
 				24C4BD146B99880D51338CCC /* PaceAlertOrchestrator.swift in Sources */,
+				7C251FC78CCBE2A72385F893 /* PaceHistoryChart.swift in Sources */,
 				37031A88F12F70098989B788 /* PercentDial.swift in Sources */,
 				1662147F4652E067D89B275A /* QuotAIAboutView.swift in Sources */,
 				821C73A1D04EF95FDAF632E2 /* QuotAIApp.swift in Sources */,
@@ -654,7 +694,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 27;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -665,7 +705,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.14.0;
+				MARKETING_VERSION = 0.15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};
@@ -693,7 +733,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 27;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -704,7 +744,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.14.0;
+				MARKETING_VERSION = 0.15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};

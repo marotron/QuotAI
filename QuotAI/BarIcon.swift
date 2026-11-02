@@ -219,7 +219,8 @@ enum BarIcon {
     static func drawAvatar(_ avatar: Avatar, in box: NSRect, ink: NSColor) {
         if let parts = cutouts[avatar] {
             let fitted = aspectFit(parts.aspect, in: box)
-            tinted(parts.body, ink, pointSize: fitted.size)?.draw(
+            // Flipped: menu-bar / ring canvases are flipped contexts.
+            tinted(parts.body, ink, pointSize: fitted.size, flipVertically: true)?.draw(
                 in: fitted, from: .zero, operation: .sourceOver, fraction: 1
             )
             return
@@ -235,6 +236,34 @@ enum BarIcon {
         }
         painted.isTemplate = false
         painted.draw(in: box, from: .zero, operation: .sourceOver, fraction: 1)
+    }
+
+    /// Series-tinted avatar for SwiftUI (panel meters / tip). Same cutout mask as the menu bar.
+    static func tintedAvatar(_ avatar: Avatar, ink: NSColor, pointSize: CGFloat) -> NSImage {
+        let size = NSSize(width: pointSize, height: pointSize)
+        let box = NSRect(origin: .zero, size: size)
+        if let parts = cutouts[avatar] {
+            let fitted = aspectFit(parts.aspect, in: box)
+            if let painted = tinted(parts.body, ink, pointSize: fitted.size, flipVertically: false) {
+                let out = NSImage(size: size, flipped: false) { _ in
+                    painted.draw(in: fitted, from: .zero, operation: .sourceOver, fraction: 1)
+                    return true
+                }
+                out.isTemplate = false
+                return out
+            }
+        }
+        guard let symbol = fallbackAvatar(avatar, size: pointSize) else {
+            return NSImage(size: size)
+        }
+        let out = NSImage(size: size, flipped: false) { rect in
+            symbol.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+            ink.setFill()
+            rect.fill(using: .sourceAtop)
+            return true
+        }
+        out.isTemplate = false
+        return out
     }
 
     /// Black body mask. `hole` is the white (triangle, eyes); it is kept for the split and not drawn.
@@ -321,7 +350,13 @@ enum BarIcon {
     }
 
     /// Tint offscreen. A drawing-handler image nested inside the menu-bar image drops the glyph.
-    private static func tinted(_ mask: NSImage, _ color: NSColor, pointSize: NSSize) -> NSImage? {
+    /// - Parameter flipVertically: `true` for flipped menu-bar canvases; `false` for SwiftUI.
+    private static func tinted(
+        _ mask: NSImage,
+        _ color: NSColor,
+        pointSize: NSSize,
+        flipVertically: Bool
+    ) -> NSImage? {
         guard pointSize.width > 0, pointSize.height > 0 else { return nil }
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         let pw = max(1, Int((pointSize.width * scale).rounded(.up)))
@@ -340,12 +375,13 @@ enum BarIcon {
         ), let ctx = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
         // Bitmap context is in pixels. Drawing in points only fills a corner, then
         // `rep.size` scales that corner down again — the mark becomes a dot.
-        // The menu-bar image is flipped, which turns this bitmap upside down, so
-        // draw the mask the other way up and the bar shows it upright.
+        // Menu-bar canvases are flipped, so flip here and they show upright there.
         let previous = NSGraphicsContext.current
         NSGraphicsContext.current = ctx
-        ctx.cgContext.translateBy(x: 0, y: CGFloat(ph))
-        ctx.cgContext.scaleBy(x: 1, y: -1)
+        if flipVertically {
+            ctx.cgContext.translateBy(x: 0, y: CGFloat(ph))
+            ctx.cgContext.scaleBy(x: 1, y: -1)
+        }
         let canvas = NSRect(x: 0, y: 0, width: CGFloat(pw), height: CGFloat(ph))
         mask.draw(in: canvas, from: .zero, operation: .sourceOver, fraction: 1)
         color.setFill()

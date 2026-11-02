@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuotAI — pace history menu chrome (prototype)</title>
+  <style>
+    :root {
+      --bg: #ececec;
+      --panel: #f6f6f6;
+      --text: #1d1d1f;
+      --secondary: #6e6e73;
+      --tertiary: #8e8e93;
+      --divider: #d2d2d7;
+      --accent: #007aff;
+      --menu-bg: rgba(246, 246, 246, 0.92);
+      --menu-hover: #0a82ff;
+      --menu-hover-text: #fff;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      --warn: #f59e0b;
+      --cursor: #8b5cf6;
+      --other: #d946ef;
+      --grok: #c084fc;
+      --even: #86868b;
+      --desktop: #c5c9d0;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --panel: #2a2a2a;
+        --text: #f5f5f7;
+        --secondary: #a1a1a6;
+        --tertiary: #8e8e93;
+        --divider: #3a3a3c;
+        --menu-bg: rgba(42, 42, 42, 0.94);
+        --desktop: #2c2e32;
+        --even: #98989d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      padding: 28px 20px 120px;
+    }
+    .proto-banner {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--warn);
+      border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .question {
+      margin: 0 0 8px;
+      max-width: 44rem;
+      color: var(--secondary);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .open {
+      margin: 0 0 24px;
+      font-size: 13px;
+      color: var(--tertiary);
+    }
+    .open code {
+      font-size: 12px;
+      color: var(--secondary);
+    }
+    .stage-wrap {
+      max-width: 900px;
+    }
+    .stage-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--tertiary);
+      margin: 0 0 10px;
+    }
+    .desktop {
+      position: relative;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--desktop) 70%, #fff) 0%, var(--desktop) 100%);
+      border-radius: 12px;
+      min-height: 560px;
+      padding: 0 0 28px;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .menubar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 14px;
+      background: color-mix(in srgb, var(--panel) 55%, transparent);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid color-mix(in srgb, var(--divider) 70%, transparent);
+      font-size: 12px;
+      color: var(--text);
+    }
+    .menubar .slot {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+      cursor: default;
+      user-select: none;
+    }
+    .menubar .slot.active {
+      background: color-mix(in srgb, var(--accent) 32%, transparent);
+    }
+    .menubar .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .menubar .clock {
+      font-variant-numeric: tabular-nums;
+      opacity: 0.85;
+    }
+    .surface {
+      position: relative;
+      margin: 12px 18px 0;
+      min-height: 440px;
+    }
+
+    /* —— Native menu —— */
+    .menu {
+      width: 268px;
+      background: var(--menu-bg);
+      backdrop-filter: blur(20px);
+      border-radius: 8px;
+      box-shadow:
+        0 0 0 0.5px rgba(0, 0, 0, 0.12),
+        0 10px 40px rgba(0, 0, 0, 0.22);
+      padding: 5px 0;
+      font-size: 13px;
+      position: absolute;
+      top: 0;
+      right: 8px;
+      z-index: 3;
+    }
+    .menu .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 22px;
+      padding: 2px 14px;
+      margin: 0 5px;
+      border-radius: 4px;
+      cursor: default;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .menu .item.secondary {
+      color: var(--secondary);
+      font-size: 12px;
+      justify-content: flex-start;
+    }
+    .menu .item.action {
+      cursor: pointer;
+    }
+    .menu .item.action:hover,
+    .menu .item.action.hot {
+      background: var(--menu-hover);
+      color: var(--menu-hover-text);
+    }
+    .menu .item.action:hover .chev,
+    .menu .item.action.hot .chev {
+      color: var(--menu-hover-text);
+      opacity: 0.9;
+    }
+    .menu .sep {
+      height: 1px;
+      background: var(--divider);
+      margin: 5px 14px;
+    }
+    .menu .meter {
+      font-variant-numeric: tabular-nums;
+      justify-content: flex-start;
+    }
+    .menu .note {
+      color: var(--secondary);
+      font-size: 12px;
+      padding-left: 28px;
+      justify-content: flex-start;
+      gap: 0;
+    }
+    .menu .fact {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .menu .chev {
+      color: var(--tertiary);
+      font-size: 11px;
+      margin-left: auto;
+    }
+    .mark {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .mark.other { background: var(--other); }
+    .avatar {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      margin-right: 8px;
+      flex-shrink: 0;
+      object-fit: cover;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .avatar.dim {
+      opacity: 0.55;
+    }
+
+    /* —— A: Hot-inspired window panel —— */
+    .panel-window {
+      width: 500px;
+      background: var(--menu-bg);
+      backdrop-filter: blur(22px);
+      border-radius: 10px;
+      box-shadow:
+        0 0 0 0.5px rgba(0, 0, 0, 0.14),
+        0 14px 44px rgba(0, 0, 0, 0.24);
+      position: absolute;
+      top: 0;
+      right: 8px;
+      overflow: hidden;
+      z-index: 3;
+      padding: 5px 0;
+      font-size: 13px;
+    }
+    .panel-window .row {
+      display: flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 2px 14px;
+      margin: 0 5px;
+      border-radius: 4px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      user-select: none;
+    }
+    .panel-window .row.secondary {
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--secondary);
+      font-size: 12px;
+    }
+    .panel-window .row.secondary .status-line {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px 0;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .panel-window .row.secondary .ago-badge {
+      display: inline-block;
+      margin: 0 1px 0 4px;
+      padding: 0 5px;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--text) 8%, transparent);
+      color: var(--secondary);
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1.45;
+      font-variant-numeric: tabular-nums;
+      vertical-align: 0.05em;
+    }
+    .panel-window .row.secondary .app-ver {
+      flex-shrink: 0;
+      margin-left: auto;
+      opacity: 0.72;
+      font-variant-numeric: tabular-nums;
+    }
+    .panel-window .meters {
+      display: grid;
+      /* avatar · name · used ÷ elapsed = pace → reset */
+      grid-template-columns:
+        14px
+        max-content
+        3.2rem
+        0.7rem
+        3.4rem
+        0.9rem
+        max-content
+        0.7rem
+        max-content;
+      column-gap: 6px;
+      row-gap: 2px;
+      align-items: center;
+      padding: 2px 14px 4px;
+      margin: 0 5px;
+    }
+    .op {
+      color: #8e8e93;
+      font-size: 11px;
+      font-weight: 500;
+      text-align: center;
+      line-height: 1;
+      user-select: none;
+    }
+    .menu .item.meter .op {
+      margin: 0 2px;
+    }
+    .panel-window .meters .m-avatar {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      object-fit: cover;
+      display: block;
+    }
+    .panel-window .meters .m-avatar.dim { opacity: 0.55; }
+    .panel-window .meters .m-name {
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      padding-right: 6px;
+    }
+    /* D — Corridor alerts proposal (leave locked A alone).
+       Pace = neutral N% only; alert column after pace (before →).
+       Series colors distinct from each other and from corridor blue/orange.
+       (Future: Settings may let users customise per-quota colors.) */
+    /* Series ≠ corridor chrome: no blue / green / orange / red / yellow. */
+    #variant-A , #variant-D {
+      --cursor: #8b5cf6; /* Models — violet */
+      --other: #d946ef;  /* Other Models — fuchsia */
+      --grok: #c084fc;   /* Grok Bot — lavender (away from Other fuchsia) */
+    }
+    #variant-A .panel-window , #variant-D .panel-window {
+      width: 470px;
+    }
+    #variant-A .panel-window .row.secondary , #variant-D .panel-window .row.secondary {
+      font-size: 11px;
+      min-height: 20px;
+    }
+    #variant-A .panel-window .row.secondary .ago-badge , #variant-D .panel-window .row.secondary .ago-badge {
+      font-size: 9px;
+    }
+    #variant-A .panel-window .meters , #variant-D .panel-window .meters {
+      /* avatar · name (flex) · used ÷ elapsed = pace · alert → reset (flush right) */
+      grid-template-columns:
+        14px
+        minmax(max-content, 1fr)
+        max-content
+        0.7rem
+        max-content
+        0.9rem
+        max-content
+        14px
+        0.7rem
+        max-content;
+    }
+    #variant-A .panel-window .meters .m-name, #variant-D .panel-window .meters .m-name,
+    #variant-A .panel-window .meters .fact , #variant-D .panel-window .meters .fact {
+      font-size: 11px;
+    }
+    #variant-A .panel-window .meters .op , #variant-D .panel-window .meters .op {
+      font-size: 10px;
+    }
+    /* Pace stays secondary always — no on/under/over text color. */
+    #variant-A .panel-window .meters .fact.pace-fact , #variant-D .panel-window .meters .fact.pace-fact {
+      color: var(--secondary);
+    }
+    #variant-A .panel-window .meters .alert-slot , #variant-D .panel-window .meters .alert-slot {
+      width: 14px;
+      height: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #variant-A .panel-window .meters .alert-slot svg , #variant-D .panel-window .meters .alert-slot svg {
+      width: 13px;
+      height: 13px;
+      display: block;
+    }
+    #variant-A .panel-window .meters .alert-slot.under , #variant-D .panel-window .meters .alert-slot.under {
+      color: #0a84ff;
+    }
+    #variant-A .panel-window .meters .alert-slot.over , #variant-D .panel-window .meters .alert-slot.over {
+      color: #ff9f0a;
+    }
+    #variant-A .panel-window .meters .alert-slot.exhausted , #variant-D .panel-window .meters .alert-slot.exhausted {
+      color: #ff453a;
+    }
+    #variant-A .panel-window .meters .alert-slot.quiet , #variant-D .panel-window .meters .alert-slot.quiet {
+      color: var(--tertiary);
+      opacity: 0.7;
+    }
+    /* Avatar mark as mask: black body → series color; cutouts stay clear (same as app tint). */
+    #variant-A .panel-window .meters .m-avatar-tone , #variant-D .panel-window .meters .m-avatar-tone {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: var(--series, var(--secondary));
+      -webkit-mask: center / contain no-repeat;
+      mask: center / contain no-repeat;
+      -webkit-mask-source-type: alpha;
+      mask-mode: alpha;
+    }
+    #variant-A .panel-window .meters .m-avatar-tone.series-cursor , #variant-D .panel-window .meters .m-avatar-tone.series-cursor {
+      --series: var(--cursor);
+      -webkit-mask-image: url("avatars/cursor.png");
+      mask-image: url("avatars/cursor.png");
+    }
+    #variant-A .panel-window .meters .m-avatar-tone.series-other , #variant-D .panel-window .meters .m-avatar-tone.series-other {
+      --series: var(--other);
+      -webkit-mask-image: url("avatars/cursor.png");
+      mask-image: url("avatars/cursor.png");
+    }
+    #variant-A .panel-window .meters .m-avatar-tone.series-grok , #variant-D .panel-window .meters .m-avatar-tone.series-grok {
+      --series: var(--grok);
+      -webkit-mask-image: url("avatars/grok.png");
+      mask-image: url("avatars/grok.png");
+    }
+    #variant-A .chart-tip .tip-row .swatch-tone , #variant-D .chart-tip .tip-row .swatch-tone {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      background: var(--series, var(--secondary));
+      -webkit-mask: center / contain no-repeat;
+      mask: center / contain no-repeat;
+      -webkit-mask-source-type: alpha;
+      mask-mode: alpha;
+    }
+    #variant-A .chart-tip .tip-row .swatch-tone.series-cursor , #variant-D .chart-tip .tip-row .swatch-tone.series-cursor {
+      --series: var(--cursor);
+      -webkit-mask-image: url("avatars/cursor.png");
+      mask-image: url("avatars/cursor.png");
+    }
+    #variant-A .chart-tip .tip-row .swatch-tone.series-other , #variant-D .chart-tip .tip-row .swatch-tone.series-other {
+      --series: var(--other);
+      -webkit-mask-image: url("avatars/cursor.png");
+      mask-image: url("avatars/cursor.png");
+    }
+    #variant-A .chart-tip .tip-row .swatch-tone.series-grok , #variant-D .chart-tip .tip-row .swatch-tone.series-grok {
+      --series: var(--grok);
+      -webkit-mask-image: url("avatars/grok.png");
+      mask-image: url("avatars/grok.png");
+    }
+    .panel-window .meters .fact {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 12px;
+      color: var(--secondary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .panel-window .meters .fact.svg-only {
+      justify-self: start;
+    }
+    .fact .sf {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+      display: inline-block;
+      /* Same grey for all metric icons — do not inherit pace status color. */
+      background: var(--secondary);
+      opacity: 0.9;
+      -webkit-mask: center / contain no-repeat;
+      mask: center / contain no-repeat;
+    }
+    /* SF Symbols: sparkles · hourglass.bottomhalf.filled · gauge… · timer
+       Elapsed mask keeps hierarchical alpha so the partial fill still reads. */
+    .fact .sf.used {
+      -webkit-mask-image: url("sf/used.png");
+      mask-image: url("sf/used.png");
+    }
+    .fact .sf.pace {
+      -webkit-mask-image: url("sf/pace.png");
+      mask-image: url("sf/pace.png");
+    }
+    .fact .sf.elapsed {
+      -webkit-mask-image: url("sf/elapsed.png");
+      mask-image: url("sf/elapsed.png");
+    }
+    .fact .sf.reset {
+      -webkit-mask-image: url("sf/reset.png");
+      mask-image: url("sf/reset.png");
+    }
+    /* Match chart corridors: under blue · over orange. On-pace stays secondary grey.
+       Specificity must beat `.panel-window .meters .fact`. */
+    .panel-window .meters .fact.pace-on,
+    .menu .item .fact.pace-on { color: var(--secondary); }
+    .panel-window .meters .fact.pace-under,
+    .menu .item .fact.pace-under { color: #0a84ff; }
+    .panel-window .meters .fact.pace-over,
+    .menu .item .fact.pace-over { color: #ff9f0a; }
+    .menu .item.note .fact {
+      margin-right: 10px;
+    }
+    .menu .item.note .fact:last-child {
+      margin-right: 0;
+    }
+    .menu .fact .sf {
+      width: 12px;
+      height: 12px;
+    }
+    .panel-window .row.action {
+      cursor: pointer;
+      justify-content: space-between;
+    }
+    .panel-window .row.action:hover {
+      background: var(--menu-hover);
+      color: var(--menu-hover-text);
+    }
+    .panel-window .row.action .kbd {
+      color: inherit;
+      opacity: 0.55;
+      font-size: 12px;
+      margin-left: 16px;
+    }
+    .panel-window .sep {
+      height: 1px;
+      background: var(--divider);
+      margin: 5px 14px;
+    }
+    .panel-window .chart-well {
+      /* Outer inset + plot clearance match .sep horizontal (14px) */
+      margin: 4px 14px 6px;
+      padding: 14px;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--text) 4.5%, var(--panel));
+      box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--divider) 80%, transparent);
+    }
+    .panel-window .chart-well .chart-host {
+      width: 100%;
+    }
+
+    /* —— B: popover —— */
+    .popover {
+      position: absolute;
+      top: 118px;
+      right: 284px;
+      width: 340px;
+      background: var(--panel);
+      border-radius: 10px;
+      box-shadow:
+        0 0 0 0.5px rgba(0, 0, 0, 0.12),
+        0 12px 36px rgba(0, 0, 0, 0.22);
+      z-index: 4;
+      overflow: hidden;
+    }
+    .popover::after {
+      content: "";
+      position: absolute;
+      top: 22px;
+      right: -6px;
+      width: 12px;
+      height: 12px;
+      background: var(--panel);
+      transform: rotate(45deg);
+      box-shadow: 1px -1px 0 rgba(0, 0, 0, 0.08);
+    }
+    .popover .titlebar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px 0 12px;
+      font-size: 12px;
+      color: var(--secondary);
+      border-bottom: 1px solid var(--divider);
+      background: color-mix(in srgb, var(--panel) 92%, var(--text));
+      position: relative;
+      z-index: 1;
+    }
+    .popover .body {
+      padding: 10px 12px 14px;
+      position: relative;
+      z-index: 1;
+    }
+    .popover .hint {
+      margin: 8px 0 0;
+      font-size: 11px;
+      color: var(--tertiary);
+      line-height: 1.35;
+    }
+
+    /* —— C: detached window —— */
+    .detached {
+      position: absolute;
+      top: 36px;
+      left: 16px;
+      width: 420px;
+      background: var(--panel);
+      border-radius: 10px;
+      box-shadow: 0 14px 44px rgba(0, 0, 0, 0.22);
+      overflow: hidden;
+      z-index: 4;
+    }
+    .detached .titlebar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-size: 12px;
+      color: var(--secondary);
+      border-bottom: 1px solid var(--divider);
+      background: color-mix(in srgb, var(--panel) 92%, var(--text));
+    }
+    .detached .traffic {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      gap: 6px;
+    }
+    .detached .traffic span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff5f57;
+    }
+    .detached .traffic span:nth-child(2) { background: #febc2e; }
+    .detached .traffic span:nth-child(3) { background: #28c840; }
+    .detached .body {
+      padding: 14px 16px 16px;
+    }
+    .detached .lede {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--secondary);
+      line-height: 1.4;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 8px;
+      margin: 10px 0 0;
+      font-size: 11px;
+      color: var(--secondary);
+    }
+    .legend .filter {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      margin: 0;
+      padding: 2px 7px 2px 5px;
+      border: 0.5px solid color-mix(in srgb, var(--divider) 90%, transparent);
+      border-radius: 5px;
+      background: color-mix(in srgb, var(--text) 3.5%, transparent);
+      color: inherit;
+      font: inherit;
+      line-height: 1.2;
+      cursor: pointer;
+      user-select: none;
+    }
+    .legend .filter:hover {
+      background: color-mix(in srgb, var(--text) 7%, transparent);
+    }
+    .legend .filter[aria-pressed="false"] {
+      opacity: 0.38;
+      text-decoration: line-through;
+      text-decoration-color: color-mix(in srgb, var(--secondary) 55%, transparent);
+    }
+    .legend img {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      margin-right: 5px;
+      vertical-align: middle;
+      object-fit: cover;
+    }
+    .legend img.dim { opacity: 0.55; }
+    .legend i.line {
+      display: inline-block;
+      width: 10px;
+      height: 3px;
+      border-radius: 1px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .legend .cursor i.line { background: var(--cursor); }
+    .legend .other i.line { background: var(--other); }
+    .legend .grok i.line { background: var(--grok); }
+    .legend .even i {
+      display: inline-block;
+      background: transparent;
+      border-top: 1.5px dashed var(--even);
+      height: 0;
+      width: 12px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    /* D only: Names sits on the right; small thick tick as swatch. */
+    #variant-A .legend , #variant-D .legend {
+      width: 100%;
+    }
+    #variant-A .legend .filter.names , #variant-D .legend .filter.names {
+      margin-left: auto;
+    }
+    /* Eye = labels visible; slash path shows when pressed=false. */
+    #variant-A .legend .names .eye , #variant-D .legend .names .eye {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 4px;
+      vertical-align: middle;
+      flex-shrink: 0;
+      color: var(--secondary);
+    }
+    #variant-A .legend .names .eye .slash , #variant-D .legend .names .eye .slash {
+      display: none;
+    }
+    #variant-A .legend .names[aria-pressed="false"] .eye .slash , #variant-D .legend .names[aria-pressed="false"] .eye .slash {
+      display: block;
+    }
+    .legend .onpace i {
+      display: inline-block;
+      width: 10px;
+      height: 8px;
+      border-radius: 2px;
+      margin-right: 5px;
+      vertical-align: middle;
+      background: color-mix(in srgb, #34c759 45%, transparent);
+    }
+    .legend .over i {
+      display: inline-block;
+      width: 10px;
+      height: 3px;
+      border-radius: 1px;
+      margin-right: 5px;
+      vertical-align: middle;
+      background: #ff9f0a;
+    }
+    .legend .under i {
+      display: inline-block;
+      width: 10px;
+      height: 3px;
+      border-radius: 1px;
+      margin-right: 5px;
+      vertical-align: middle;
+      background: #0a84ff;
+    }
+    .chart-host svg .layer[hidden] {
+      display: none;
+    }
+
+    .chart-host svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+    .chart-host .axis {
+      stroke: var(--divider);
+      stroke-width: 1;
+      fill: none;
+    }
+    .chart-host .grid {
+      stroke: color-mix(in srgb, var(--divider) 70%, transparent);
+      stroke-width: 1;
+      stroke-dasharray: 2 3;
+    }
+    .chart-host .axis-chrome {
+      pointer-events: none;
+    }
+    .chart-host .tick {
+      fill: var(--tertiary);
+      font-size: 9px;
+      font-family: var(--font);
+    }
+    .chart-host .axis-label {
+      fill: var(--secondary);
+      font-size: 10px;
+      font-family: var(--font);
+    }
+    /* Approved inset Y chrome — same size/fills as X chrome + soft transparent halo. */
+    .chart-host .tick.inset,
+    .chart-host .axis-label.inset {
+      paint-order: stroke fill;
+      stroke: color-mix(in srgb, color-mix(in srgb, var(--text) 4.5%, var(--panel)) 55%, transparent);
+      stroke-width: 3px;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 0.75px color-mix(in srgb, var(--panel) 45%, transparent));
+    }
+    .chart-host .even-line {
+      fill: none;
+      stroke: var(--even);
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+      opacity: 0.85;
+    }
+    .chart-host .on-pace-fill {
+      fill: color-mix(in srgb, #34c759 18%, transparent);
+      stroke: none;
+    }
+    .chart-host .on-pace-edge {
+      fill: none;
+      stroke: #34c759;
+      stroke-width: 0.6;
+      stroke-dasharray: 3.5 2.5;
+      opacity: 0.65;
+    }
+    .chart-host .over-fill {
+      fill: color-mix(in srgb, #ff9f0a 16%, transparent);
+      stroke: none;
+    }
+    .chart-host .under-fill {
+      fill: color-mix(in srgb, #0a84ff 16%, transparent);
+      stroke: none;
+    }
+    .chart-host .over-line {
+      fill: none;
+      stroke: #ff9f0a;
+      stroke-width: 0.7;
+      stroke-dasharray: 3.5 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .chart-host .under-line {
+      fill: none;
+      stroke: #0a84ff;
+      stroke-width: 0.7;
+      stroke-dasharray: 3.5 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .chart-host .series {
+      fill: none;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .chart-host .series.cursor { stroke: var(--cursor); }
+    .chart-host .series.other { stroke: var(--other); }
+    .chart-host .series.grok { stroke: var(--grok); }
+    .chart-host .dot {
+      stroke: var(--panel);
+      stroke-width: 1.5;
+    }
+    .chart-host .dot.cursor { fill: var(--cursor); }
+    .chart-host .dot.other { fill: var(--other); }
+    .chart-host .dot.grok { fill: var(--grok); }
+    .chart-host .anno {
+      fill: var(--secondary);
+      font-size: 9px;
+      font-family: var(--font);
+    }
+    /* D: series-colored end labels (Models / Other / Grok).
+       Soft halo so labels stay readable over corridor fills. */
+    #variant-A .chart-host .anno , #variant-D .chart-host .anno {
+      font-size: 8px;
+      paint-order: stroke fill;
+      stroke: color-mix(in srgb, var(--panel) 68%, transparent);
+      stroke-width: 3px;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 0.85px color-mix(in srgb, var(--panel) 48%, transparent));
+    }
+    #variant-A .chart-host .anno.cursor , #variant-D .chart-host .anno.cursor { fill: var(--cursor); }
+    #variant-A .chart-host .anno.other , #variant-D .chart-host .anno.other { fill: var(--other); }
+    #variant-A .chart-host .anno.grok , #variant-D .chart-host .anno.grok { fill: var(--grok); }
+    .chart-host {
+      position: relative;
+      cursor: crosshair;
+    }
+    .chart-host .hit {
+      fill: transparent;
+      cursor: crosshair;
+    }
+    .chart-host .guide {
+      stroke: color-mix(in srgb, var(--text) 28%, transparent);
+      stroke-width: 1;
+      stroke-dasharray: 3 3;
+      pointer-events: none;
+      display: none;
+    }
+    .chart-host .hover-dot {
+      stroke: var(--panel);
+      stroke-width: 1.5;
+      pointer-events: none;
+      display: none;
+    }
+    .chart-host .hover-dot.cursor { fill: var(--cursor); }
+    .chart-host .hover-dot.other { fill: var(--other); }
+    .chart-host .hover-dot.grok { fill: var(--grok); }
+    .chart-tip {
+      position: absolute;
+      z-index: 5;
+      pointer-events: none;
+      min-width: 118px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--panel) 92%, #000);
+      box-shadow:
+        0 0 0 0.5px rgba(0, 0, 0, 0.14),
+        0 8px 20px rgba(0, 0, 0, 0.18);
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--text);
+      display: none;
+      white-space: nowrap;
+    }
+    .chart-tip .tip-elapsed {
+      color: var(--secondary);
+      margin-bottom: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .chart-tip .tip-when {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--secondary);
+      margin-bottom: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .chart-tip .tip-when .ago {
+      opacity: 0.85;
+    }
+    .chart-tip .tip-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .chart-tip .tip-row + .tip-row { margin-top: 2px; }
+    .chart-tip .tip-row .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      object-fit: cover;
+      display: inline-block;
+    }
+    .chart-tip .tip-row .swatch.dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--other);
+    }
+    .chart-tip .tip-row .swatch.dot.dim { opacity: 0.55; }
+    .chart-tip .tip-row .lbl { color: var(--secondary); flex: 1; }
+    .chart-tip .tip-row .val { font-weight: 560; }
+
+    .variant { display: none; }
+    .variant.active { display: block; }
+
+    .state {
+      margin-top: 22px;
+      max-width: 720px;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: color-mix(in srgb, var(--panel) 80%, #000);
+      border: 1px solid var(--divider);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--secondary);
+      white-space: pre-wrap;
+    }
+    .switcher {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #111;
+      color: #f5f5f7;
+      border-radius: 999px;
+      padding: 8px 14px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+      z-index: 50;
+      font-size: 13px;
+      user-select: none;
+    }
+    .switcher button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+    .switcher .label {
+      min-width: 16rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <!--
+    Question: Where should the pace/history graph live relative to the menu bar?
+    A = approved window panel · D = next tweak (clone of A) · B = menu + popover · C = detached glance.
+    Locked plot: Elapsed%×Used%, trajectories + current dots + even-pace diagonal only.
+    Throwaway — open: open .scratch/quotai/pace-history-menu-prototype/index.html
+  -->
+  <span class="proto-banner">Prototype — throwaway</span>
+  <h1>Pace history · menu chrome</h1>
+  <p class="question">
+    Native <code>.menu</code> cannot host Swift Charts. A is the locked window-panel baseline;
+    A is <strong>Corridor alerts</strong> (scrap on-pace). D is the tweak clone. B/C remain chrome
+    comparisons.
+    D: corridors + even diagonal only; pace cell = gauge + <code>N%</code>; alert icon column.
+  </p>
+  <p class="open">
+    Open: <code>open .scratch/quotai/pace-history-menu-prototype/index.html</code>
+    · <code>?variant=A|D|B|C</code> · ← / → · in B/C click “Pace history”
+  </p>
+
+  <div class="stage-wrap">
+    <p class="stage-label" id="stage-label">A — Approved (window panel)</p>
+    <div class="desktop" aria-label="Menu bar chrome stage">
+      <div class="menubar">
+        <span class="slot" id="menubar-slot"><span class="dot"></span> QuotAI</span>
+        <span class="clock">10:22</span>
+      </div>
+      <div class="surface">
+
+                        <!-- A — Approved (window panel). Corridor alerts · scrap on-pace. Nit on D; promote D→A to re-lock. -->
+        <div class="variant" data-variant="A" id="variant-A">
+          <div class="panel-window" role="dialog" aria-label="QuotAI panel">
+            <div class="row secondary">
+              <span class="status-line">Last refresh: Cursor 09:57<span class="ago-badge">just now</span> · Grok Bot 09:41<span class="ago-badge">16m ago</span></span>
+              <span class="app-ver">v0.14.0</span>
+            </div>
+            <div class="sep"></div>
+            <!-- Order: used% ÷ elapsed% = pace% · corridorAlert? → time to reset -->
+            <!-- Pace = neutral fact (gauge + N%). Corridor alert: quiet checkmark / under / over / exhausted. -->
+            <div class="meters" role="table" aria-label="Quota meters">
+              <span class="m-avatar-tone series-cursor" aria-hidden="true"></span>
+              <span class="m-name">Models</span>
+              <span class="fact" title="Quota used">
+                <span class="sf used" aria-hidden="true"></span> 46%
+              </span>
+              <span class="op" aria-hidden="true">÷</span>
+              <span class="fact" title="Elapsed">
+                <span class="sf elapsed" aria-hidden="true"></span> 48%
+              </span>
+              <span class="op" aria-hidden="true">=</span>
+              <span class="fact pace-fact" title="Pace = used ÷ elapsed">
+                <span class="sf pace" aria-hidden="true"></span> 96%
+              </span>
+              <span class="alert-slot quiet" title="On corridor" aria-label="On corridor">
+                <!-- SF: checkmark.circle -->
+                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.15 7.15 6.05 9.05 9.85 4.9" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="op" aria-hidden="true">→</span>
+              <span class="fact" title="Time to reset">
+                <span class="sf reset" aria-hidden="true"></span> 11d 4h left
+              </span>
+
+              <span class="m-avatar-tone series-other" aria-hidden="true"></span>
+              <span class="m-name">Other Models</span>
+              <span class="fact" title="Quota used">
+                <span class="sf used" aria-hidden="true"></span> 18%
+              </span>
+              <span class="op" aria-hidden="true">÷</span>
+              <span class="fact" title="Elapsed">
+                <span class="sf elapsed" aria-hidden="true"></span> 48%
+              </span>
+              <span class="op" aria-hidden="true">=</span>
+              <span class="fact pace-fact" title="Pace = used ÷ elapsed">
+                <span class="sf pace" aria-hidden="true"></span> 38%
+              </span>
+              <span class="alert-slot under" title="Under corridor" aria-label="Under corridor">
+                <!-- SF: arrow.down.circle -->
+                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M7 4.2v5.1M4.85 7.35 7 9.5l2.15-2.15" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="op" aria-hidden="true">→</span>
+              <span class="fact" title="Time to reset">
+                <span class="sf reset" aria-hidden="true"></span> 11d 4h left
+              </span>
+
+              <span class="m-avatar-tone series-grok" aria-hidden="true"></span>
+              <span class="m-name">Grok Bot</span>
+              <span class="fact" title="Quota used">
+                <span class="sf used" aria-hidden="true"></span> 85%
+              </span>
+              <span class="op" aria-hidden="true">÷</span>
+              <span class="fact" title="Elapsed">
+                <span class="sf elapsed" aria-hidden="true"></span> 71%
+              </span>
+              <span class="op" aria-hidden="true">=</span>
+              <span class="fact pace-fact" title="Pace = used ÷ elapsed">
+                <span class="sf pace" aria-hidden="true"></span> 120%
+              </span>
+              <span class="alert-slot over" title="Over corridor" aria-label="Over corridor">
+                <!-- SF: arrow.up.circle -->
+                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M7 9.8V4.7M4.85 6.65 7 4.5l2.15 2.15" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="op" aria-hidden="true">→</span>
+              <span class="fact" title="Time to reset">
+                <span class="sf reset" aria-hidden="true"></span> 3d 2h left
+              </span>
+            </div>
+            <div class="chart-well">
+              <div class="chart-host" data-chart="panel" data-annotate="1" data-yaxis="inside" data-onpace="0"></div>
+              <div class="legend" style="margin-top:6px" role="group" aria-label="Plot filters">
+                <button type="button" class="filter over" data-layer="over" aria-pressed="true"><i></i>Over corridor</button>
+                <button type="button" class="filter under" data-layer="under" aria-pressed="true"><i></i>Under corridor</button>
+                <button type="button" class="filter even" data-layer="even" aria-pressed="true"><i></i>Exact pace</button>
+                <button type="button" class="filter names" data-layer="names" aria-pressed="true" title="Show series names">
+                  <svg class="eye" viewBox="0 0 14 14" aria-hidden="true">
+                    <path fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" d="M1.4 7s2.2-3.6 5.6-3.6S12.6 7 12.6 7s-2.2 3.6-5.6 3.6S1.4 7 1.4 7z"/>
+                    <circle cx="7" cy="7" r="1.55" fill="currentColor"/>
+                    <path class="slash" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M3 11.2 11 2.8"/>
+                  </svg>
+                  Names
+                </button>
+              </div>
+            </div>
+            <div class="row action">Refresh all</div>
+            <div class="sep"></div>
+            <div class="row action">Settings… <span class="kbd">⌘,</span></div>
+            <div class="row action">Quit QuotAI <span class="kbd">⌘Q</span></div>
+          </div>
+        </div>
+
+        <!-- D — Tweak clone of A. Nit here; leave A alone until re-lock. -->
+        <div class="variant" data-variant="D" id="variant-D">
+          <div class="panel-window" role="dialog" aria-label="QuotAI panel">
+            <div class="row secondary">
+              <span class="status-line">Last refresh: Cursor 09:57<span class="ago-badge">just now</span> · Grok Bot 09:41<span class="ago-badge">16m ago</span></span>
+              <span class="app-ver">v0.14.0</span>
+            </div>
+            <div class="sep"></div>
+            <!-- Order: used% ÷ elapsed% = pace% · corridorAlert? → time to reset -->
+            <!-- Pace = neutral fact (gauge + N%). Corridor alert: quiet checkmark / under / over / exhausted. -->
+            <div class="meters" role="table" aria-label="Quota meters">
+              <span class="m-avatar-tone series-cursor" aria-hidden="true"></span>
+              <span class="m-name">Models</span>
+              <span class="fact" title="Quota used">
+                <span class="sf used" aria-hidden="true"></span> 46%
+              </span>
+              <span class="op" aria-hidden="true">÷</span>
+              <span class="fact" title="Elapsed">
+                <span class="sf elapsed" aria-hidden="true"></span> 48%
+              </span>
+              <span class="op" aria-hidden="true">=</span>
+              <span class="fact pace-fact" title="Pace = used ÷ elapsed">
+                <span class="sf pace" aria-hidden="true"></span> 96%
+              </span>
+              <span class="alert-slot quiet" title="On corridor" aria-label="On corridor">
+                <!-- SF: checkmark.circle -->
+                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.15 7.15 6.05 9.05 9.85 4.9" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="op" aria-hidden="true">→</span>
+              <span class="fact" title="Time to reset">
+                <span class="sf reset" aria-hidden="true"></span> 11d 4h left
+              </span>
+
+              <span class="m-avatar-tone series-other" aria-hidden="true"></span>
+              <span class="m-name">Other Models</span>
+              <span class="fact" title="Quota used">
+                <span class="sf used" aria-hidden="true"></span> 18%
+              </span>
+              <span class="op" aria-hidden="true">÷</span>
+              <span class="fact" title="Elapsed">
+                <span class="sf elapsed" aria-hidden="true"></span> 48%
+              </span>
+              <span class="op" aria-hidden="true">=</span>
+              <span class="fact pace-fact" title="Pace = used ÷ elapsed">
+                <span class="sf pace" aria-hidden="true"></span> 38%
+              </span>
+              <span class="alert-slot under" title="Under corridor" aria-label="Under corridor">
+                <!-- SF: arrow.down.circle -->
+                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M7 4.2v5.1M4.85 7.35 7 9.5l2.15-2.15" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="op" aria-hidden="true">→</span>
+              <span class="fact" title="Time to reset">
+                <span class="sf reset" aria-hidden="true"></span> 11d 4h left
+              </span>
+
+              <span class="m-avatar-tone series-grok" aria-hidden="true"></span>
+              <span class="m-name">Grok Bot</span>
+              <span class="fact" title="Quota used">
+                <span class="sf used" aria-hidden="true"></span> 85%
+              </span>
+              <span class="op" aria-hidden="true">÷</span>
+              <span class="fact" title="Elapsed">
+                <span class="sf elapsed" aria-hidden="true"></span> 71%
+              </span>
+              <span class="op" aria-hidden="true">=</span>
+              <span class="fact pace-fact" title="Pace = used ÷ elapsed">
+                <span class="sf pace" aria-hidden="true"></span> 120%
+              </span>
+              <span class="alert-slot over" title="Over corridor" aria-label="Over corridor">
+                <!-- SF: arrow.up.circle -->
+                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M7 9.8V4.7M4.85 6.65 7 4.5l2.15 2.15" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="op" aria-hidden="true">→</span>
+              <span class="fact" title="Time to reset">
+                <span class="sf reset" aria-hidden="true"></span> 3d 2h left
+              </span>
+            </div>
+            <div class="chart-well">
+              <div class="chart-host" data-chart="panel" data-annotate="1" data-yaxis="inside" data-onpace="0"></div>
+              <div class="legend" style="margin-top:6px" role="group" aria-label="Plot filters">
+                <button type="button" class="filter over" data-layer="over" aria-pressed="true"><i></i>Over corridor</button>
+                <button type="button" class="filter under" data-layer="under" aria-pressed="true"><i></i>Under corridor</button>
+                <button type="button" class="filter even" data-layer="even" aria-pressed="true"><i></i>Exact pace</button>
+                <button type="button" class="filter names" data-layer="names" aria-pressed="true" title="Show series names">
+                  <svg class="eye" viewBox="0 0 14 14" aria-hidden="true">
+                    <path fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" d="M1.4 7s2.2-3.6 5.6-3.6S12.6 7 12.6 7s-2.2 3.6-5.6 3.6S1.4 7 1.4 7z"/>
+                    <circle cx="7" cy="7" r="1.55" fill="currentColor"/>
+                    <path class="slash" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M3 11.2 11 2.8"/>
+                  </svg>
+                  Names
+                </button>
+              </div>
+            </div>
+            <div class="row action">Refresh all</div>
+            <div class="sep"></div>
+            <div class="row action">Settings… <span class="kbd">⌘,</span></div>
+            <div class="row action">Quit QuotAI <span class="kbd">⌘Q</span></div>
+          </div>
+        </div>
+
+        <!-- B — Menu + popover -->
+        <div class="variant" data-variant="B" id="variant-B">
+          <div class="menu" aria-label="QuotAI menu">
+            <div class="item secondary">Last refresh: Cursor 09:57 · Grok Bot 09:41</div>
+            <div class="sep"></div>
+            <div class="item meter"><img class="avatar" src="avatars/cursor.png" alt="" width="14" height="14" />Models · <span class="fact" title="Quota used"><span class="sf used" aria-hidden="true"></span> 46%</span> <span class="op" aria-hidden="true">÷</span> <span class="fact" title="Elapsed"><span class="sf elapsed" aria-hidden="true"></span> 48%</span> <span class="op" aria-hidden="true">=</span> <span class="fact pace-on" title="Pace = used ÷ elapsed"><span class="sf pace" aria-hidden="true"></span> 96% · on pace</span></div>
+            <div class="item note"><span class="fact" title="Time to reset"><span class="sf reset" aria-hidden="true"></span> 11d 4h left</span></div>
+            <div class="item meter"><img class="avatar dim" src="avatars/cursor.png" alt="" width="14" height="14" />Other Models · <span class="fact" title="Quota used"><span class="sf used" aria-hidden="true"></span> 18%</span> <span class="op" aria-hidden="true">÷</span> <span class="fact" title="Elapsed"><span class="sf elapsed" aria-hidden="true"></span> 48%</span> <span class="op" aria-hidden="true">=</span> <span class="fact pace-under" title="Pace = used ÷ elapsed"><span class="sf pace" aria-hidden="true"></span> 38% · under</span></div>
+            <div class="item note"><span class="fact" title="Time to reset"><span class="sf reset" aria-hidden="true"></span> 11d 4h left</span></div>
+            <div class="item meter"><img class="avatar" src="avatars/grok.png" alt="" width="14" height="14" />Grok Bot · <span class="fact" title="Quota used"><span class="sf used" aria-hidden="true"></span> 85%</span> <span class="op" aria-hidden="true">÷</span> <span class="fact" title="Elapsed"><span class="sf elapsed" aria-hidden="true"></span> 71%</span> <span class="op" aria-hidden="true">=</span> <span class="fact pace-over" title="Pace = used ÷ elapsed"><span class="sf pace" aria-hidden="true"></span> 120% · over</span></div>
+            <div class="item note"><span class="fact" title="Time to reset"><span class="sf reset" aria-hidden="true"></span> 3d 2h left</span></div>
+            <div class="sep"></div>
+            <div class="item action hot" data-open="popover" id="b-pace-row">
+              Pace history <span class="chev">›</span>
+            </div>
+            <div class="sep"></div>
+            <div class="item action">Refresh all</div>
+            <div class="sep"></div>
+            <div class="item action">Settings…</div>
+            <div class="item action">Quit QuotAI</div>
+          </div>
+          <div class="popover" id="popover-b" hidden>
+            <div class="titlebar">
+              <span>Pace history</span>
+              <span style="font-size:11px;opacity:0.7">this period</span>
+            </div>
+            <div class="body">
+              <div class="chart-host" data-chart="popover"></div>
+              <div class="legend" role="group" aria-label="Plot filters">
+                <button type="button" class="filter cursor" data-layer="cursor" aria-pressed="true"><img src="avatars/cursor.png" alt="" /><i class="line"></i>Cursor</button>
+                <button type="button" class="filter other" data-layer="other" aria-pressed="true"><img class="dim" src="avatars/cursor.png" alt="" /><i class="line"></i>Other</button>
+                <button type="button" class="filter grok" data-layer="grok" aria-pressed="true"><img src="avatars/grok.png" alt="" /><i class="line"></i>Grok</button>
+                <button type="button" class="filter onpace" data-layer="onpace" aria-pressed="true"><i></i>On-pace band</button>
+                <button type="button" class="filter over" data-layer="over" aria-pressed="true"><i></i>Over</button>
+                <button type="button" class="filter under" data-layer="under" aria-pressed="true"><i></i>Under</button>
+              </div>
+              <p class="hint">Attached popover — chart only. Meters stay in the native menu.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- C — Detached glance -->
+        <div class="variant" data-variant="C" id="variant-C">
+          <div class="menu" aria-label="QuotAI menu">
+            <div class="item secondary">Last refresh: Cursor 09:57 · Grok Bot 09:41</div>
+            <div class="sep"></div>
+            <div class="item meter"><img class="avatar" src="avatars/cursor.png" alt="" width="14" height="14" />Models · <span class="fact" title="Quota used"><span class="sf used" aria-hidden="true"></span> 46%</span> <span class="op" aria-hidden="true">÷</span> <span class="fact" title="Elapsed"><span class="sf elapsed" aria-hidden="true"></span> 48%</span> <span class="op" aria-hidden="true">=</span> <span class="fact pace-on" title="Pace = used ÷ elapsed"><span class="sf pace" aria-hidden="true"></span> 96% · on pace</span></div>
+            <div class="item note"><span class="fact" title="Time to reset"><span class="sf reset" aria-hidden="true"></span> 11d 4h left</span></div>
+            <div class="item meter"><img class="avatar dim" src="avatars/cursor.png" alt="" width="14" height="14" />Other Models · <span class="fact" title="Quota used"><span class="sf used" aria-hidden="true"></span> 18%</span> <span class="op" aria-hidden="true">÷</span> <span class="fact" title="Elapsed"><span class="sf elapsed" aria-hidden="true"></span> 48%</span> <span class="op" aria-hidden="true">=</span> <span class="fact pace-under" title="Pace = used ÷ elapsed"><span class="sf pace" aria-hidden="true"></span> 38% · under</span></div>
+            <div class="item note"><span class="fact" title="Time to reset"><span class="sf reset" aria-hidden="true"></span> 11d 4h left</span></div>
+            <div class="item meter"><img class="avatar" src="avatars/grok.png" alt="" width="14" height="14" />Grok Bot · <span class="fact" title="Quota used"><span class="sf used" aria-hidden="true"></span> 85%</span> <span class="op" aria-hidden="true">÷</span> <span class="fact" title="Elapsed"><span class="sf elapsed" aria-hidden="true"></span> 71%</span> <span class="op" aria-hidden="true">=</span> <span class="fact pace-over" title="Pace = used ÷ elapsed"><span class="sf pace" aria-hidden="true"></span> 120% · over</span></div>
+            <div class="item note"><span class="fact" title="Time to reset"><span class="sf reset" aria-hidden="true"></span> 3d 2h left</span></div>
+            <div class="sep"></div>
+            <div class="item action" data-open="detached" id="c-pace-row">Pace history…</div>
+            <div class="sep"></div>
+            <div class="item action">Refresh all</div>
+            <div class="sep"></div>
+            <div class="item action">Settings…</div>
+            <div class="item action">About</div>
+            <div class="item action">Quit QuotAI</div>
+          </div>
+          <div class="detached" id="detached-c" hidden>
+            <div class="titlebar">
+              <div class="traffic" aria-hidden="true"><span></span><span></span><span></span></div>
+              Pace history
+            </div>
+            <div class="body">
+              <p class="lede">
+                Used % vs elapsed % for the active period. Same axes as Settings → Alerts,
+                without corridor dials.
+              </p>
+              <div class="chart-host" data-chart="detached"></div>
+              <div class="legend" role="group" aria-label="Plot filters">
+                <button type="button" class="filter cursor" data-layer="cursor" aria-pressed="true"><img src="avatars/cursor.png" alt="" /><i class="line"></i>Cursor</button>
+                <button type="button" class="filter other" data-layer="other" aria-pressed="true"><img class="dim" src="avatars/cursor.png" alt="" /><i class="line"></i>Other</button>
+                <button type="button" class="filter grok" data-layer="grok" aria-pressed="true"><img src="avatars/grok.png" alt="" /><i class="line"></i>Grok</button>
+                <button type="button" class="filter onpace" data-layer="onpace" aria-pressed="true"><i></i>On-pace band</button>
+                <button type="button" class="filter over" data-layer="over" aria-pressed="true"><i></i>Over alert</button>
+                <button type="button" class="filter under" data-layer="under" aria-pressed="true"><i></i>Under alert</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <pre class="state" id="state"></pre>
+
+  <div class="switcher" role="navigation" aria-label="Prototype variants">
+    <button type="button" id="prev" aria-label="Previous variant">←</button>
+    <span class="label" id="switch-label">A — Approved (window panel)</span>
+    <button type="button" id="next" aria-label="Next variant">→</button>
+  </div>
+
+  <script>
+    /*
+      Fake refresh-cadence series (elapsed%, used%). Current = last point.
+      Cursor quiet (in corridor), Other under corridor, Grok over corridor.
+      A still labels pace with on/under/over words; D uses plain N% + alert icon.
+    */
+    const SERIES = {
+      cursor: [
+        [0, 0], [8, 7], [16, 15], [24, 23], [32, 31], [40, 39],
+        [48, 46], // 46/48 ≈ 96% → on pace
+      ],
+      other: [
+        [0, 0], [8, 2], [16, 5], [24, 8], [32, 11], [40, 15],
+        [48, 18], // 18/48 ≈ 38% → under
+      ],
+      grok: [
+        [0, 0], [10, 12], [20, 26], [30, 40], [40, 52], [50, 64],
+        [60, 74], [71, 85], // 85/71 ≈ 120% → over
+      ],
+    };
+    const LABELS = { cursor: "Models", other: "Other", grok: "Grok" };
+    /* End-label nudges — Cursor/Other share elapsed 48%, so stack above/below. */
+    const ANNO_NUDGE = {
+      cursor: { dx: 6, dy: -3, anchor: "start" },
+      other: { dx: 6, dy: 11, anchor: "start" },
+      grok: { dx: 6, dy: -3, anchor: "start" },
+    };
+
+    // Proto clock: Cursor/Other period (48% elapsed → 11d 4h left). Hover maps elapsed% → date.
+    const PERIOD = (() => {
+      const now = new Date("2026-11-01T09:57:00");
+      const remainingMs = ((11 * 24) + 4) * 3600 * 1000;
+      const elapsedNow = 0.48;
+      const periodMs = remainingMs / (1 - elapsedNow);
+      const start = new Date(now.getTime() - periodMs * elapsedNow);
+      return { now, start, periodMs };
+    })();
+
+    function dateAtElapsed(elapsedPct) {
+      return new Date(PERIOD.start.getTime() + (elapsedPct / 100) * PERIOD.periodMs);
+    }
+    function formatTipDate(d) {
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+    function formatTipAgo(from, to) {
+      const ms = Math.max(0, to - from);
+      if (ms < 45_000) return "just now";
+      const mins = Math.round(ms / 60_000);
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.round(mins / 60);
+      if (hrs < 36) return `${hrs}h ago`;
+      const days = Math.round(hrs / 24);
+      return `${days}d ago`;
+    }
+
+    // Endpoint defaults from PaceAlertThresholds; mild curve for proto.
+    const THRESHOLDS = {
+      overMaxStartPct: 25,
+      overEmptyBeforePct: 95,
+      underAfterPct: 25,
+      underMinEndPct: 95,
+      overCurvePct: 40,
+      underCurvePct: 40,
+    };
+    // Chart on-pace fill: parallels (used% = elapsed% ± (hi−100) pts).
+    const ON_PACE = { loPct: 90, hiPct: 110 };
+    const onPaceLoOffset = (ON_PACE.loPct - 100) / 100; // e.g. −0.10
+    const onPaceHiOffset = (ON_PACE.hiPct - 100) / 100; // e.g. +0.10
+
+    function curvePower(curvePct) {
+      return 1 + Math.min(Math.max(curvePct / 100, 0), 1);
+    }
+    function overFloor(t) {
+      const b = Math.max(THRESHOLDS.overEmptyBeforePct / 100, 1e-6);
+      return t + (1 - b);
+    }
+    function underCeiling(t) {
+      const d = THRESHOLDS.underMinEndPct / 100;
+      return t + (d - 1);
+    }
+    /** Used fraction 0…1 on over boundary at elapsed fraction t. */
+    function overUsed(t) {
+      const a = THRESHOLDS.overMaxStartPct / 100;
+      const b = Math.max(THRESHOLDS.overEmptyBeforePct / 100, 1e-6);
+      const p = curvePower(THRESHOLDS.overCurvePct);
+      const s = Math.max(t / b, 0);
+      const raw = a + (1 - a) * Math.pow(s, p);
+      return Math.max(raw, overFloor(t));
+    }
+    /** Used fraction 0…1 on under boundary at elapsed fraction t. */
+    function underUsed(t) {
+      const c = THRESHOLDS.underAfterPct / 100;
+      const d = THRESHOLDS.underMinEndPct / 100;
+      const denom = Math.max(1 - c, 1e-6);
+      const p = curvePower(THRESHOLDS.underCurvePct);
+      const s = Math.max((t - c) / denom, 0);
+      const raw = d * Math.pow(s, 1 / p);
+      return Math.min(raw, underCeiling(t));
+    }
+
+    const VARIANTS = [
+      { id: "A", name: "Approved (window panel)" },
+      { id: "D", name: "Tweak clone (Corridor)" },
+      { id: "B", name: "Menu + popover" },
+      { id: "C", name: "Detached glance" },
+    ];
+
+    const ui = {
+      popoverOpen: true,
+      detachedOpen: true,
+    };
+
+    function interpolateUsed(points, elapsed) {
+      if (!points.length) return null;
+      if (elapsed < points[0][0] || elapsed > points[points.length - 1][0]) return null;
+      for (let i = 0; i < points.length - 1; i++) {
+        const [e0, u0] = points[i];
+        const [e1, u1] = points[i + 1];
+        if (elapsed >= e0 && elapsed <= e1) {
+          if (e1 === e0) return u0;
+          const t = (elapsed - e0) / (e1 - e0);
+          return u0 + t * (u1 - u0);
+        }
+      }
+      return points[points.length - 1][1];
+    }
+
+    function chartSvg(plotH, opts = {}) {
+      // X = 2× Y (wider elapsed axis). Even-pace is not 45° here — intentional.
+      const annotate = opts.annotate !== false;
+      // Panel approved: Y ticks + "Used %" inside the right spine; padR=0
+      // mirrors flush left. Mid ticks → axis titles. Soft .inset halo — see CSS.
+      const yAxisInside = opts.yAxisInside === true;
+      // D proposal: corridors + even only (no on-pace fill/edges).
+      const showOnPace = opts.showOnPace !== false;
+      const plotW = plotH * 2;
+      // Default: Y chrome outside right. Plot origin flush so chart-well
+      // padding alone sets equal left/top clearance (14px = .sep).
+      const padL = 0;
+      const padR = yAxisInside ? 0 : 36;
+      const padT = 0;
+      const padB = 22;
+      const w = padL + plotW + padR;
+      const h = padT + plotH + padB;
+      const x = (e) => padL + (e / 100) * plotW;
+      const y = (u) => padT + plotH - (u / 100) * plotH;
+      const ticks = [0, 25, 50, 75, 100];
+      const yTickX = yAxisInside ? padL + plotW - 5 : padL + plotW + 5;
+      const yTickAnchor = yAxisInside ? "end" : "start";
+      const yLabelX = w - 2;
+      const yLabelY = padT + plotH / 2;
+      const yInsetClass = yAxisInside ? " inset" : "";
+
+      let grid = "";
+      let xTicks = "";
+      let yTicks = "";
+      for (const t of ticks) {
+        // Interior dashed grid only — 0/100 sit on the solid axis rect (no double edge).
+        if (t !== 0 && t !== 100) {
+          grid += `<line class="grid" x1="${x(t)}" y1="${padT}" x2="${x(t)}" y2="${padT + plotH}" />`;
+          grid += `<line class="grid" x1="${padL}" y1="${y(t)}" x2="${padL + plotW}" y2="${y(t)}" />`;
+        }
+        const xTickY = padT + plotH + 12;
+        // Inside: "Elapsed %" replaces mid X tick 50 (same baseline as numbers).
+        if (yAxisInside && t === 50) {
+          xTicks += `<text class="tick" x="${x(t)}" y="${xTickY}" text-anchor="middle">Elapsed %</text>`;
+        } else {
+          let tx = x(t);
+          if (yAxisInside && t === 0) tx += 5; // nudge in from left edge
+          if (yAxisInside && t === 100) tx -= 13; // nudge in from right edge
+          xTicks += `<text class="tick" x="${tx}" y="${xTickY}" text-anchor="middle">${t}</text>`;
+        }
+        // Inside: "Used %" replaces the mid (50) tick; keep rotate(90).
+        if (yAxisInside && t === 50) {
+          const lx = yTickX - 8; // nudge left of the spine
+          const ly = y(t);
+          yTicks += `<text class="tick inset" x="${lx}" y="${ly}" text-anchor="middle" transform="rotate(90 ${lx} ${ly})">Used %</text>`;
+        } else {
+          let ty = y(t) + 3;
+          if (yAxisInside && t === 0) ty -= 8; // nudge up from bottom spine
+          if (yAxisInside && t === 100) ty += 8; // nudge down from top spine
+          yTicks += `<text class="tick${yInsetClass}" x="${yTickX}" y="${ty}" text-anchor="${yTickAnchor}">${t}</text>`;
+        }
+      }
+
+      function pathFor(points) {
+        return points
+          .map((p, i) => `${i === 0 ? "M" : "L"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`)
+          .join(" ");
+      }
+
+      // Sample band curves in elapsed fraction 0…1 (match PaceAlertBandChart stride).
+      const samples = [];
+      for (let t = 0; t <= 1.0001; t += 0.02) samples.push(Math.min(t, 1));
+      const underStart = THRESHOLDS.underAfterPct / 100;
+      if (!samples.some((t) => Math.abs(t - underStart) < 1e-9)) {
+        samples.push(underStart);
+        samples.sort((a, b) => a - b);
+      }
+
+      // On-pace band: parallels (u = t + δ), clipped to 0…100. (A/B/C only.)
+      let onPaceLayer = "";
+      if (showOnPace) {
+        const onPaceHi = [];
+        const onPaceLo = [];
+        for (const t of samples) {
+          const e = t * 100;
+          onPaceHi.push([e, Math.min(Math.max((t + onPaceHiOffset) * 100, 0), 100)]);
+          onPaceLo.push([e, Math.min(Math.max((t + onPaceLoOffset) * 100, 0), 100)]);
+        }
+        const onPaceFill =
+          pathFor(onPaceHi) +
+          " " +
+          onPaceLo
+            .slice()
+            .reverse()
+            .map((p, i) => `${i === 0 ? "L" : "L"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`)
+            .join(" ") +
+          " Z";
+        onPaceLayer = `
+        <g class="layer" data-layer="onpace">
+          <path class="on-pace-fill" d="${onPaceFill}" />
+          <path class="on-pace-edge" d="${pathFor(onPaceHi)}" />
+          <path class="on-pace-edge" d="${pathFor(onPaceLo)}" />
+        </g>`;
+      }
+
+      const overEnd = THRESHOLDS.overEmptyBeforePct / 100;
+      const overPts = samples
+        .filter((t) => t <= overEnd + 1e-9)
+        .map((t) => [t * 100, Math.min(Math.max(overUsed(t) * 100, 0), 100)]);
+      // After empty-before, over boundary is exhausted (used ≥ 100) — fill stays at top.
+      if (overEnd < 1) {
+        overPts.push([overEnd * 100, 100], [100, 100]);
+      }
+      const underPts = samples
+        .filter((t) => t >= underStart - 1e-9)
+        .map((t) => [t * 100, Math.min(Math.max(underUsed(t) * 100, 0), 100)]);
+
+      // Over alert zone: above over curve → top of plot (used = 100).
+      const overFill =
+        pathFor(overPts) +
+        ` L${x(100).toFixed(1)},${y(100).toFixed(1)}` +
+        ` L${x(0).toFixed(1)},${y(100).toFixed(1)} Z`;
+
+      // Under alert zone: below under curve → bottom (used = 0), only after underAfter.
+      let underFill = "";
+      if (underPts.length) {
+        underFill =
+          pathFor(underPts) +
+          ` L${x(100).toFixed(1)},${y(0).toFixed(1)}` +
+          ` L${x(underStart * 100).toFixed(1)},${y(0).toFixed(1)} Z`;
+      }
+
+      const bands = `
+        <g class="layer" data-layer="over">
+          <path class="over-fill" d="${overFill}" />
+          <path class="over-line" d="${pathFor(overPts.filter((p) => p[0] <= overEnd * 100 + 1e-6))}" />
+        </g>
+        <g class="layer" data-layer="under">
+          ${underFill ? `<path class="under-fill" d="${underFill}" />` : ""}
+          <path class="under-line" d="${pathFor(underPts)}" />
+        </g>
+        ${onPaceLayer}
+        <g class="layer" data-layer="even">
+          <line class="even-line" x1="${x(0)}" y1="${y(0)}" x2="${x(100)}" y2="${y(100)}" />
+        </g>
+      `;
+
+      let series = "";
+      let nameLabels = "";
+      let hoverDots = "";
+      for (const key of ["cursor", "other", "grok"]) {
+        const pts = SERIES[key];
+        const last = pts[pts.length - 1];
+        if (annotate) {
+          const n = ANNO_NUDGE[key] || { dx: 0, dy: -7, anchor: "middle" };
+          nameLabels += `<text class="anno ${key}" x="${(x(last[0]) + n.dx).toFixed(1)}" y="${(y(last[1]) + n.dy).toFixed(1)}" text-anchor="${n.anchor}">${LABELS[key]}</text>`;
+        }
+        series += `<g class="layer" data-layer="${key}">
+          <path class="series ${key}" d="${pathFor(pts)}" />
+          <circle class="dot ${key}" cx="${x(last[0])}" cy="${y(last[1])}" r="3.5" />
+        </g>`;
+        hoverDots += `<circle class="hover-dot ${key}" data-key="${key}" r="4" cx="0" cy="0" />`;
+      }
+      const namesLayer = nameLabels
+        ? `<g class="layer" data-layer="names">${nameLabels}</g>`
+        : "";
+
+      // Axis chrome after series so labels never sit under fills/lines.
+      // Outside: titles sit below / in the right gutter. Inside: they replace mid ticks.
+      const xAxisTitle = yAxisInside
+        ? ""
+        : `<text class="axis-label" x="${padL + plotW / 2}" y="${h - 2}" text-anchor="middle">Elapsed %</text>`;
+      const yAxisTitle = yAxisInside
+        ? ""
+        : `<text class="axis-label" x="${yLabelX}" y="${yLabelY}" text-anchor="middle" transform="rotate(90 ${yLabelX} ${yLabelY})">Used %</text>`;
+      const axisChrome = `<g class="axis-chrome">
+        ${xTicks}
+        ${yTicks}
+        ${xAxisTitle}
+        ${yAxisTitle}
+      </g>`;
+
+      return {
+        html: `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Pace history: used percent versus elapsed percent">
+        ${grid}
+        <rect class="axis" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" />
+        ${bands}
+        ${series}
+        ${namesLayer}
+        ${axisChrome}
+        <line class="guide" x1="0" y1="${padT}" x2="0" y2="${padT + plotH}" />
+        ${hoverDots}
+        <rect class="hit" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" />
+      </svg>
+      <div class="chart-tip" hidden></div>`,
+        geom: { padL, padT, plotW, plotH, w, h },
+      };
+    }
+
+    function bindChartHover(host, geom) {
+      const svg = host.querySelector("svg");
+      const tip = host.querySelector(".chart-tip");
+      const guide = host.querySelector(".guide");
+      const hit = host.querySelector(".hit");
+      if (!svg || !tip || !guide || !hit) return;
+
+      const { padL, padT, plotW, plotH } = geom;
+      const showOnPace = host.dataset.onpace !== "0";
+
+      function hide() {
+        tip.style.display = "none";
+        tip.hidden = true;
+        guide.style.display = "none";
+        host.querySelectorAll(".hover-dot").forEach((d) => {
+          d.style.display = "none";
+        });
+      }
+
+      function show(clientX, clientY) {
+        const pt = svg.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const ctm = svg.getScreenCTM();
+        if (!ctm) return;
+        const local = pt.matrixTransform(ctm.inverse());
+        const elapsed = ((local.x - padL) / plotW) * 100;
+        if (elapsed < 0 || elapsed > 100) {
+          hide();
+          return;
+        }
+
+        const rows = [];
+        for (const key of ["cursor", "other", "grok"]) {
+          const used = interpolateUsed(SERIES[key], elapsed);
+          const dot = host.querySelector(`.hover-dot.${key}`);
+          if (used == null) {
+            if (dot) dot.style.display = "none";
+            continue;
+          }
+          const cx = padL + (elapsed / 100) * plotW;
+          const cy = padT + plotH - (used / 100) * plotH;
+          if (dot) {
+            dot.setAttribute("cx", cx.toFixed(1));
+            dot.setAttribute("cy", cy.toFixed(1));
+            dot.style.display = "block";
+          }
+          rows.push({ key, used });
+        }
+
+        if (!rows.length) {
+          hide();
+          return;
+        }
+
+        const gx = padL + (elapsed / 100) * plotW;
+        guide.setAttribute("x1", gx.toFixed(1));
+        guide.setAttribute("x2", gx.toFixed(1));
+        guide.style.display = "block";
+
+        const AVATAR = {
+          cursor: "avatars/cursor.png",
+          other: "avatars/cursor.png",
+          grok: "avatars/grok.png",
+        };
+        const t = elapsed / 100;
+        const overU = Math.min(Math.max(overUsed(t) * 100, 0), 100);
+        const underU =
+          t >= THRESHOLDS.underAfterPct / 100
+            ? Math.min(Math.max(underUsed(t) * 100, 0), 100)
+            : null;
+        let bandBits =
+          `<div class="tip-row"><span class="lbl">Over ≥</span><span class="val">${overU.toFixed(0)}%</span></div>` +
+          (underU == null
+            ? `<div class="tip-row"><span class="lbl">Under</span><span class="val">n/a yet</span></div>`
+            : `<div class="tip-row"><span class="lbl">Under ≤</span><span class="val">${underU.toFixed(0)}%</span></div>`);
+        if (showOnPace) {
+          bandBits +=
+            `<div class="tip-row"><span class="lbl">On pace</span><span class="val">${Math.min(Math.max(elapsed + onPaceLoOffset * 100, 0), 100).toFixed(0)}–${Math.min(Math.max(elapsed + onPaceHiOffset * 100, 0), 100).toFixed(0)}%</span></div>`;
+        }
+
+        const at = dateAtElapsed(elapsed);
+        const when =
+          `<div class="tip-when">` +
+          `<span>${formatTipDate(at)} · ${formatTipAgo(at, PERIOD.now)}</span>` +
+          `<span class="ago">Elapsed ${elapsed.toFixed(0)}%</span>` +
+          `</div>`;
+
+        tip.innerHTML =
+          when +
+          rows
+            .map((r) => {
+              const icon = `<span class="swatch-tone series-${r.key}" aria-hidden="true"></span>`;
+              return (
+                `<div class="tip-row">${icon}` +
+                `<span class="lbl">${LABELS[r.key]}</span>` +
+                `<span class="val">${r.used.toFixed(0)}% used</span></div>`
+              );
+            })
+            .join("") +
+          `<div class="tip-elapsed" style="margin-top:6px;padding-top:4px;border-top:1px solid color-mix(in srgb, var(--divider) 80%, transparent)">${showOnPace ? "Bands" : "Corridors"}</div>` +
+          bandBits;
+        tip.hidden = false;
+        tip.style.display = "block";
+
+        const hostRect = host.getBoundingClientRect();
+        const tipW = tip.offsetWidth;
+        const tipH = tip.offsetHeight;
+        let left = clientX - hostRect.left + 12;
+        let top = clientY - hostRect.top - tipH - 8;
+        if (left + tipW > hostRect.width - 4) left = clientX - hostRect.left - tipW - 12;
+        if (top < 4) top = clientY - hostRect.top + 14;
+        tip.style.left = `${Math.max(4, left)}px`;
+        tip.style.top = `${top}px`;
+      }
+
+      hit.addEventListener("mousemove", (e) => show(e.clientX, e.clientY));
+      hit.addEventListener("mouseleave", hide);
+    }
+
+    function paintCharts() {
+      document.querySelectorAll(".chart-host").forEach((el) => {
+        const kind = el.dataset.chart;
+        // Height → width = 2H. Panel uses ~480px inner → plotH ~210.
+        const plotH =
+          kind === "panel" ? 148 :
+          kind === "detached" ? 140 :
+          kind === "popover" ? 120 : 118;
+        const annotate = el.dataset.annotate !== "0";
+        const yAxisInside = el.dataset.yaxis === "inside";
+        const showOnPace = el.dataset.onpace !== "0";
+        const built = chartSvg(plotH, { annotate, yAxisInside, showOnPace });
+        el.innerHTML = built.html;
+        bindChartHover(el, built.geom);
+      });
+    }
+
+    function currentId() {
+      const p = new URLSearchParams(location.search).get("variant");
+      return VARIANTS.some((v) => v.id === p) ? p : "A";
+    }
+
+    function paintState() {
+      const id = currentId();
+      document.getElementById("state").textContent = JSON.stringify(
+        {
+          question: "Where should pace/history live relative to the menu bar?",
+          variant: id,
+          plot: {
+            axes: "Elapsed % × Used %",
+            onPaceBand:
+              id === "D"
+                ? "removed (corridor proposal)"
+                : "parallels used = elapsed ± (hi−100) pts (Settings 90–110% → ±10)",
+            corridorAlerts: THRESHOLDS,
+            evenPaceDiagonal: true,
+            series: Object.fromEntries(
+              Object.entries(SERIES).map(([k, pts]) => [
+                k,
+                { points: pts.length, current: pts[pts.length - 1] },
+              ])
+            ),
+          },
+          chrome: {
+            A: "Approved locked baseline — window panel + inset axis chrome (Elapsed/Used replace mid ticks)",
+            D: "Proposed — Corridor alerts: plain pace N%, alert icon column, no on-pace band",
+            B: "Native .menu + NSPopover-style chart",
+            C: "Native .menu + About-style NSWindow",
+          },
+          popoverOpen: id === "B" ? ui.popoverOpen : null,
+          detachedOpen: id === "C" ? ui.detachedOpen : null,
+        },
+        null,
+        2
+      );
+    }
+
+    function showVariant(id) {
+      document.querySelectorAll(".variant").forEach((el) => {
+        el.classList.toggle("active", el.dataset.variant === id);
+      });
+      const meta = VARIANTS.find((v) => v.id === id) || VARIANTS[0];
+      const label = meta.id + " — " + meta.name;
+      document.getElementById("switch-label").textContent = label;
+      document.getElementById("stage-label").textContent = label;
+
+      const slot = document.getElementById("menubar-slot");
+      slot.classList.toggle("active", true);
+
+      const pop = document.getElementById("popover-b");
+      const det = document.getElementById("detached-c");
+      if (id === "B") {
+        pop.hidden = !ui.popoverOpen;
+        document.getElementById("b-pace-row").classList.toggle("hot", ui.popoverOpen);
+      }
+      if (id === "C") {
+        det.hidden = !ui.detachedOpen;
+      }
+
+      const url = new URL(location.href);
+      url.searchParams.set("variant", id);
+      history.replaceState(null, "", url);
+      paintState();
+    }
+
+    function cycle(delta) {
+      const i = VARIANTS.findIndex((v) => v.id === currentId());
+      const next = VARIANTS[(i + delta + VARIANTS.length) % VARIANTS.length];
+      showVariant(next.id);
+    }
+
+    document.getElementById("prev").addEventListener("click", () => cycle(-1));
+    document.getElementById("next").addEventListener("click", () => cycle(1));
+    document.addEventListener("keydown", (e) => {
+      const t = e.target;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.isContentEditable)
+      )
+        return;
+      if (e.key === "ArrowLeft") cycle(-1);
+      if (e.key === "ArrowRight") cycle(1);
+    });
+
+    function bindLayerFilters() {
+      document.querySelectorAll(".legend .filter[data-layer]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const layer = btn.dataset.layer;
+          if (!layer) return;
+          const pressed = btn.getAttribute("aria-pressed") !== "false";
+          const next = !pressed;
+          btn.setAttribute("aria-pressed", String(next));
+
+          const scope =
+            btn.closest(".chart-well, .popover, .detached, .chart-block") ||
+            btn.parentElement;
+          scope
+            .querySelectorAll(`.chart-host svg .layer[data-layer="${layer}"]`)
+            .forEach((g) => {
+              if (next) g.removeAttribute("hidden");
+              else g.setAttribute("hidden", "");
+            });
+        });
+      });
+    }
+
+    document.body.addEventListener("click", (e) => {
+      const open = e.target.closest("[data-open]");
+      if (!open) return;
+      if (open.dataset.open === "popover") {
+        ui.popoverOpen = !ui.popoverOpen;
+        document.getElementById("popover-b").hidden = !ui.popoverOpen;
+        open.classList.toggle("hot", ui.popoverOpen);
+        paintState();
+      }
+      if (open.dataset.open === "detached") {
+        ui.detachedOpen = !ui.detachedOpen;
+        document.getElementById("detached-c").hidden = !ui.detachedOpen;
+        paintState();
+      }
+    });
+
+    paintCharts();
+    bindLayerFilters();
+    showVariant(currentId());
+  </script>
+</body>
+</html>

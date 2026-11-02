@@ -31,7 +31,7 @@ Last updated: 2026-10-13
 | Smart pace alert bands | pure | `PaceAlertBands` over/under corridors; curve dials linear→parabolic (under mirrors across even pace; clamp to endpoint parallels) |
 | Alert decision | pure | `PaceAlertDecision` meters + channels → blink/notify/email + signature |
 | Alert cooldown | pure | `PaceAlertCooldown` edge + cooldown suppress |
-| Pace chrome | pure | `PaceChromeResolver` — smart under/over wins tint + blink; quiet → on-pace solid ([docs/pace-chrome.md](pace-chrome.md)) |
+| Pace chrome | pure | `PaceChromeResolver` — corridor under/over/exhausted tint + blink; quiet / alerts-off → neutral ([docs/pace-chrome.md](pace-chrome.md)) |
 | Alert message builder | pure | `AlertMessageBuilder` subject/body |
 | Dynamic refresh schedule | pure | `RefreshSchedule.interval(periodEnds:now:)` — per-family period ends, first step strictly under the threshold; bad or duplicate JSON → default |
 | Per-meter refresh planner | pure | `RefreshPlanner` due families + next fire from shared schedule/fixed minutes and dual last-fetch times |

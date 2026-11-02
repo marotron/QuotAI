@@ -20,8 +20,6 @@ struct QuotAIApp: App {
     @AppStorage("blinkSignificantPace") private var blinkSignificantPace = false
     @AppStorage("blinkUnderPercent") private var blinkUnderPercent = 75
     @AppStorage("blinkOverPercent") private var blinkOverPercent = 130
-    @AppStorage("paceOnLoPercent") private var paceOnLoPercent = 90
-    @AppStorage("paceOnHiPercent") private var paceOnHiPercent = 110
     @AppStorage("useSmartPaceAlerts") private var useSmartPaceAlerts = true
     @AppStorage("overMaxStartPct") private var overMaxStartPct = 25
     @AppStorage("overEmptyBeforePct") private var overEmptyBeforePct = 95
@@ -30,32 +28,9 @@ struct QuotAIApp: App {
     @AppStorage("overCurvePct") private var overCurvePct = 0
     @AppStorage("underCurvePct") private var underCurvePct = 0
 
-    @AppStorage("pinRefreshAll") private var pinRefreshAll = true
-    @AppStorage("pinRefreshCursor") private var pinRefreshCursor = false
-    @AppStorage("pinRefreshGrok") private var pinRefreshGrok = false
-    @AppStorage("pinRefreshInterval") private var pinRefreshInterval = true
-    @AppStorage("pinColorMode") private var pinColorMode = false
-    @AppStorage("pinIconLook") private var pinIconLook = false
-    @AppStorage("pinOnPaceBand") private var pinOnPaceBand = false
-    @AppStorage("pinShowOtherModels") private var pinShowOtherModels = false
-    @AppStorage("pinShowAvatars") private var pinShowAvatars = false
-    @AppStorage("pinShowPercent") private var pinShowUsedPercent = false
-    @AppStorage("pinShowElapsedPercent") private var pinShowElapsedPercent = false
-    @AppStorage("pinShowRemaining") private var pinShowRemaining = false
-    @AppStorage("pinAlternateElapsedRemaining") private var pinAlternateElapsedRemaining = false
-    @AppStorage("pinRingCenterContent") private var pinRingCenterContent = false
-    @AppStorage("pinBlink") private var pinBlink = false
-    @AppStorage("pinOpenCursorSpending") private var pinOpenCursorSpending = false
-
-    private static let deadZonePresets: [(lo: Int, hi: Int)] = [
-        (95, 105),
-        (90, 110),
-        (85, 115),
-        (80, 120),
-    ]
-
-    private var onPaceLo: Double { Double(min(paceOnLoPercent, paceOnHiPercent)) / 100 }
-    private var onPaceHi: Double { Double(max(paceOnLoPercent, paceOnHiPercent)) / 100 }
+    /// Fixed pale-arc math for ring dial only — not a user Settings band anymore.
+    private var onPaceLo: Double { PaceCalculator.greenLo }
+    private var onPaceHi: Double { PaceCalculator.greenHi }
 
     private var smartThresholds: PaceAlertThresholds {
         PaceAlertThresholds(
@@ -68,146 +43,22 @@ struct QuotAIApp: App {
         )
     }
 
-    private var presentation: MenuPresentation {
-        let now = store.displayClock
-        let presented = MenuPresenter.present(
-            cursorModels: store.cursorModels.projected(at: now, onPaceLo: onPaceLo, onPaceHi: onPaceHi),
-            otherModels: showOtherModels
-                ? store.otherModels.projected(at: now, onPaceLo: onPaceLo, onPaceHi: onPaceHi)
-                : nil,
-            grokBot: store.grokBot.projected(at: now, onPaceLo: onPaceLo, onPaceHi: onPaceHi),
-            authError: store.authError,
-            notice: store.refreshError,
-            now: now,
-            onPaceLo: onPaceLo,
-            onPaceHi: onPaceHi
-        )
-        MeterMenuBadges.shared.meters = presented.meters
-        return presented
-    }
-
     init() {
-        MeterMenuBadges.shared.install()
+        // MeterMenuBadges remains for NSMenu painting; panel uses SwiftUI chrome instead.
         NotificationAlertService.install()
     }
 
     var body: some Scene {
-        // `.menu` → native NSMenu (Wi‑Fi / VPN style). Avoid `.window` chrome for buttons/pickers.
+        // `.window` → popover-like panel hosting Swift Charts (DESIGN Variant A).
         MenuBarExtra {
-            Text(store.lastRefreshStatusLine)
-                .onAppear {
-                    store.snapDisplayClock()
-                    Task { await store.refreshIfStale() }
-                }
-            Divider()
-            ForEach(presentation.notices, id: \.self) { notice in
-                Text(notice)
-            }
-            ForEach(presentation.meters) { meter in
-                // Button (not Text) → enabled NSMenuItem so marks/title are not dimmed.
-                // Colors still painted via MeterMenuBadges on open.
-                Button(MeterMenuBadges.titleWithFallbackMark(for: meter)) {}
-                if let note = MeterMenuBadges.noteWithIndent(for: meter) {
-                    // Separate item — NSMenu strips newlines inside a single title.
-                    // Same leading mark width as the title row so copy lines up.
-                    Button(note) {}
-                }
-            }
-            if pinRefreshAll || pinRefreshCursor || pinRefreshGrok || pinOpenCursorSpending {
-                Divider()
-                if pinRefreshAll {
-                    Button("Refresh all") {
-                        Task { await store.refresh(.all) }
-                    }
-                }
-                if pinRefreshCursor {
-                    Button("Refresh Cursor") {
-                        Task { await store.refresh(.cursor) }
-                    }
-                }
-                if pinRefreshGrok {
-                    Button("Refresh Grok Bot") {
-                        Task { await store.refresh(.grok) }
-                    }
-                }
-                if pinOpenCursorSpending {
-                    Button("Open Cursor Spending") {
-                        NSWorkspace.shared.open(MenuPresenter.spendingURL)
-                    }
-                }
-            }
-            if hasPinnedPrefs {
-                Divider()
-                if pinIconLook {
-                    Picker("Menu bar style", selection: $iconLook) {
-                        Text("Bars").tag(IconLook.bars)
-                        Text("Rings · one per meter").tag(IconLook.ringsPerQuota)
-                        Text("Rings · nested Cursor").tag(IconLook.ringsPaired)
-                        Text("Rings · by pace").tag(IconLook.ringsPace)
-                    }
-                }
-                if pinColorMode {
-                    Picker("Color mode", selection: $iconColorMode) {
-                        Text("Monochrome").tag(IconColorMode.monochrome)
-                        Text("By pace").tag(IconColorMode.byLevel)
-                    }
-                }
-                if pinOnPaceBand {
-                    Picker("On-pace band", selection: deadZoneSelection) {
-                        ForEach(Self.deadZonePresets, id: \.lo) { preset in
-                            Text("\(preset.lo)–\(preset.hi)%").tag(deadZoneTag(lo: preset.lo, hi: preset.hi))
-                        }
-                    }
-                }
-                if pinRefreshInterval {
-                    Picker("Refresh rate", selection: store.refreshEveryBinding()) {
-                        ForEach(QuotaStore.pollIntervalChoices, id: \.self) { minutes in
-                            Text(minutes == 60 ? "every 1 hour" : "every \(minutes) min").tag(minutes)
-                        }
-                        Text("Dynamic").tag(QuotaStore.dynamicRefreshTag)
-                    }
-                }
-                if pinShowOtherModels {
-                    Toggle("Show Other Models", isOn: $showOtherModels)
-                }
-                if pinShowAvatars {
-                    Toggle("Show icons", isOn: $showAvatars)
-                }
-                if pinShowUsedPercent {
-                    Toggle("Show used %", isOn: $showUsedPercent)
-                }
-                if pinShowElapsedPercent, iconLook != .bars, !alternateElapsedActive {
-                    Toggle("Show elapsed %", isOn: $showElapsedPercent)
-                }
-                if pinShowRemaining, !alternateElapsedActive || iconLook == .bars {
-                    Toggle("Show time to reset", isOn: $showRemaining)
-                }
-                if pinAlternateElapsedRemaining, iconLook.alternatesElapsedAndRemaining {
-                    Toggle("Alternate elapsed % / time to reset", isOn: $alternateElapsedRemaining)
-                }
-                if pinRingCenterContent, iconLook != .bars {
-                    Picker("Ring center", selection: $ringCenterContent) {
-                        Text("Nothing").tag(RingCenterContent.none)
-                        Text("Time to reset").tag(RingCenterContent.remaining)
-                        Text("Icon").tag(RingCenterContent.icon)
-                    }
-                }
-                if pinBlink {
-                    Toggle("Blink on significant pace", isOn: $blinkSignificantPace)
-                }
-            }
-            Divider()
-            MenuSettingsButton()
-            Divider()
-            Button("About") {
-                AboutWindowHost.shared.showAbout()
-            }
-            Divider()
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }
+            MenuBarWindowPanel(
+                store: store,
+                showOtherModels: showOtherModels,
+                corridorAlertsEnabled: useSmartPaceAlerts,
+                smartThresholds: smartThresholds
+            )
         } label: {
-            // Own view + state so icon animation ticks do not rebuild the menu (which dismisses Pickers).
+            // Own view + state so icon animation ticks do not rebuild the panel.
             MenuBarIconLabel(
                 store: store,
                 iconLook: iconLook,
@@ -228,37 +79,11 @@ struct QuotAIApp: App {
                 onPaceHi: onPaceHi
             )
         }
-        .menuBarExtraStyle(.menu)
+        .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView(store: store)
         }
-    }
-
-    /// Stored alternate flag takes effect on every ring style.
-    private var alternateElapsedActive: Bool {
-        alternateElapsedRemaining && iconLook.alternatesElapsedAndRemaining
-    }
-
-    private var hasPinnedPrefs: Bool {
-        pinRefreshInterval || pinColorMode || pinIconLook || pinOnPaceBand || pinShowOtherModels
-            || pinShowAvatars || pinShowUsedPercent || pinShowElapsedPercent || pinShowRemaining
-            || pinAlternateElapsedRemaining || pinRingCenterContent || pinBlink
-    }
-
-    private func deadZoneTag(lo: Int, hi: Int) -> String { "\(lo)-\(hi)" }
-
-    /// Bridges two AppStorage ints to one Picker selection.
-    private var deadZoneSelection: Binding<String> {
-        Binding(
-            get: { deadZoneTag(lo: paceOnLoPercent, hi: paceOnHiPercent) },
-            set: { tag in
-                let parts = tag.split(separator: "-").compactMap { Int($0) }
-                guard parts.count == 2 else { return }
-                paceOnLoPercent = parts[0]
-                paceOnHiPercent = parts[1]
-            }
-        )
     }
 }
 
@@ -896,31 +721,28 @@ private struct MenuBarIconLabel: View {
 
     private func paceTint(_ meter: QuotaMeter) -> SymbolTint? {
         guard iconColorMode == .byLevel, !meter.isUnavailable else { return nil }
-        let tint = paceChrome(meter)?.tint
-            ?? MenuPresenter.tint(pace: meter.pace, onPaceLo: onPaceLo, onPaceHi: onPaceHi)
+        let tint = paceChrome(meter).tint
         return tint == .neutral ? nil : tint
     }
 
-    /// Bars / rings: blue under / green on / orange over (nil when monochrome or unknown).
+    /// Bars / rings: corridor under blue / over orange / exhausted red (nil when monochrome or quiet).
     private func paceBarColor(_ meter: QuotaMeter) -> NSColor? {
         guard let tint = paceTint(meter) else { return nil }
         return tintColor(tint)
     }
 
-    /// Smart under/over/exhausted → solid brand fill (color already resolved in `paceBarColor`).
+    /// Corridor under/over/exhausted → solid brand fill (color already resolved in `paceBarColor`).
     private func meterIsSmartSignificant(_ meter: QuotaMeter) -> Bool {
         guard useSmartPaceAlerts, !meter.isUnavailable else { return false }
         return PaceAlertBands.isSignificant(kind: meterAlertKind(meter) ?? .quiet)
     }
 
-    /// Smart-on chrome: smart under/over wins tint; blink only when smart is significant.
-    private func paceChrome(_ meter: QuotaMeter) -> PaceChrome? {
-        guard useSmartPaceAlerts, let kind = meterAlertKind(meter) else { return nil }
+    /// Corridor-only chrome: quiet / alerts-off → neutral; blink only when significant.
+    private func paceChrome(_ meter: QuotaMeter) -> PaceChrome {
+        let kind = meterAlertKind(meter) ?? .quiet
         return PaceChromeResolver.resolve(
-            pace: meter.pace,
-            smartKind: kind,
-            onPaceLo: onPaceLo,
-            onPaceHi: onPaceHi,
+            corridorKind: kind,
+            corridorAlertsEnabled: useSmartPaceAlerts,
             blinkEnabled: blinkSignificantPace
         )
     }
@@ -935,9 +757,7 @@ private struct MenuBarIconLabel: View {
                 percentUsed: pct,
                 elapsedFraction: t,
                 thresholds: smartThresholds,
-                smart: useSmartPaceAlerts,
-                legacyUnder: blinkUnderRatio,
-                legacyOver: blinkOverRatio
+                smart: true
             )
         }
         if meter.percentUsed ?? 0 >= 100 { return .exhausted }
@@ -945,16 +765,8 @@ private struct MenuBarIconLabel: View {
     }
 
     private func meterNeedsBlink(_ meter: QuotaMeter) -> Bool {
-        guard blinkSignificantPace, !meter.isUnavailable else { return false }
-        if let chrome = paceChrome(meter) {
-            return chrome.blink
-        }
-        // Smart off / missing dates → legacy pace-ratio significance.
-        return PaceCalculator.isSignificant(
-            pace: meter.pace,
-            under: blinkUnderRatio,
-            over: blinkOverRatio
-        )
+        guard !meter.isUnavailable else { return false }
+        return paceChrome(meter).blink
     }
 
     /// Off beat for one quota ring — same 1.0s pulse as `blinkedBarColor`.

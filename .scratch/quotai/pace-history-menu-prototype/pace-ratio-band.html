@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuotAI — pace ratio band (throwaway)</title>
+  <style>
+    :root {
+      --bg: #ececec;
+      --panel: #f6f6f6;
+      --text: #1d1d1f;
+      --secondary: #6e6e73;
+      --tertiary: #8e8e93;
+      --divider: #d2d2d7;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      --warn: #f59e0b;
+      --onpace: #34c759;
+      --parallel: #af52de;
+      --even: #86868b;
+      --over: #ff9f0a;
+      --under: #0a84ff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --panel: #2a2a2a;
+        --text: #f5f5f7;
+        --secondary: #a1a1a6;
+        --tertiary: #8e8e93;
+        --divider: #3a3a3c;
+        --even: #98989d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      padding: 28px 20px 80px;
+    }
+    .banner {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--warn);
+      border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .q {
+      margin: 0 0 18px;
+      max-width: 40rem;
+      color: var(--secondary);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .well {
+      width: 470px;
+      max-width: 100%;
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow:
+        0 0 0 0.5px rgba(0, 0, 0, 0.12),
+        0 10px 28px rgba(0, 0, 0, 0.12);
+    }
+    .chart-host { width: 100%; position: relative; }
+    .chart-host svg { display: block; width: 100%; height: auto; }
+    .grid {
+      stroke: color-mix(in srgb, var(--divider) 70%, transparent);
+      stroke-width: 1;
+      stroke-dasharray: 2 3;
+    }
+    .axis {
+      fill: none;
+      stroke: var(--divider);
+      stroke-width: 1;
+    }
+    .tick {
+      fill: var(--tertiary);
+      font-size: 9px;
+      font-family: var(--font);
+    }
+    .ratio-fill {
+      fill: color-mix(in srgb, var(--onpace) 22%, transparent);
+      stroke: none;
+    }
+    .ratio-edge {
+      fill: none;
+      stroke: var(--onpace);
+      stroke-width: 1.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .parallel-fill {
+      fill: color-mix(in srgb, var(--parallel) 14%, transparent);
+      stroke: none;
+      display: none;
+    }
+    .parallel-edge {
+      fill: none;
+      stroke: var(--parallel);
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+      opacity: 0.85;
+      display: none;
+    }
+    .show-parallel .parallel-fill,
+    .show-parallel .parallel-edge { display: block; }
+    .even {
+      fill: none;
+      stroke: var(--even);
+      stroke-width: 1.25;
+      stroke-dasharray: 3 2.5;
+    }
+    .sample {
+      stroke: var(--panel);
+      stroke-width: 1.5;
+    }
+    .sample.on { fill: var(--onpace); }
+    .sample.over { fill: var(--over); }
+    .sample.under { fill: var(--under); }
+    .anno {
+      fill: var(--secondary);
+      font-size: 9px;
+      font-family: var(--font);
+      font-variant-numeric: tabular-nums;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--secondary);
+    }
+    .legend label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .swatch {
+      width: 12px;
+      height: 8px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .swatch.ratio { background: color-mix(in srgb, var(--onpace) 55%, transparent); box-shadow: inset 0 0 0 1px var(--onpace); }
+    .swatch.parallel { background: color-mix(in srgb, var(--parallel) 40%, transparent); box-shadow: inset 0 0 0 1px var(--parallel); }
+    .swatch.even { background: transparent; box-shadow: inset 0 0 0 1px var(--even); }
+    .table {
+      margin-top: 16px;
+      width: 470px;
+      max-width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .table th, .table td {
+      text-align: left;
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .table th { color: var(--tertiary); font-weight: 600; font-size: 11px; }
+    .note {
+      margin-top: 14px;
+      max-width: 36rem;
+      font-size: 12px;
+      color: var(--secondary);
+      line-height: 1.45;
+    }
+    code { font-size: 11px; color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="banner">Throwaway · not product chrome</div>
+  <h1>85–115% pace as ratio rays</h1>
+  <p class="q">
+    Same plot box as Variant D (<code>plotW = 2 × plotH</code>).
+    Green = true meter pace region: <code>used = lo·elapsed … hi·elapsed</code>
+    (rays from origin). Toggle purple parallels to see today’s chart band.
+  </p>
+
+  <div class="well">
+    <div class="chart-host" id="host"></div>
+    <div class="legend">
+      <span><i class="swatch ratio"></i> Ratio band (pace)</span>
+      <label><input type="checkbox" id="toggleParallel" /> <i class="swatch parallel"></i> Parallel band (current chart)</label>
+      <span><i class="swatch even"></i> Even pace (100%)</span>
+    </div>
+  </div>
+
+  <table class="table" aria-label="Sample points">
+    <thead>
+      <tr>
+        <th>Point</th>
+        <th>Elapsed</th>
+        <th>Used</th>
+        <th>Pace</th>
+        <th>In ratio band?</th>
+        <th>In parallel band?</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <p class="note">
+    Formula check at elapsed 50%: ratio 85–115% → used <strong>42.5–57.5%</strong>;
+    parallels ±15 pts → used <strong>35–65%</strong>. Meter “on pace” uses the ratio.
+  </p>
+
+  <script>
+    const LO = 0.85;
+    const HI = 1.15;
+    const LO_OFF = (LO - 1) * 100; // −15
+    const HI_OFF = (HI - 1) * 100; // +15
+
+    // Same geometry intent as Variant D / app chart (2:1).
+    const plotH = 148;
+    const plotW = plotH * 2; // 296 user units
+    const padL = 0, padT = 0, padR = 0, padB = 22;
+    const w = padL + plotW + padR;
+    const h = padT + plotH + padB;
+    const x = (e) => padL + (e / 100) * plotW;
+    const y = (u) => padT + plotH - (u / 100) * plotH;
+    const clamp = (u) => Math.min(100, Math.max(0, u));
+
+    function pathFor(pts) {
+      return pts.map((p, i) => `${i ? "L" : "M"}${x(p[0]).toFixed(2)},${y(p[1]).toFixed(2)}`).join(" ");
+    }
+
+    // Dense sample 0…100 elapsed
+    const ts = [];
+    for (let e = 0; e <= 100; e += 1) ts.push(e);
+
+    // Ratio rays (true pace): used = ratio × elapsed, clipped
+    const ratioLo = ts.map((e) => [e, clamp(LO * e)]);
+    const ratioHi = ts.map((e) => [e, clamp(HI * e)]);
+    // Close polygon: hi forward, lo reverse
+    const ratioFill =
+      pathFor(ratioHi) +
+      " " +
+      pathFor([...ratioLo].reverse()).replace(/^M/, "L") +
+      " Z";
+
+    // Parallel band (current chart)
+    const parLo = ts.map((e) => [e, clamp(e + LO_OFF)]);
+    const parHi = ts.map((e) => [e, clamp(e + HI_OFF)]);
+    const parFill =
+      pathFor(parHi) +
+      " " +
+      pathFor([...parLo].reverse()).replace(/^M/, "L") +
+      " Z";
+
+    const even = ts.map((e) => [e, e]);
+
+    // Demo samples that show the meter-vs-band mismatch
+    const samples = [
+      { name: "A", e: 25, u: 22, note: "near even" },
+      { name: "B", e: 44, u: 51, note: "≈117% · meter over" },
+      { name: "C", e: 50, u: 50, note: "100% even" },
+      { name: "D", e: 50, u: 40, note: "80% under" },
+      { name: "E", e: 71, u: 85, note: "≈120% over" },
+    ];
+
+    function inRatio(e, u) {
+      if (e <= 0) return u <= HI_OFF; // degenerate at origin
+      const r = u / e;
+      return r >= LO && r <= HI;
+    }
+    function inParallel(e, u) {
+      return u >= clamp(e + LO_OFF) && u <= clamp(e + HI_OFF);
+    }
+    function pacePct(e, u) {
+      if (e <= 0) return "—";
+      return `${Math.round((u / e) * 100)}%`;
+    }
+    function statusClass(e, u) {
+      if (e <= 0) return "on";
+      const r = u / e;
+      if (r < LO) return "under";
+      if (r > HI) return "over";
+      return "on";
+    }
+
+    let ticks = "";
+    for (const t of [0, 25, 50, 75, 100]) {
+      ticks += `<line class="grid" x1="${x(t)}" y1="${padT}" x2="${x(t)}" y2="${padT + plotH}" />`;
+      ticks += `<line class="grid" x1="${padL}" y1="${y(t)}" x2="${padL + plotW}" y2="${y(t)}" />`;
+      const xLabel = t === 50 ? "Elapsed %" : String(t);
+      const yLabel = t === 50 ? "Used %" : String(t);
+      let xNudge = 0;
+      if (t === 0) xNudge = 5;
+      if (t === 100) xNudge = -13;
+      ticks += `<text class="tick" x="${x(t) + xNudge}" y="${padT + plotH + 12}" text-anchor="middle">${xLabel}</text>`;
+      if (t === 50) {
+        ticks += `<text class="tick" x="${padL + plotW - 13}" y="${y(t)}" text-anchor="middle" transform="rotate(-90 ${padL + plotW - 13} ${y(t)})">${yLabel}</text>`;
+      } else {
+        ticks += `<text class="tick" x="${padL + plotW - 5}" y="${y(t) + 3}" text-anchor="end">${yLabel}</text>`;
+      }
+    }
+
+    const sampleMarks = samples.map((s) => {
+      const cls = statusClass(s.e, s.u);
+      const label = `${s.name} ${pacePct(s.e, s.u)}`;
+      const ly = y(s.u) - 8;
+      return `
+        <circle class="sample ${cls}" cx="${x(s.e)}" cy="${y(s.u)}" r="3.5" />
+        <text class="anno" x="${x(s.e) + 5}" y="${ly}">${label}</text>
+      `;
+    }).join("");
+
+    document.getElementById("host").innerHTML = `
+      <svg viewBox="0 0 ${w} ${h}" role="img" aria-label="85 to 115 percent pace ratio band">
+        ${ticks}
+        <rect class="axis" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" />
+        <path class="parallel-fill" d="${parFill}" />
+        <path class="parallel-edge" d="${pathFor(parHi)}" />
+        <path class="parallel-edge" d="${pathFor(parLo)}" />
+        <path class="ratio-fill" d="${ratioFill}" />
+        <path class="ratio-edge" d="${pathFor(ratioHi)}" />
+        <path class="ratio-edge" d="${pathFor(ratioLo)}" />
+        <path class="even" d="${pathFor(even)}" />
+        ${sampleMarks}
+        <rect class="hit" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent" />
+      </svg>
+    `;
+
+    const tbody = document.getElementById("rows");
+    tbody.innerHTML = samples.map((s) => {
+      const rOk = inRatio(s.e, s.u);
+      const pOk = inParallel(s.e, s.u);
+      return `<tr>
+        <td>${s.name} · ${s.note}</td>
+        <td>${s.e}%</td>
+        <td>${s.u}%</td>
+        <td>${pacePct(s.e, s.u)}</td>
+        <td>${rOk ? "yes" : "no"}</td>
+        <td>${pOk ? "yes" : "no"}</td>
+      </tr>`;
+    }).join("");
+
+    const host = document.getElementById("host");
+    document.getElementById("toggleParallel").addEventListener("change", (ev) => {
+      host.classList.toggle("show-parallel", ev.target.checked);
+    });
+  </script>
+</body>
+</html>

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.15.0 — 2026-11-02
+
+### Added
+
+- Menu bar **window panel** (Swift Charts): per-quota meters, pace history (used % vs elapsed %), corridor filters, hover tip, and actions
+- Pace history sample store + chart model (Cursor / Grok series, exact-pace guide, over/under corridors)
+- Version label in the panel header opens the in-app changelog; About stays in the actions list
+
+### Changed
+
+- MenuBarExtra uses `.window` panel chrome instead of the native menu for meters and history
+- Ring/bar chrome and Settings Alerts copy follow **corridor alerts** only (quiet → neutral; under/over/exhausted tint); on-pace band removed from chart, legend, tip, meters, and Settings
+- About link labeled **GitHub release notes**
+
 ## 0.14.0 — 2026-10-26
 
 ### Added
