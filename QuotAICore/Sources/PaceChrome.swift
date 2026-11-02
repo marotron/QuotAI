@@ -3,7 +3,7 @@ import Foundation
 /// Menu-bar ring/bar chrome: fill tint + whether it pulses.
 public struct PaceChrome: Equatable, Sendable {
     public var tint: SymbolTint
-    /// Pulse only for smart under/over/exhausted — on-pace alone stays solid.
+    /// Pulse only for corridor under/over/exhausted when blink is enabled.
     public var blink: Bool
 
     public init(tint: SymbolTint, blink: Bool) {
@@ -12,25 +12,27 @@ public struct PaceChrome: Equatable, Sendable {
     }
 }
 
-/// Resolves display chrome when smart pace alerts are on.
+/// Resolves display chrome from corridor alert kind only.
 ///
-/// - Color: smart under/over/exhausted wins; quiet falls back to on-pace ratio band.
-/// - Blink: only when smart kind is significant (and enabled).
+/// - Color: under / over / exhausted → tint; quiet or alerts-off → neutral.
+/// - Blink: only when corridor kind is significant and blink is enabled.
 public enum PaceChromeResolver {
     public static func resolve(
-        pace: PaceResult?,
-        smartKind: PaceAlertKind,
-        onPaceLo: Double = PaceCalculator.greenLo,
-        onPaceHi: Double = PaceCalculator.greenHi,
+        corridorKind: PaceAlertKind,
+        corridorAlertsEnabled: Bool,
         blinkEnabled: Bool
     ) -> PaceChrome {
-        let tint = MenuPresenter.tint(
-            pace: pace,
-            smartKind: smartKind,
-            onPaceLo: onPaceLo,
-            onPaceHi: onPaceHi
-        )
-        let blink = blinkEnabled && PaceAlertBands.isSignificant(kind: smartKind)
+        guard corridorAlertsEnabled else {
+            return PaceChrome(tint: .neutral, blink: false)
+        }
+        let tint: SymbolTint
+        switch corridorKind {
+        case .under: tint = .under
+        case .over: tint = .warning
+        case .exhausted: tint = .critical
+        case .quiet: tint = .neutral
+        }
+        let blink = blinkEnabled && PaceAlertBands.isSignificant(kind: corridorKind)
         return PaceChrome(tint: tint, blink: blink)
     }
 }

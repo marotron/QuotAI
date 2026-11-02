@@ -24,6 +24,10 @@ final class QuotaStore: ObservableObject {
     @Published var lastGrokRefreshed: Date?
     /// Dropdown + menu-bar reset countdown. Moves at most once a minute.
     @Published private(set) var displayClock = Date()
+    /// Bumps when pace-history samples are written so the window panel can redraw.
+    @Published private(set) var paceHistoryEpoch = 0
+
+    let paceHistoryStore = PaceHistorySampleStore()
 
     private var didAttemptAuthFailureReimport = false
     private var pollTimer: Timer?
@@ -337,16 +341,30 @@ final class QuotaStore: ObservableObject {
         )
         try KeychainStore.save(result.credentials)
         let stamp = Date()
+        var historyBatch: [PaceHistorySample] = []
         if let cursor = result.cursorModels {
             cursorModels = cursor
             lastCursorRefreshed = stamp
+            if let sample = Self.paceHistorySample(meterId: .cursor, meter: cursor, now: stamp) {
+                historyBatch.append(sample)
+            }
         }
         if let other = result.otherModels {
             otherModels = other
+            if let sample = Self.paceHistorySample(meterId: .other, meter: other, now: stamp) {
+                historyBatch.append(sample)
+            }
         }
         if let grok = result.grokBot {
             grokBot = grok
             lastGrokRefreshed = stamp
+            if let sample = Self.paceHistorySample(meterId: .grok, meter: grok, now: stamp) {
+                historyBatch.append(sample)
+            }
+        }
+        if !historyBatch.isEmpty {
+            try? paceHistoryStore.append(contentsOf: historyBatch)
+            paceHistoryEpoch &+= 1
         }
         authError = nil
         refreshError = nil
@@ -357,6 +375,27 @@ final class QuotaStore: ObservableObject {
             cursor: cursorModels,
             other: includeOther ? otherModels : nil,
             grok: grokBot
+        )
+    }
+
+    /// Sample for a successful meter update when used %, elapsed %, and period start are present.
+    private static func paceHistorySample(
+        meterId: PaceHistoryMeterId,
+        meter: QuotaMeter,
+        now: Date
+    ) -> PaceHistorySample? {
+        guard !meter.isUnavailable,
+              let usedPct = meter.percentUsed,
+              let elapsedPct = meter.periodElapsedPercent(now: now),
+              let periodStart = meter.periodStart else {
+            return nil
+        }
+        return PaceHistorySample(
+            meterId: meterId,
+            usedPct: usedPct,
+            elapsedPct: elapsedPct,
+            timestamp: now,
+            periodStart: periodStart
         )
     }
 
