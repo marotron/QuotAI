@@ -34,10 +34,21 @@ enum CursorVscdbImporter {
             return s.isEmpty ? nil : s
         }
 
-        let access = value(for: "cursorAuth/accessToken")
-        let refresh = value(for: "cursorAuth/refreshToken")
+        let accessRaw = value(for: "cursorAuth/accessToken")
+        let refreshRaw = value(for: "cursorAuth/refreshToken")
         let email = value(for: "cursorAuth/cachedEmail")
-        guard let access, let refresh else { return nil }
+        guard let accessRaw, let refreshRaw else { return nil }
+
+        guard let access = usableToken(accessRaw), let refresh = usableToken(refreshRaw) else {
+            return nil
+        }
         return QuotAIKeychain.Credentials(accessToken: access, refreshToken: refresh, cachedEmail: email)
+    }
+
+    /// Plaintext JWTs pass through. Sealed cells need the Safe Storage password.
+    private static func usableToken(_ stored: String) -> String? {
+        guard CursorSealedToken.isSealed(stored) else { return stored }
+        guard let password = CursorSafeStorageKey.readPassword() else { return nil }
+        return CursorSealedToken.open(stored: stored, password: password)
     }
 }

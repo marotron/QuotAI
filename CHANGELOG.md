@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.3 — 2026-11-02
+
+### Fixed
+
+- Re-auth / import works again with Cursor 3.27+ sealed editor tokens (`cursor-safe-storage`) by opening them with the local Cursor Safe Storage key
+
 ## 0.15.2 — 2026-11-02
 
 ### Changed

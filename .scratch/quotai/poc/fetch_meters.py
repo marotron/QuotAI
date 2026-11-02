@@ -9,9 +9,12 @@ Run: python3 .scratch/quotai/poc/fetch_meters.py
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import math
 import sqlite3
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -28,6 +31,9 @@ PERIOD_USAGE = f"{CONNECT_BASE}/aiserver.v1.DashboardService/GetCurrentPeriodUsa
 SAND_USAGE = f"{CONNECT_BASE}/aiserver.v1.DashboardService/GetSandUsageStatus"
 SPENDING_URL = "https://cursor.com/dashboard/spending"
 GREEN_LO, GREEN_HI = 0.90, 1.10
+SEALED_PREFIX = "cursor-safe-storage:v1:"
+SAFE_STORAGE_SERVICE = "Cursor Safe Storage"
+SAFE_STORAGE_ACCOUNT = "Cursor Key"
 
 
 @dataclass
@@ -78,9 +84,93 @@ def read_tokens(db_path: Path) -> tuple[str | None, str | None, str | None]:
                 val = val.decode("utf-8", errors="replace")
             return str(val).strip() or None
 
-        return one("cursorAuth/accessToken"), one("cursorAuth/refreshToken"), one("cursorAuth/cachedEmail")
+        access = one("cursorAuth/accessToken")
+        refresh = one("cursorAuth/refreshToken")
+        email = one("cursorAuth/cachedEmail")
+        return usable_token(access), usable_token(refresh), email
     finally:
         con.close()
+
+
+def usable_token(stored: str | None) -> str | None:
+    """Plaintext JWTs pass through; Cursor 3.27+ sealed cells need Safe Storage."""
+    if not stored:
+        return None
+    if not stored.startswith(SEALED_PREFIX):
+        return stored
+    password = read_safe_storage_password()
+    if not password:
+        print("FAIL: sealed Cursor login — allow Keychain 'Cursor Safe Storage'", file=sys.stderr)
+        return None
+    opened = open_sealed_token(stored, password)
+    if not opened:
+        print("FAIL: could not open sealed Cursor token", file=sys.stderr)
+        return None
+    return opened
+
+
+def read_safe_storage_password() -> str | None:
+    r = subprocess.run(
+        [
+            "security",
+            "find-generic-password",
+            "-s",
+            SAFE_STORAGE_SERVICE,
+            "-a",
+            SAFE_STORAGE_ACCOUNT,
+            "-w",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode != 0:
+        return None
+    password = r.stdout.rstrip("\n")
+    return password or None
+
+
+def open_sealed_token(stored: str, password: str) -> str | None:
+    """Electron safeStorage v10: AES-128-CBC, IV=16 spaces, PBKDF2-HMAC-SHA1."""
+    raw = base64.b64decode(stored[len(SEALED_PREFIX) :])
+    if raw[:3] != b"v10":
+        return None
+    key = hashlib.pbkdf2_hmac("sha1", password.encode(), b"saltysalt", 1003, dklen=16)
+    try:
+        plain = _aes128_cbc_decrypt(raw[3:], key, iv=b" " * 16)
+        token = plain.decode("utf-8")
+    except Exception:
+        return None
+    parts = token.split(".")
+    if len(parts) != 3 or not all(parts):
+        return None
+    return token
+
+
+def _aes128_cbc_decrypt(ciphertext: bytes, key: bytes, iv: bytes) -> bytes:
+    """AES-128-CBC PKCS7 via macOS CommonCrypto (stdlib ctypes — no pip)."""
+    import ctypes
+    import ctypes.util
+
+    lib = ctypes.CDLL(ctypes.util.find_library("System") or "/usr/lib/libSystem.dylib")
+    kCCDecrypt, kCCAlgorithmAES, kCCOptionPKCS7Padding, kCCSuccess = 1, 0, 0x0001, 0
+    out = ctypes.create_string_buffer(len(ciphertext) + 16)
+    out_len = ctypes.c_size_t(0)
+    status = lib.CCCrypt(
+        kCCDecrypt,
+        kCCAlgorithmAES,
+        kCCOptionPKCS7Padding,
+        key,
+        len(key),
+        iv,
+        ciphertext,
+        len(ciphertext),
+        out,
+        len(out),
+        ctypes.byref(out_len),
+    )
+    if status != kCCSuccess:
+        raise OSError(f"CCCrypt failed: {status}")
+    return out.raw[: out_len.value]
 
 
 def parse_ts(raw: Any) -> datetime | None:

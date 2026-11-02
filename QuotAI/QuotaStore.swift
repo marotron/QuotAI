@@ -328,9 +328,14 @@ final class QuotaStore: ObservableObject {
         let trimmed = accessToken.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         let refreshTrimmed = (refreshToken ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let refreshValue = refreshTrimmed.isEmpty ? trimmed : refreshTrimmed
+        if CursorSealedToken.isSealed(trimmed) || CursorSealedToken.isSealed(refreshValue) {
+            authError = "Paste a JWT — not a sealed Cursor storage value"
+            return
+        }
         let creds = QuotAIKeychain.Credentials(
             accessToken: trimmed,
-            refreshToken: refreshTrimmed.isEmpty ? trimmed : refreshTrimmed
+            refreshToken: refreshValue
         )
         do {
             try KeychainStore.save(creds)
@@ -343,17 +348,26 @@ final class QuotaStore: ObservableObject {
     }
 
     private func resolveCredentials(forceReimport: Bool) async throws -> QuotAIKeychain.Credentials {
-        if !forceReimport, let existing = try KeychainStore.load() {
+        if !forceReimport, let existing = try KeychainStore.load(), !Self.containsSealedToken(existing) {
             return existing
         }
         if let imported = try CursorVscdbImporter.importCredentials() {
             try KeychainStore.save(imported)
             return imported
         }
-        if let existing = try KeychainStore.load() {
+        if let existing = try KeychainStore.load(), !Self.containsSealedToken(existing) {
             return existing
         }
+        // Prior import may have saved sealed ciphertext; drop it so Re-auth can recover.
+        if (try? KeychainStore.load()).map(Self.containsSealedToken) == true {
+            try? KeychainStore.clear()
+        }
         throw CursorConnectClient.ClientError.unauthorized
+    }
+
+    private static func containsSealedToken(_ credentials: QuotAIKeychain.Credentials) -> Bool {
+        CursorSealedToken.isSealed(credentials.accessToken)
+            || CursorSealedToken.isSealed(credentials.refreshToken)
     }
 
     private func connectScope(for scope: RefreshScope) -> CursorConnectClient.FetchScope {
