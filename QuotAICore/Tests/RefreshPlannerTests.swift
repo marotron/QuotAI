@@ -171,4 +171,37 @@ final class RefreshPlannerTests: XCTestCase {
         )
         XCTAssertEqual(fire, now)
     }
+
+    func testInterval_fixedMinutes() {
+        let iv = RefreshPlanner.interval(
+            dynamic: false,
+            fixedMinutes: 10,
+            schedule: schedule,
+            periodEnds: [nearEnd],
+            now: now
+        )
+        XCTAssertEqual(iv, 600)
+    }
+
+    func testInterval_dynamicFarIsOtherwise() {
+        let iv = RefreshPlanner.interval(
+            dynamic: true,
+            fixedMinutes: 10,
+            schedule: schedule,
+            periodEnds: [farEnd],
+            now: now
+        )
+        XCTAssertEqual(iv, 3600)
+    }
+
+    func testInterval_dynamicNearUsesFirstStep() {
+        let iv = RefreshPlanner.interval(
+            dynamic: true,
+            fixedMinutes: 10,
+            schedule: schedule,
+            periodEnds: [nearEnd],
+            now: now
+        )
+        XCTAssertEqual(iv, 60)
+    }
 }

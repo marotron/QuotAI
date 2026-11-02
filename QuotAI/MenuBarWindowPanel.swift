@@ -77,21 +77,35 @@ struct MenuBarWindowPanel: View {
 
     private var statusRow: some View {
         HStack(alignment: .firstTextBaseline) {
-            if store.isRefreshing {
-                Text("Refreshing…")
-            } else {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
                 HStack(spacing: 0) {
                     Text("Last refresh: Cursor ")
                     Text(timeText(store.lastCursorRefreshed))
                         .monospacedDigit()
                     if let cursor = store.lastCursorRefreshed {
-                        agoBadge(cursor)
+                        FreshnessBadgeView(
+                            lastAt: cursor,
+                            now: context.date,
+                            interval: store.pollIntervalSeconds(for: .cursor, now: context.date),
+                            isSpinning: store.isRefreshingFamily(.cursor),
+                            accessibilityName: "Cursor"
+                        ) {
+                            Task { await store.refresh(.cursor) }
+                        }
                     }
                     Text(" · Grok Bot ")
                     Text(timeText(store.lastGrokRefreshed))
                         .monospacedDigit()
                     if let grok = store.lastGrokRefreshed {
-                        agoBadge(grok)
+                        FreshnessBadgeView(
+                            lastAt: grok,
+                            now: context.date,
+                            interval: store.pollIntervalSeconds(for: .grok, now: context.date),
+                            isSpinning: store.isRefreshingFamily(.grok),
+                            accessibilityName: "Grok Bot"
+                        ) {
+                            Task { await store.refresh(.grok) }
+                        }
                     }
                 }
             }
@@ -113,19 +127,6 @@ struct MenuBarWindowPanel: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 2)
         .frame(minHeight: 20)
-    }
-
-    private func agoBadge(_ date: Date) -> some View {
-        Text(Self.relativeAgo(from: date, to: now))
-            .font(.system(size: 9, weight: .medium))
-            .foregroundStyle(secondaryText)
-            .padding(.horizontal, 5)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.primary.opacity(0.08))
-            )
-            .padding(.leading, 4)
-            .padding(.trailing, 1)
     }
 
     // MARK: - Meters
@@ -183,20 +184,28 @@ struct MenuBarWindowPanel: View {
                     .font(.system(size: 11))
                     .foregroundStyle(secondaryText)
             } else {
+                // Fixed trailing columns so used / elapsed / pace / reset line up across rows.
                 HStack(spacing: 6) {
                     fact(icon: "sparkles", value: usedText(meter))
+                        .frame(width: Self.pctColumnWidth, alignment: .trailing)
                     op("÷")
                     fact(icon: "hourglass.bottomhalf.filled", value: elapsedText(meter))
+                        .frame(width: Self.pctColumnWidth, alignment: .trailing)
                     op("=")
                     paceFact(meter)
+                        .frame(width: Self.pctColumnWidth, alignment: .trailing)
                     alertSlot(for: meter)
                     op("→")
                     fact(icon: "timer", value: resetText(meter))
+                        .frame(width: Self.resetColumnWidth, alignment: .trailing)
                 }
             }
         }
         .frame(minHeight: 20)
     }
+
+    private static let pctColumnWidth: CGFloat = 46
+    private static let resetColumnWidth: CGFloat = 98
 
     private func seriesAvatar(_ avatar: BarIcon.Avatar, series: PaceHistorySeriesColor) -> some View {
         Image(nsImage: BarIcon.tintedAvatar(avatar, ink: Self.nsColor(hex: series.hex), pointSize: 14))
