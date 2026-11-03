@@ -125,7 +125,7 @@ struct MenuBarWindowPanel: View {
     private var metersGrid: some View {
         VStack(alignment: .leading, spacing: 2) {
             meterRow(
-                title: "Models",
+                title: "Cursor Models",
                 meter: store.cursorModels.projected(at: now),
                 avatar: .cursor,
                 series: .models

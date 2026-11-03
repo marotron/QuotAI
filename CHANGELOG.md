@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.4 — 2026-11-03
+
+### Fixed
+
+- Window panel meter title reads "Cursor Models" instead of "Models", matching the label used everywhere else
+- Pace band end label for Cursor Models reads "Cursor" instead of "Models"
+
 ## 0.15.3 — 2026-11-02
 
 ### Fixed
