@@ -10,13 +10,21 @@ struct PaceHistoryChart: View {
 
     @State private var visibleLayers: Set<PaceHistoryChartLayer> = Set(PaceHistoryChartLayer.allCases)
     @State private var hoverElapsed: Double?
+    @Environment(\.colorScheme) private var colorScheme
 
     /// Panel 470 − 14×2 well margin − 14×2 well pad (same fill as proto `svg { width:100% }`).
     /// Fixed — no GeometryReader↔@State loop (that hung Charts / Metal on open).
     private let plotW: CGFloat = 414
     private var plotH: CGFloat { plotW / 2 }
+    /// 22 — gutter below the plot that hosts the outside x-axis labels.
     private let axisPadBottom: CGFloat = 22
-    private let axisTicks: [Double] = [0, 25, 50, 75, 100]
+    /// 83.5 hosts the "Elapsed" title in the gap between the 75% label and the
+    /// right-aligned "100%" (label-only strip); 87.5 hosts the x "100%" label
+    /// between 75 and the right edge (no tick at 100 — the corner label would
+    /// crowd the right spine).
+    private let axisTicks: [Double] = [0, 25, 50, 75, 83.5, 87.5]
+    /// Y-only: 87.5 hosts the rotated "Used %" title between 100 and 75.
+    private let axisTicksY: [Double] = [0, 25, 50, 75, 87.5, 100]
 
     private static let cursorColor = Color(red: 0x8b / 255, green: 0x5c / 255, blue: 0xf6 / 255)
     private static let otherColor = Color(red: 0xd9 / 255, green: 0x46 / 255, blue: 0xef / 255)
@@ -25,6 +33,13 @@ struct PaceHistoryChart: View {
     private static let overFill = Color(red: 1, green: 0x9f / 255, blue: 0x0a / 255)
     private static let underFill = Color(red: 0x0a / 255, green: 0x84 / 255, blue: 1)
     private static let tertiary = Color(red: 0x8e / 255, green: 0x8e / 255, blue: 0x93 / 255)
+
+    /// Plot box hairline — mirrors `MenuBarWindowPanel.divider` (card border).
+    private var chartBoxBorder: Color {
+        colorScheme == .dark
+            ? Color(red: 0x3a / 255, green: 0x3a / 255, blue: 0x3c / 255)
+            : Color(red: 0xd2 / 255, green: 0xd2 / 255, blue: 0xd7 / 255)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -50,27 +65,30 @@ struct PaceHistoryChart: View {
         .chartYScale(domain: 0...100)
         .chartXAxis {
             AxisMarks(values: axisTicks) { value in
-                // Interior dashed grid only — 0/100 sit on the solid axis rect.
-                if let n = value.as(Double.self), !isPlotPerimeterTick(n) {
+                // Interior dashed grid only — 0/100 sit on the solid axis rect;
+                // 87.5 and 83.5 are label-only strips (no grid).
+                if let n = value.as(Double.self), !isPlotPerimeterTick(n),
+                   abs(n - 87.5) > 0.01, abs(n - 83.5) > 0.01 {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [2, 3]))
                         .foregroundStyle(Color.secondary.opacity(0.35))
                 }
-                AxisValueLabel {
-                    if let n = value.as(Double.self) {
+                if let n = value.as(Double.self) {
+                    AxisValueLabel {
                         xTickLabel(n)
                     }
                 }
             }
         }
         .chartYAxis {
-            // `.inset` draws labels inside the plot (proto `data-yaxis="inside"`)
-            // and stops Charts reserving a trailing gutter that shrinks the box.
-            AxisMarks(preset: .inset, position: .trailing, values: axisTicks) { value in
-                if let n = value.as(Double.self), !isPlotPerimeterTick(n) {
+            // `.inset` draws labels inside the plot at the leading edge
+            // (proto `data-yaxis="inside"`); no gutter is reserved either side.
+            AxisMarks(preset: .inset, position: .leading, values: axisTicksY) { value in
+                if let n = value.as(Double.self), !isPlotPerimeterTick(n),
+                   abs(n - 87.5) > 0.01 {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [2, 3]))
                         .foregroundStyle(Color.secondary.opacity(0.35))
                 }
-                AxisValueLabel(anchor: .trailing) {
+                AxisValueLabel(anchor: .leading) {
                     if let n = value.as(Double.self) {
                         yTickLabel(n)
                     }
@@ -80,7 +98,12 @@ struct PaceHistoryChart: View {
         .chartPlotStyle { plotArea in
             plotArea
                 .frame(width: plotW, height: plotH)
-                .border(Color.secondary.opacity(0.45), width: 1)
+                // Same hairline as the chart card border in MenuBarWindowPanel
+                // (`divider` 0.8 / 0.5pt) — lighter than the old secondary 0.45.
+                .overlay(
+                    Rectangle()
+                        .strokeBorder(chartBoxBorder.opacity(0.8), lineWidth: 0.5)
+                )
         }
         .chartOverlay { proxy in
             GeometryReader { geo in
@@ -198,6 +221,7 @@ struct PaceHistoryChart: View {
                     series: .value("Meter", meterId.rawValue)
                 )
                 .foregroundStyle(color(for: meterId))
+                .opacity(0.75)
                 .lineStyle(StrokeStyle(lineWidth: 1.75, lineCap: .round, lineJoin: .round))
             }
             // Reading dots only — leave the latest sample to the end-cap marks below.
@@ -206,7 +230,7 @@ struct PaceHistoryChart: View {
                     x: .value("Elapsed", row.elapsedPct),
                     y: .value("Used", row.usedPct)
                 )
-                .symbolSize(10)
+                .symbolSize(4)
                 .foregroundStyle(color(for: meterId))
             }
         }
@@ -227,11 +251,21 @@ struct PaceHistoryChart: View {
             .foregroundStyle(color(for: end.meterId))
             .annotation(position: .trailing, alignment: .leading, spacing: 4) {
                 if visibleLayers.contains(.names) {
-                    Text(endLabel(for: end.meterId))
-                        .font(.system(size: 8, weight: .medium))
-                        .foregroundStyle(color(for: end.meterId))
-                        .shadow(color: Color(nsColor: .windowBackgroundColor).opacity(0.7), radius: 1.2)
-                        .offset(y: nameNudgeY(for: end.meterId))
+                    HStack(spacing: 2) {
+                        // Other has no dedicated avatar asset — reuse the Cursor
+                        // avatar inked in the Other fuchsia, matching the meter row.
+                        Image(nsImage: BarIcon.tintedAvatar(
+                            end.meterId == .grok ? .grok : .cursor,
+                            ink: nsColor(for: end.meterId),
+                            pointSize: 10
+                        ))
+                        .frame(width: 10, height: 10)
+                        Text(endLabel(for: end.meterId))
+                            .font(.system(size: 8, weight: .medium))
+                            .foregroundStyle(color(for: end.meterId))
+                            .shadow(color: Color(nsColor: .windowBackgroundColor).opacity(0.7), radius: 1.2)
+                    }
+                    .offset(y: nameNudgeY(for: end.meterId))
                 }
             }
         }
@@ -420,45 +454,61 @@ struct PaceHistoryChart: View {
 
     @ViewBuilder
     private func xTickLabel(_ n: Double) -> some View {
-        if abs(n - 50) < 0.5 {
-            Text("Elapsed %")
+        if abs(n - 83.5) < 0.5 {
+            // Title strip: sits in the gap between the "75%" label and the
+            // right-aligned "100%" — tune .offset(x:) to slide it.
+            Text("Elapsed")
                 .font(.system(size: 9))
                 .foregroundStyle(Self.tertiary)
-        } else {
+                .offset(x: -5)
+        } else if abs(n - 87.5) < 0.5 {
+            // "100%" rides the label line between 75 and the right edge.
+            // Centered on the 87.5 tick by default; +38 slides it right so the
+            // text ends ~3pt short of the right spine — tune this offset to move it.
+            Text("100%")
+                .font(.system(size: 9).monospacedDigit())
+                .foregroundStyle(Self.tertiary)
+                .offset(x: 20)
+        } else if abs(n) >= 0.5 {
+            // 0 has no x label — the y-axis 0 marks that corner.
             Text(tickText(n))
                 .font(.system(size: 9).monospacedDigit())
                 .foregroundStyle(Self.tertiary)
-                .padding(.leading, abs(n) < 0.5 ? 5 : 0)
-                .padding(.trailing, abs(n - 100) < 0.5 ? 13 : 0)
         }
     }
 
     @ViewBuilder
     private func yTickLabel(_ n: Double) -> some View {
-        if abs(n - 50) < 0.5 {
-            Text("Used %")
+        if abs(n - 87.5) < 0.5 {
+            // Title strip: the rotated text gets an exact 11×30 layout box, so
+            // Charts anchors the visible column — left edge on the spine,
+            // vertically centered on the 87.5 tick (midway 100↔75).
+            Text("Used")
                 .font(.system(size: 9))
                 .foregroundStyle(Self.tertiary)
+                .fixedSize()
                 .rotationEffect(.degrees(90))
-                // Proto: title sits ~8pt left of the right-spine tick column.
-                .padding(.trailing, 8)
+                .frame(width: 11, height: 30)
+                // +12pt: the y numbers carry .padding(.top, 16), which shifts their
+                // visible text 8pt below their ticks — nudge lower than that midpoint.
+                .offset(x: 0, y: 8)
         } else {
-            Text(tickText(n))
+            // Corner "0" stays bare — the % only reads on the inner ticks.
+            Text(abs(n) < 0.5 ? "0" : tickText(n))
                 .font(.system(size: 9).monospacedDigit())
                 .foregroundStyle(Self.tertiary)
                 // Soft halo so ticks stay readable over corridor fills.
                 .shadow(color: Color(nsColor: .windowBackgroundColor).opacity(0.55), radius: 0.75)
-                .padding(.trailing, 5)
-                .padding(.bottom, abs(n) < 0.5 ? 8 : 0)
-                .padding(.top, abs(n - 100) < 0.5 ? 8 : 0)
+                .padding(.leading, 0)
+                .padding(.top, 16)
         }
     }
 
     private func tickText(_ n: Double) -> String {
-        String(Int(n.rounded()))
+        String(Int(n.rounded())) + "%"
     }
 
-    /// Proto tip: when header → per-series rows → Corridors (over / under).
+    /// Proto tip: Elapsed line → when readings → per-series rows → over / under bands.
     private func tipView(elapsed: Double) -> some View {
         let t = elapsed / 100
         let overU = clampPct(PaceAlertBands.overUsed(atElapsed: t, thresholds: thresholds) * 100)
@@ -469,17 +519,17 @@ struct PaceHistoryChart: View {
         let readings = tipWhenReadings(atElapsed: elapsed)
 
         return VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(Array(readings.enumerated()), id: \.offset) { _, reading in
-                        Text(formatWhenReading(reading))
-                    }
+            // Elapsed leads the tip on its own first line.
+            Text("Elapsed \(Int(elapsed.rounded()))%")
+                .foregroundStyle(.secondary.opacity(0.85))
+                .padding(.bottom, 4)
+
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(Array(readings.enumerated()), id: \.offset) { _, reading in
+                    Text(formatWhenReading(reading))
                 }
-                .foregroundStyle(.secondary)
-                Spacer(minLength: 10)
-                Text("Elapsed \(Int(elapsed.rounded()))%")
-                    .foregroundStyle(.secondary.opacity(0.85))
             }
+            .foregroundStyle(.secondary)
             .padding(.bottom, 4)
 
             ForEach(hoverDots) { dot in
@@ -487,33 +537,32 @@ struct PaceHistoryChart: View {
                     tipAvatar(dot.id)
                     Text(shortName(dot.id))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text(String(format: "%.0f%% used", dot.used))
-                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .fixedSize()
                 }
                 .padding(.top, 2)
             }
 
-            Text("Corridors")
-                .foregroundStyle(.secondary)
+            // Divider between the used list and the corridor bands.
+            Rectangle()
+                .fill(Color.secondary.opacity(0.35))
+                .frame(height: 1)
                 .padding(.top, 6)
                 .padding(.bottom, 4)
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.35))
-                        .frame(height: 1)
-                        .padding(.top, 2)
-                }
 
-            tipBandRow(label: "Over ≥", value: String(format: "%.0f%%", overU))
+            tipBandRow(label: "Over ≥", value: String(format: "%.0f%% used", overU))
             if let underU {
-                tipBandRow(label: "Under ≤", value: String(format: "%.0f%%", underU))
+                tipBandRow(label: "Under ≤", value: String(format: "%.0f%% used", underU))
             } else {
                 tipBandRow(label: "Under", value: "n/a yet")
             }
         }
-        .font(.system(size: 11))
+        .font(.system(size: 10))
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .frame(minWidth: 148, alignment: .leading)
@@ -536,7 +585,7 @@ struct PaceHistoryChart: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text(value)
-                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
         .padding(.top, 2)
@@ -599,7 +648,10 @@ struct PaceHistoryChart: View {
     }
 
     private func formatWhenReading(_ reading: PaceHistoryTipPresentation.WhenReading) -> String {
-        let date = reading.at.formatted(.dateTime.month(.abbreviated).day())
+        // Compact: "26 Oct 14:32" — date and clock time joined by a space (locale formats each part).
+        let day = reading.at.formatted(.dateTime.month(.abbreviated).day())
+        let time = reading.at.formatted(.dateTime.hour().minute())
+        let date = "\(day) \(time)"
         let ago = PaceHistoryTipPresentation.relativeAgo(from: reading.at, to: Date())
         let body = "\(date) · \(ago)"
         if let family = reading.family {
@@ -633,3 +685,48 @@ struct PaceHistoryChart: View {
         return CGSize(width: clampedX, height: 8)
     }
 }
+
+#if PANEL_PREVIEW
+// Canvas preview for the chart alone. Only compiled into the design-preview
+// target (production never defines PANEL_PREVIEW). Use the QuotAIPanelPreview
+// scheme to render it.
+#Preview("Pace history chart") {
+    let start = Date.now.addingTimeInterval(-25 * 24 * 3600)
+    let span = 30 * 24 * 3600.0
+    let cursor = (0..<12).map { step -> PaceHistorySample in
+        let t = Double(step) / 11
+        return PaceHistorySample(
+            meterId: .cursor,
+            usedPct: 72 * (0.2 + 0.8 * t),
+            elapsedPct: t * 83,
+            timestamp: start.addingTimeInterval(t * span * 0.83),
+            periodStart: start
+        )
+    }
+    let other = cursor.map { sample in
+        PaceHistorySample(
+            meterId: .other,
+            usedPct: 45 * (0.2 + 0.8 * sample.elapsedPct / 83),
+            elapsedPct: sample.elapsedPct,
+            timestamp: sample.timestamp,
+            periodStart: start
+        )
+    }
+    let grok = cursor.map { sample in
+        PaceHistorySample(
+            meterId: .grok,
+            usedPct: 104 * (0.2 + 0.8 * sample.elapsedPct / 83),
+            elapsedPct: sample.elapsedPct,
+            timestamp: sample.timestamp,
+            periodStart: start
+        )
+    }
+    PaceHistoryChart(
+        thresholds: .default,
+        series: [.cursor: cursor, .other: other, .grok: grok],
+        showOtherModels: true
+    )
+    .padding()
+    .frame(width: 470)
+}
+#endif

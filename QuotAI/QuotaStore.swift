@@ -29,7 +29,13 @@ final class QuotaStore: ObservableObject {
     /// Bumps when pace-history samples are written so the window panel can redraw.
     @Published private(set) var paceHistoryEpoch = 0
 
-    let paceHistoryStore = PaceHistorySampleStore()
+    let paceHistoryStore: PaceHistorySampleStore
+
+    #if PANEL_PREVIEW
+        /// Set only by the design-preview initializer; short-circuits every fetch path so
+        /// the preview app stays look-only. Compiled out of production builds.
+        private let isPreview: Bool
+    #endif
 
     private var didAttemptAuthFailureReimport = false
     private var pollTimer: Timer?
@@ -115,6 +121,10 @@ final class QuotaStore: ObservableObject {
     }
 
     init() {
+        #if PANEL_PREVIEW
+            isPreview = false
+        #endif
+        paceHistoryStore = PaceHistorySampleStore()
         let stored = UserDefaults.standard.integer(forKey: Self.pollIntervalKey)
         pollIntervalMinutes = Self.pollIntervalChoices.contains(stored) ? stored : 10
         dynamicRefresh = UserDefaults.standard.bool(forKey: Self.dynamicRefreshKey)
@@ -131,6 +141,80 @@ final class QuotaStore: ObservableObject {
             Task { await self?.refresh(.all) }
         }
     }
+
+    #if PANEL_PREVIEW
+        /// Design-preview store: believable meters and history for the panel preview app.
+        /// No timers, no network, no keychain; history goes to a throwaway temp file so the
+        /// real app's `pace-history.json` is never touched.
+        init(previewHistoryFileURL: URL) {
+            isPreview = true
+            paceHistoryStore = PaceHistorySampleStore(fileURL: previewHistoryFileURL)
+            pollIntervalMinutes = 10
+            dynamicRefresh = false
+            refreshSchedule = .default
+
+            let now = Date()
+            let periodStart = Calendar.current.date(byAdding: .day, value: -25, to: now) ?? now
+            let periodEnd = Calendar.current.date(byAdding: .day, value: 5, to: now) ?? now
+            // Tweak these to exercise panel states: on-corridor / under / exhausted.
+            cursorModels = QuotaMeter(
+                name: "Cursor Models",
+                percentUsed: 72,
+                periodStart: periodStart,
+                periodEnd: periodEnd
+            )
+            otherModels = QuotaMeter(
+                name: "Other Models",
+                percentUsed: 45,
+                periodStart: periodStart,
+                periodEnd: periodEnd
+            )
+            grokBot = QuotaMeter(
+                name: "Grok Bot",
+                percentUsed: 104,
+                periodStart: periodStart,
+                periodEnd: periodEnd
+            )
+            lastCursorRefreshed = now.addingTimeInterval(-4 * 60)
+            lastGrokRefreshed = now.addingTimeInterval(-4 * 60)
+            Self.seedPreviewHistory(
+                into: paceHistoryStore,
+                periodStart: periodStart,
+                periodEnd: periodEnd
+            )
+        }
+
+        /// One gentle ramp per series so the chart well shows three trajectories.
+        private static func seedPreviewHistory(
+            into store: PaceHistorySampleStore,
+            periodStart: Date,
+            periodEnd: Date
+        ) {
+            let finals: [(id: PaceHistoryMeterId, usedPct: Double)] = [
+                (.cursor, 72), (.other, 45), (.grok, 104)
+            ]
+            let duration = periodEnd.timeIntervalSince(periodStart)
+            var batch: [PaceHistorySample] = []
+            for (id, final) in finals {
+                let count = 16
+                for step in 0..<count {
+                    let t = Double(step) / Double(count - 1)
+                    // Ease-in ramp toward the meter's current used %.
+                    let used = final * (0.15 + 0.85 * t * t)
+                    batch.append(
+                        PaceHistorySample(
+                            meterId: id,
+                            usedPct: min(used, final),
+                            elapsedPct: t * 83.3, // 25 of 30 days elapsed
+                            timestamp: periodStart.addingTimeInterval(t * duration * 0.83),
+                            periodStart: periodStart
+                        )
+                    )
+                }
+            }
+            try? store.append(contentsOf: batch)
+        }
+    #endif
 
     deinit {
         pollTimer?.invalidate()
@@ -273,6 +357,9 @@ final class QuotaStore: ObservableObject {
     }
 
     func refresh(_ scope: RefreshScope = .all, forceReimport: Bool = false) async {
+        #if PANEL_PREVIEW
+            if isPreview { return }
+        #endif
         guard !isRefreshing else { return }
         isRefreshing = true
         refreshingScope = scope

@@ -24,7 +24,10 @@ struct FreshnessBadgeView: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 4) {
+                // fixedSize — the status row squeezes flexible text first; the
+                // ago label must never truncate ("just…").
                 Text(MenuBarWindowPanel.relativeAgo(from: lastAt, to: now))
+                    .fixedSize()
                     .font(.system(size: 9, weight: .medium))
                     .foregroundStyle(fresh)
                 glyph

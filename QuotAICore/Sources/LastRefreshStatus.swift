@@ -13,7 +13,7 @@ public enum LastRefreshStatus {
         }
         let cursorText = cursor.map(formatTime) ?? "—"
         let grokText = grok.map(formatTime) ?? "—"
-        return "Last refresh: Cursor \(cursorText) · Grok Bot \(grokText)"
+        return "Last refresh: Cursor \(cursorText) · Grok \(grokText)"
     }
 
     /// 24-hour `HH:mm` in the given calendar/time zone (defaults: current).

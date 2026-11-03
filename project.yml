@@ -62,8 +62,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.marotron.QuotAI
-        MARKETING_VERSION: "0.15.4"
-        CURRENT_PROJECT_VERSION: 31
+        MARKETING_VERSION: "0.16.0"
+        CURRENT_PROJECT_VERSION: 32
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: QuotAI
         INFOPLIST_KEY_LSUIElement: YES
@@ -86,6 +86,36 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.marotron.QuotAICoreTests
         GENERATE_INFOPLIST_FILE: YES
 
+  # Design-preview app for the menu-bar dropdown panel. Compiles the real panel
+  # sources (minus the real app entry point) against a seeded fake store so look
+  # tweaks land in the shipping app for free. Production never compiles this
+  # target and never defines PANEL_PREVIEW, so all preview code compiles out.
+  QuotAIPanelPreview:
+    type: application
+    platform: macOS
+    sources:
+      - path: QuotAI
+        excludes:
+          - "QuotAIApp.swift"
+      - path: QuotAIPanelPreview
+    dependencies:
+      - target: QuotAICore
+      - sdk: libsqlite3.tbd
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.marotron.QuotAIPanelPreview
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: QuotAI Panel Preview
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG PANEL_PREVIEW
+        Release:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: PANEL_PREVIEW
+
 schemes:
   QuotAI:
     build:
@@ -96,5 +126,12 @@ schemes:
     test:
       targets:
         - QuotAICoreTests
+    run:
+      config: Debug
+
+  QuotAIPanelPreview:
+    build:
+      targets:
+        QuotAIPanelPreview: all
     run:
       config: Debug

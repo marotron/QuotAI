@@ -1,7 +1,7 @@
 # Historical used / elapsed trajectories
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: [12-pace-band-quick-view.md](12-pace-band-quick-view.md)
 Target: next version (after quick view)
 GitHub: https://github.com/marotron/QuotAI/issues/17
@@ -40,3 +40,7 @@ User described historical used (and elapsed) vs normalized time as the upgrade a
 ### 2026-10-09 (later)
 
 Mirrored to GitHub [#17](https://github.com/marotron/QuotAI/issues/17).
+
+### 2026-11-03 — resolved
+
+Delivered by v0.15.0 (PR #33): `PaceHistorySampleStore` (QuotAICore, unit-tested) persists per-meter used %/elapsed % samples with `periodStart` roll, file-backed and local-only; panel chart plots used % (Y) vs normalized elapsed % (X) per meter with exact-pace guide and corridor boundaries. GitHub #17 closed. Open question left open on the issue: separate elapsed-over-time series view (reopening welcome).
