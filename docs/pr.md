@@ -1,6 +1,6 @@
 # Product requirements — QuotAI
 
-Last updated: 2026-09-19
+Last updated: 2026-11-04
 
 ## Goal
 
@@ -10,7 +10,7 @@ macOS menu-bar app showing **Cursor Models** and **Grok Bot** quota from Cursor 
 
 - **Meters:** Cursor Models + Grok Bot only (`% used` + days left + pace). Other Models / on-demand → open Spending page.
 - **Bar (Settings):** default Used + days left, or Pace dial (worse of two meters).
-- **Dropdown:** always full detail + small dial per meter; always **Open Cursor Spending** → `https://cursor.com/dashboard/spending`.
+- **Dropdown:** always full detail + small dial per meter. Action and display rows are chosen in Settings → Menu pins (default on: Refresh all, Refresh interval, Open Cursor Spending → `https://cursor.com/dashboard/spending`).
 - **Missing Grok:** error / unavailable row; Cursor Models still refresh.
 
 ## Auth

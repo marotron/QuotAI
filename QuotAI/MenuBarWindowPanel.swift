@@ -11,6 +11,7 @@ struct MenuBarWindowPanel: View {
 
     @Environment(\.openSettings) private var openSettings
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage("menuPinDensity") private var menuPinDensity: MenuPinDensity = .compact
 
     private var now: Date { store.displayClock }
 
@@ -37,30 +38,12 @@ struct MenuBarWindowPanel: View {
                 .padding(.bottom, 6)
                 .padding(.horizontal, 14)
 
-            actionRow("Refresh all") {
-                Task { await store.refresh(.all) }
-            }
-            .padding(.horizontal, 5)
-            .disabled(store.isRefreshing)
+            MenuPinsView(store: store)
 
             panelSeparator
 
-            actionRow("Settings…", shortcut: "⌘,") {
-                #if !PANEL_PREVIEW
-                    SettingsWindowElevator.show { openSettings() }
-                #endif
-            }
-            #if !PANEL_PREVIEW
-                .keyboardShortcut(",", modifiers: .command)
-            #endif
-            .padding(.horizontal, 5)
-
-            actionRow("About") {
-                #if !PANEL_PREVIEW
-                    AboutWindowHost.shared.showAbout()
-                #endif
-            }
-            .padding(.horizontal, 5)
+            settingsAndAboutRows
+                .padding(.horizontal, 5)
 
             panelSeparator
 
@@ -76,6 +59,7 @@ struct MenuBarWindowPanel: View {
         }
         .padding(.vertical, 5)
         .frame(width: 470)
+        .environment(\.menuRowMetrics, MenuRowMetrics(density: menuPinDensity))
         .background(panelBackground)
         .onAppear {
             store.snapDisplayClock()
@@ -329,12 +313,51 @@ struct MenuBarWindowPanel: View {
         PanelActionRow(title: title, shortcut: shortcut, action: action)
     }
 
+    @ViewBuilder
+    private var settingsRow: some View {
+        actionRow("Settings…", shortcut: "⌘,") {
+            #if !PANEL_PREVIEW
+                SettingsWindowElevator.show { openSettings() }
+            #endif
+        }
+        #if !PANEL_PREVIEW
+            .keyboardShortcut(",", modifiers: .command)
+        #endif
+    }
+
+    @ViewBuilder
+    private var aboutRow: some View {
+        actionRow("About") {
+            #if !PANEL_PREVIEW
+                AboutWindowHost.shared.showAbout()
+            #endif
+        }
+    }
+
+    /// Compact: Settings and About share one line, split by the same gutter and divider as the pinned columns.
+    /// Normal: one row each.
+    @ViewBuilder
+    private var settingsAndAboutRows: some View {
+        if MenuRowMetrics(density: menuPinDensity).columns > 1 {
+            HStack(spacing: 0) {
+                settingsRow
+                    .frame(maxWidth: .infinity)
+                    .padding(.trailing, 6)
+                aboutRow
+                    .frame(maxWidth: .infinity)
+                    .padding(.leading, 6)
+            }
+            .overlay(alignment: .center) {
+                PanelColumnDivider()
+            }
+        } else {
+            settingsRow
+            aboutRow
+        }
+    }
+
     private var panelSeparator: some View {
-        Rectangle()
-            .fill(divider)
-            .frame(height: 1)
-            .padding(.vertical, 5)
-            .padding(.horizontal, 14)
+        PanelRule()
     }
 
     // MARK: - Copy helpers
@@ -476,13 +499,14 @@ struct MenuBarWindowPanel: View {
 /// Proto action row: hover/press → `--menu-hover` fill + white label (incl. shortcut).
 /// Hover state lives on the row (not inside `ButtonStyle`) so MenuBarExtra windows get
 /// `onContinuousHover` the same way the chart overlay does.
-private struct PanelActionRow: View {
+struct PanelActionRow: View {
     let title: String
     var shortcut: String? = nil
     let action: () -> Void
 
     @State private var isHovered = false
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.menuRowMetrics) private var metrics
 
     var body: some View {
         Button(action: action) {
@@ -491,15 +515,14 @@ private struct PanelActionRow: View {
                 Spacer()
                 if let shortcut {
                     Text(shortcut)
-                        .font(.system(size: 12))
                         .opacity(0.55)
                         .padding(.leading, 16)
                 }
             }
-            .font(.system(size: 13))
-            .padding(.horizontal, 14)
+            .font(.system(size: metrics.fontSize))
+            .padding(.horizontal, metrics.inset)
             .padding(.vertical, 2)
-            .frame(minHeight: 22)
+            .frame(minHeight: metrics.rowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(PanelActionButtonStyle(isHovered: isEnabled && isHovered))
@@ -558,12 +581,15 @@ private struct PanelActionButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
 
-    private static let menuHover = Color(red: 0x0a / 255, green: 0x82 / 255, blue: 1)
-
     private var normalText: Color {
         colorScheme == .dark
             ? Color(red: 0xf5 / 255, green: 0xf5 / 255, blue: 0xf7 / 255)
             : Color(red: 0x1d / 255, green: 0x1d / 255, blue: 0x1f / 255)
+    }
+
+    /// Menu blue highlight (`--menu-hover` in the proto) with a white label.
+    private var highlightFill: Color {
+        Color(red: 0x0a / 255, green: 0x82 / 255, blue: 1)
     }
 
     func makeBody(configuration: Configuration) -> some View {
@@ -572,7 +598,7 @@ private struct PanelActionButtonStyle: ButtonStyle {
             .foregroundStyle(highlighted ? Color.white : (idleForeground ?? normalText))
             .background(
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(highlighted ? Self.menuHover : Color.clear)
+                    .fill(highlighted ? highlightFill : Color.clear)
             )
     }
 }
