@@ -46,22 +46,32 @@ struct MenuBarWindowPanel: View {
             panelSeparator
 
             actionRow("Settings…", shortcut: "⌘,") {
-                SettingsWindowElevator.show { openSettings() }
+                #if !PANEL_PREVIEW
+                    SettingsWindowElevator.show { openSettings() }
+                #endif
             }
-            .keyboardShortcut(",", modifiers: .command)
+            #if !PANEL_PREVIEW
+                .keyboardShortcut(",", modifiers: .command)
+            #endif
             .padding(.horizontal, 5)
 
             actionRow("About") {
-                AboutWindowHost.shared.showAbout()
+                #if !PANEL_PREVIEW
+                    AboutWindowHost.shared.showAbout()
+                #endif
             }
             .padding(.horizontal, 5)
 
             panelSeparator
 
             actionRow("Quit QuotAI", shortcut: "⌘Q") {
-                NSApplication.shared.terminate(nil)
+                #if !PANEL_PREVIEW
+                    NSApplication.shared.terminate(nil)
+                #endif
             }
-            .keyboardShortcut("q", modifiers: .command)
+            #if !PANEL_PREVIEW
+                .keyboardShortcut("q", modifiers: .command)
+            #endif
             .padding(.horizontal, 5)
         }
         .padding(.vertical, 5)
@@ -79,7 +89,15 @@ struct MenuBarWindowPanel: View {
         HStack(alignment: .firstTextBaseline) {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 HStack(spacing: 0) {
-                    Text("Last refresh: Cursor ")
+                    Text("Last refresh: ")
+                    // Avatars inked in the row text color so they read as part of the line.
+                    Image(nsImage: BarIcon.tintedAvatar(
+                        .cursor,
+                        ink: NSColor(secondaryText),
+                        pointSize: 11
+                    ))
+                    .frame(width: 11, height: 11)
+                    Text(" Cursor ")
                     Text(timeText(store.lastCursorRefreshed))
                         .monospacedDigit()
                     if let cursor = store.lastCursorRefreshed {
@@ -93,7 +111,14 @@ struct MenuBarWindowPanel: View {
                             Task { await store.refresh(.cursor) }
                         }
                     }
-                    Text(" · Grok Bot ")
+                    Text(" · ")
+                    Image(nsImage: BarIcon.tintedAvatar(
+                        .grok,
+                        ink: NSColor(secondaryText),
+                        pointSize: 11
+                    ))
+                    .frame(width: 11, height: 11)
+                    Text(" Grok ")
                     Text(timeText(store.lastGrokRefreshed))
                         .monospacedDigit()
                     if let grok = store.lastGrokRefreshed {
@@ -125,7 +150,7 @@ struct MenuBarWindowPanel: View {
     private var metersGrid: some View {
         VStack(alignment: .leading, spacing: 2) {
             meterRow(
-                title: "Models",
+                title: "Cursor Models",
                 meter: store.cursorModels.projected(at: now),
                 avatar: .cursor,
                 series: .models
@@ -166,29 +191,38 @@ struct MenuBarWindowPanel: View {
                 .font(.system(size: 11))
                 .foregroundStyle(primaryText)
                 .lineLimit(1)
-
-            Spacer(minLength: 8)
+                // Never squeeze the meter name into "Cursor Mod…" — the metric
+                // cluster below absorbs row pressure instead.
+                .fixedSize()
 
             if meter.isUnavailable {
                 Text("unavailable")
                     .font(.system(size: 11))
                     .foregroundStyle(secondaryText)
+                Spacer(minLength: 8)
             } else {
-                // Fixed trailing columns so used / elapsed / pace / reset line up across rows.
-                HStack(spacing: 6) {
+                // Fixed trailing columns so used / elapsed / pace / reset line up
+                // across rows; maxWidth:.infinity keeps the cluster flush right
+                // regardless of title width (a collapsed Spacer used to drift it).
+                HStack(spacing: 4) {
                     fact(icon: "sparkles", value: usedText(meter))
                         .frame(width: Self.pctColumnWidth, alignment: .trailing)
+                        .help(usedHelp(meter))
                     op("÷")
                     fact(icon: "hourglass.bottomhalf.filled", value: elapsedText(meter))
                         .frame(width: Self.pctColumnWidth, alignment: .trailing)
+                        .help(elapsedHelp(meter))
                     op("=")
                     paceFact(meter)
                         .frame(width: Self.pctColumnWidth, alignment: .trailing)
+                        .help(paceHelp(meter))
                     alertSlot(for: meter)
                     op("→")
                     fact(icon: "timer", value: resetText(meter))
                         .frame(width: Self.resetColumnWidth, alignment: .trailing)
+                        .help(resetHelp(meter))
                 }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .frame(minHeight: 20)
@@ -325,6 +359,43 @@ struct MenuBarWindowPanel: View {
         return PaceMeterPresentation.pacePercentText(ratio: meter.pace?.ratio, exhausted: exhausted)
     }
 
+    // MARK: - Hover tooltips (meter-row fact columns)
+
+    /// `Used quota: 72.34%`
+    private func usedHelp(_ meter: QuotaMeter) -> String {
+        guard let pct = meter.percentUsed else { return "Used quota" }
+        return "Used quota: \(String(format: "%.2f", pct))%"
+    }
+
+    /// `Elapsed billing period: 24d 21h of 30d`
+    private func elapsedHelp(_ meter: QuotaMeter) -> String {
+        guard let start = meter.periodStart, let end = meter.periodEnd,
+              end.timeIntervalSince(start) > 0 else {
+            return "Elapsed share of the billing period"
+        }
+        let total = end.timeIntervalSince(start)
+        let gone = max(0, now.timeIntervalSince(start))
+        return "Elapsed billing period: "
+            + "\(RemainingTime.formatDetailed(seconds: gone)) of \(RemainingTime.formatDetailed(seconds: total))"
+    }
+
+    /// `Pace (used ÷ elapsed): 86.12%`
+    private func paceHelp(_ meter: QuotaMeter) -> String {
+        guard let ratio = meter.pace?.ratio else { return "Pace: used ÷ elapsed" }
+        return "Pace (used ÷ elapsed): \(String(format: "%.2f", ratio * 100))%"
+    }
+
+    /// `Quota resets: 7 Nov 14:32` (absolute date when the period end is known)
+    private func resetHelp(_ meter: QuotaMeter) -> String {
+        if let end = meter.periodEnd {
+            let day = end.formatted(.dateTime.month(.abbreviated).day())
+            let time = end.formatted(.dateTime.hour().minute())
+            return "Quota resets: \(day) \(time)"
+        }
+        guard let seconds = meter.secondsRemaining(at: now) else { return "Time until quota reset" }
+        return "Time until quota reset: \(RemainingTime.formatDetailed(seconds: seconds))"
+    }
+
     private func alertKind(for meter: QuotaMeter) -> PaceAlertKind {
         guard corridorAlertsEnabled, !meter.isUnavailable else { return .quiet }
         if let pct = meter.percentUsed,
@@ -451,7 +522,9 @@ private struct VersionChangelogButton: View {
 
     var body: some View {
         Button {
-            AboutWindowHost.shared.showChangelog()
+            #if !PANEL_PREVIEW
+                AboutWindowHost.shared.showChangelog()
+            #endif
         } label: {
             Text("v\(QuotAIAboutInfo.marketingVersion)")
                 .monospacedDigit()

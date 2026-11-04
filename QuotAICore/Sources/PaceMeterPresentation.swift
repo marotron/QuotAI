@@ -47,7 +47,7 @@ public enum PaceHistorySeriesColor: String, CaseIterable, Sendable {
 
     public var endLabel: String {
         switch self {
-        case .models: return "Models"
+        case .models: return "Cursor"
         case .other: return "Other"
         case .grok: return "Grok"
         }

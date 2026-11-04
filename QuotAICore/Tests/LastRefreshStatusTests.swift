@@ -29,7 +29,7 @@ final class LastRefreshStatusTests: XCTestCase {
         )
         XCTAssertEqual(
             line,
-            "Last refresh: Cursor \(hhmm(cursor)) · Grok Bot \(hhmm(grok))"
+            "Last refresh: Cursor \(hhmm(cursor)) · Grok \(hhmm(grok))"
         )
     }
 
@@ -40,7 +40,7 @@ final class LastRefreshStatusTests: XCTestCase {
             isRefreshing: false,
             formatTime: hhmm
         )
-        XCTAssertEqual(line, "Last refresh: Cursor \(hhmm(cursor)) · Grok Bot —")
+        XCTAssertEqual(line, "Last refresh: Cursor \(hhmm(cursor)) · Grok —")
     }
 
     func testMissingCursorUsesDash() {
@@ -50,7 +50,7 @@ final class LastRefreshStatusTests: XCTestCase {
             isRefreshing: false,
             formatTime: hhmm
         )
-        XCTAssertEqual(line, "Last refresh: Cursor — · Grok Bot \(hhmm(grok))")
+        XCTAssertEqual(line, "Last refresh: Cursor — · Grok \(hhmm(grok))")
     }
 
     func testBothMissingUseDashes() {
@@ -60,6 +60,6 @@ final class LastRefreshStatusTests: XCTestCase {
             isRefreshing: false,
             formatTime: hhmm
         )
-        XCTAssertEqual(line, "Last refresh: Cursor — · Grok Bot —")
+        XCTAssertEqual(line, "Last refresh: Cursor — · Grok —")
     }
 }

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.16.0 — 2026-11-03
+
+### Added
+
+- Hover tooltips on meter-row facts: usage shows `Used quota` with 2-decimal percent, elapsed shows the billing period as a duration (`24d 21h of 30d`), pace shows `used ÷ elapsed` with 2-decimal percent
+- Design-preview app target (`QuotAIPanelPreview`) with seeded meters/history for look-only panel iteration
+
+### Changed
+
+- Pace history chart axes: all ticks read as percentages, y title is `Used`, x title `Elapsed` sits between the 75% and 100% labels, `100%` right-aligned near the axis end
+- Hover tip reworked: `Elapsed N%` leads on its own line, readings include clock time in compact form (`26 Oct 14:32`), divider before the corridor bands, corridor values read `N% used`, all text one shared smaller size, values same color/weight as the rest
+- Hover circles on the chart match the current end-cap dots (halo + core) instead of oversized singles
+
+### Fixed
+
+- Ago freshness chips no longer truncate (`just…` → `just now`) and meter titles render in full (`Cursor Models`)
+- Meter metric cluster stays flush right across rows even with full-length titles
+
+## 0.15.4 — 2026-11-03
+
+### Fixed
+
+- Window panel meter title reads "Cursor Models" instead of "Models", matching the label used everywhere else
+- Pace band end label for Cursor Models reads "Cursor" instead of "Models"
+
 ## 0.15.3 — 2026-11-02
 
 ### Fixed
