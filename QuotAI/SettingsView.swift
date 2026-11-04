@@ -39,7 +39,6 @@ struct SettingsView: View {
     @AppStorage("pinRefreshInterval") private var pinRefreshInterval = true
     @AppStorage("pinColorMode") private var pinColorMode = false
     @AppStorage("pinIconLook") private var pinIconLook = false
-    @AppStorage("pinOnPaceBand") private var pinOnPaceBand = false
     @AppStorage("pinShowOtherModels") private var pinShowOtherModels = false
     @AppStorage("pinShowAvatars") private var pinShowAvatars = false
     @AppStorage("pinShowPercent") private var pinShowUsedPercent = false
@@ -48,7 +47,8 @@ struct SettingsView: View {
     @AppStorage("pinAlternateElapsedRemaining") private var pinAlternateElapsedRemaining = false
     @AppStorage("pinRingCenterContent") private var pinRingCenterContent = false
     @AppStorage("pinBlink") private var pinBlink = false
-    @AppStorage("pinOpenCursorSpending") private var pinOpenCursorSpending = false
+    @AppStorage("pinOpenCursorSpending") private var pinOpenCursorSpending = true
+    @AppStorage("menuPinDensity") private var menuPinDensity: MenuPinDensity = .compact
 
     @State private var smtpPassword = ""
     @State private var emailStatus: String?
@@ -57,6 +57,12 @@ struct SettingsView: View {
 
     /// Shared width for menu pickers so every dropdown control aligns on the right.
     private static let menuControlWidth: CGFloat = 180
+
+    /// Alerts tab notes, shown in both corridor on and off states.
+    private static let tintAndBlinkNotes = [
+        "Tint and blink follow corridor under / over / exhausted only. Quiet or alerts off → neutral.",
+        "Tint needs Color mode set to By pace. Blink works in any color mode."
+    ]
 
     private var thresholds: PaceAlertThresholds {
         PaceAlertThresholds(
@@ -77,6 +83,38 @@ struct SettingsView: View {
         }
         appendChartMeter(name: "Grok", meter: store.grokBot, into: &rows)
         return rows
+    }
+
+    private var besideMeterNotes: [String] {
+        if iconLook == .bars {
+            return [
+                "Icons, used %, and time sit beside the tracks.",
+                "With Color mode By pace, Show Other Models, and Show icons on, the Cursor icon slowly alternates when one of Models or Other is under and the other over."
+            ]
+        } else if iconLook == .ringsPerQuota, alternateElapsedRemaining {
+            return [
+                "Each meter has its own ring.",
+                "One label blinks between elapsed % and time to reset (~5s).",
+                "Used % still stacks above when enabled."
+            ]
+        } else if iconLook == .ringsPerQuota {
+            return [
+                "Each meter has its own ring.",
+                "Used % and elapsed % stack beside it.",
+                "Show Other Models adds its own ring.",
+                "With Show icons on, the icon sits beside the ring, or inside it when Center is Icon."
+            ]
+        } else if alternateElapsedRemaining {
+            return [
+                "One label blinks between elapsed % and time to reset (~5s).",
+                "Used % still stacks above when enabled."
+            ]
+        } else {
+            return [
+                "Used and elapsed together stack as two rows, or alone as one larger label.",
+                "With Color mode By pace, Show Other Models, and Center set to Icon, the Cursor icon slowly alternates when one of Models or Other is under and the other over."
+            ]
+        }
     }
 
     var body: some View {
@@ -101,14 +139,14 @@ struct SettingsView: View {
         settingsForm {
             Section {
                 menuPicker("Menu bar style", selection: $iconLook) {
-                    Text("Bars").tag(IconLook.bars)
-                    Text("Rings · one per meter").tag(IconLook.ringsPerQuota)
-                    Text("Rings · nested Cursor").tag(IconLook.ringsPaired)
-                    Text("Rings · by pace").tag(IconLook.ringsPace)
+                    ForEach(IconLook.allCases, id: \.self) { look in
+                        Text(look.pickerTitle).tag(look)
+                    }
                 }
                 menuPicker("Color mode", selection: $iconColorMode) {
-                    Text("Monochrome").tag(IconColorMode.monochrome)
-                    Text("By pace").tag(IconColorMode.byLevel)
+                    ForEach(IconColorMode.allCases, id: \.self) { mode in
+                        Text(mode.pickerTitle).tag(mode)
+                    }
                 }
                 Toggle("Show Other Models", isOn: $showOtherModels)
             }
@@ -128,33 +166,23 @@ struct SettingsView: View {
                     Toggle("Show elapsed %", isOn: $showElapsedPercent)
                     Toggle("Show time to reset", isOn: $showRemaining)
                 }
+                SettingsNotes(lines: besideMeterNotes)
             } header: {
                 Text("Beside meter")
-            } footer: {
-                if iconLook == .bars {
-                    Text("Icons, used %, and time sit beside the tracks. When Models is over and Other is under (or the reverse), the Cursor icon slowly alternates those colors.")
-                } else if iconLook == .ringsPerQuota, alternateElapsedRemaining {
-                    Text("Each meter has its own ring. One label blinks between elapsed % and time to reset (~5s). Used % still stacks above when enabled.")
-                } else if iconLook == .ringsPerQuota {
-                    Text("Each meter has its own ring. Used % and elapsed % stack beside it. The icon sits beside the ring, or inside when Center is Icon — including Other Models.")
-                } else if alternateElapsedRemaining {
-                    Text("One label blinks between elapsed % and time to reset (~5s; half the Models ↔ Other pace). Used % still stacks above when enabled.")
-                } else {
-                    Text("Used and elapsed together stack as two rows, or alone as one larger label. When Models is over and Other is under (or the reverse), the Cursor icon slowly alternates those colors (beside icons, or center when set to Icon).")
-                }
             }
 
             if iconLook != .bars {
                 Section {
-                    menuPicker("Center", selection: $ringCenterContent) {
-                        Text("Nothing").tag(RingCenterContent.none)
-                        Text("Time to reset").tag(RingCenterContent.remaining)
-                        Text("Icon").tag(RingCenterContent.icon)
+                    VStack(alignment: .leading, spacing: 0) {
+                        menuPicker("Center", selection: $ringCenterContent) {
+                            ForEach(RingCenterContent.allCases, id: \.self) { content in
+                                Text(content.pickerTitle).tag(content)
+                            }
+                        }
+                        SettingsNotes(lines: ["What sits inside each ring."])
                     }
                 } header: {
                     Text("Ring center")
-                } footer: {
-                    Text("What sits inside each ring. Bars keep icons and time beside the tracks.")
                 }
             }
         }
@@ -175,7 +203,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     menuPicker("Refresh rate", selection: store.refreshEveryBinding()) {
                         ForEach(QuotaStore.pollIntervalChoices, id: \.self) { minutes in
-                            Text(Self.refreshChoiceTitle(minutes: minutes)).tag(minutes)
+                            Text(RefreshChoiceTitle.title(minutes: minutes)).tag(minutes)
                         }
                         Text("Dynamic").tag(QuotaStore.dynamicRefreshTag)
                     }
@@ -216,6 +244,12 @@ struct SettingsView: View {
                         minutes: scheduleOtherwiseBinding
                     )
                     .frame(maxWidth: .infinity, alignment: .trailing)
+                    SettingsNotes(lines: [
+                        "Cursor and Grok each use this schedule, counted from their own next reset.",
+                        "Rows are checked from the top, and the reset must be strictly under that row.",
+                        "Intervals can't go below 1 minute.",
+                        "If two rows share a threshold, the schedule resets to the default."
+                    ])
                 } header: {
                     HStack(alignment: .firstTextBaseline) {
                         Text("Dynamic refresh")
@@ -228,16 +262,15 @@ struct SettingsView: View {
                     }
                     .textCase(nil)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                } footer: {
-                    JustifiedParagraph(
-                        text: "Each quota uses this schedule from its own time to reset. Rows are checked from the top, and the reset must be strictly under that row. An interval under 1 minute stays at 1. Two rows with the same threshold restore the default schedule."
-                    )
                 }
             }
 
             Section {
-                Button("Re-auth from Cursor") {
-                    Task { await store.reauthFromCursor() }
+                VStack(alignment: .leading, spacing: 0) {
+                    Button("Re-auth from Cursor") {
+                        Task { await store.reauthFromCursor() }
+                    }
+                    SettingsNotes(lines: ["Reads the signed-in Cursor app session when possible."])
                 }
                 Button("Paste token…") {
                     CursorAuthActions.promptPasteToken(into: store)
@@ -245,8 +278,7 @@ struct SettingsView: View {
                 Button("Open Cursor Spending") {
                     NSWorkspace.shared.open(MenuPresenter.spendingURL)
                 }
-            } footer: {
-                Text("Tokens stay in Keychain. Re-auth reads the signed-in Cursor app session when possible.")
+                SettingsNotes(lines: ["Tokens stay in Keychain."])
             }
         }
     }
@@ -363,24 +395,18 @@ struct SettingsView: View {
                     .onChange(of: underMinEndPct) { _, _ in scheduleCorridorAlertRecheck() }
                     .onChange(of: underCurvePct) { _, _ in scheduleCorridorAlertRecheck() }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("• Over alert if usage already exceeds “Max usage at period start” at the beginning of the billing period.")
-                        Text("• Over alert if you reach 100% used before “Full quota before” share of the period has passed.")
-                        Text("• Wait until “Under alerts after” share of the period has elapsed before considering an under alert.")
-                        Text("• Under alert if usage would finish the period below “Min usage by period end”.")
-                        Text("• Curve dials bend each corridor (0% linear → 100% parabolic). Under mirrors over across even pace; curves stay on the near side of parallels through Full quota before / Min usage by period end.")
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 4)
+                    SettingsNotes(lines: [
+                        "Over alert when usage is above the over line. The line starts at “Max usage at period start” and reaches 100% at “Full quota before”.",
+                        "Exhausted when usage reaches 100%, at any point in the period.",
+                        "Wait until “Under alerts after” share of the period has elapsed before considering an under alert.",
+                        "Under alert if usage would finish the period below “Min usage by period end”.",
+                        "Curve dials bend each corridor (0% linear → 100% parabolic). Under mirrors over across even pace; curves stay on the near side of parallels through Full quota before / Min usage by period end."
+                    ] + Self.tintAndBlinkNotes)
                 } else {
-                    Text("Corridor alerts off — ring/bar stay neutral; panel alert icons stay empty.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    SettingsNotes(lines: [
+                        "Corridor alerts off — ring/bar stay neutral; panel alert icons stay empty."
+                    ] + Self.tintAndBlinkNotes)
                 }
-            } footer: {
-                Text("Tint and blink follow corridor under / over / exhausted only. Quiet or alerts off → neutral.")
             }
         }
         .onAppear {
@@ -394,7 +420,13 @@ struct SettingsView: View {
             Section {
                 TextField("SMTP host", text: $smtpHost)
                 TextField("Port", value: $smtpPort, format: .number)
-                Toggle("TLS (port 465)", isOn: $smtpUseTLS)
+                VStack(alignment: .leading, spacing: 0) {
+                    Toggle("TLS (port 465)", isOn: $smtpUseTLS)
+                    SettingsNotes(lines: [
+                        "Use implicit TLS on port 465.",
+                        "STARTTLS on 587 is not supported yet."
+                    ])
+                }
                 TextField("Username", text: $smtpUsername)
                 SecureField("Password", text: $smtpPassword)
                 TextField("From", text: $smtpFrom)
@@ -409,8 +441,6 @@ struct SettingsView: View {
                 Button("Save password & send test") {
                     Task { await sendTestEmail() }
                 }
-            } footer: {
-                Text("Use implicit TLS on port 465. STARTTLS on 587 is not supported yet.")
             }
         }
     }
@@ -418,15 +448,37 @@ struct SettingsView: View {
     private var pinsTab: some View {
         settingsForm {
             Section {
+                VStack(alignment: .leading, spacing: 0) {
+                    menuPicker("Dropdown layout", selection: $menuPinDensity) {
+                        ForEach(MenuPinDensity.allCases, id: \.self) { density in
+                            Text(density.pickerTitle).tag(density)
+                        }
+                    }
+                    SettingsNotes(lines: [
+                        "Compact: smaller text, pinned rows in two columns.",
+                        "Normal: regular text, one column."
+                    ])
+                }
+            }
+            Section {
                 Toggle("Refresh all", isOn: $pinRefreshAll)
                 Toggle("Refresh Cursor", isOn: $pinRefreshCursor)
                 Toggle("Refresh Grok Bot", isOn: $pinRefreshGrok)
                 Toggle("Refresh interval", isOn: $pinRefreshInterval)
-                Toggle("Menu bar style", isOn: $pinIconLook)
-                Toggle("Color mode", isOn: $pinColorMode)
-                Toggle("On-pace band", isOn: $pinOnPaceBand)
-                Toggle("Show Other Models", isOn: $pinShowOtherModels)
                 Toggle("Open Cursor Spending", isOn: $pinOpenCursorSpending)
+            }
+            Section {
+                Toggle("Style", isOn: $pinIconLook)
+                Toggle("Color mode", isOn: $pinColorMode)
+                Toggle("Show Other Models", isOn: $pinShowOtherModels)
+                VStack(alignment: .leading, spacing: 0) {
+                    Toggle("Ring center", isOn: $pinRingCenterContent)
+                    SettingsNotes(lines: [
+                        "Ring center applies to ring styles only; ignored while Style is Bars."
+                    ])
+                }
+            } header: {
+                Text("Menu bar · Display")
             }
             Section {
                 Toggle("Show icons", isOn: $pinShowAvatars)
@@ -434,22 +486,22 @@ struct SettingsView: View {
                 Toggle("Show elapsed %", isOn: $pinShowElapsedPercent)
                 Toggle("Show time to reset", isOn: $pinShowRemaining)
                 Toggle("Alternate elapsed % / time to reset", isOn: $pinAlternateElapsedRemaining)
+                SettingsNotes(lines: [
+                    "Elapsed % and alternate apply to every ring style.",
+                    "Bars keep time to reset beside the tracks."
+                ])
             } header: {
-                Text("Beside meter")
-            } footer: {
-                Text("Elapsed % and alternate apply to every ring style. Bars keep time to reset beside the tracks.")
+                Text("Menu bar · Beside meter")
             }
             Section {
-                Toggle("Center content", isOn: $pinRingCenterContent)
+                Toggle("Blink on significant pace", isOn: $pinBlink)
             } header: {
-                Text("Ring center")
+                Text("Alerts")
             } footer: {
-                Text("Ring styles only; ignored while Menu bar style is Bars.")
-            }
-            Section {
-                Toggle("Blink toggle", isOn: $pinBlink)
-            } footer: {
-                Text("Pinned controls appear in the menu bar dropdown.")
+                // Tab-level note: sits below the last card.
+                SettingsNotes(lines: [
+                    "Pinned controls appear in the menu bar dropdown."
+                ])
             }
         }
     }
@@ -462,10 +514,6 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .toggleStyle(.switch)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private static func refreshChoiceTitle(minutes: Int) -> String {
-        minutes == 60 ? "every 1 hour" : "every \(minutes) min"
     }
 
     /// Label on the left; fixed-width menu control on the right.
@@ -663,85 +711,20 @@ private struct ScheduleRuleRow: Layout {
     }
 }
 
-/// Justified footer. Full lines spread their words; the first and last lines start at the left edge.
-private struct JustifiedParagraph: View {
-    var text: String
+/// Bulleted note rows, styled like the corridor alert notes on the Alerts tab.
+private struct SettingsNotes: View {
+    var lines: [String]
 
     var body: some View {
-        JustifiedWordLayout {
-            ForEach(Array(text.split(separator: " ").enumerated()), id: \.offset) { _, word in
-                Text(String(word))
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(lines, id: \.self) { line in
+                Text(verbatim: "• \(line)")
             }
         }
+        .font(.caption)
+        .foregroundStyle(.secondary)
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct JustifiedWordLayout: Layout {
-    /// Gap used on the last line, and the minimum gap on a full line.
-    var spacing: CGFloat = 4
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let width = proposal.width ?? .infinity
-        let lines = wrap(subviews, width: width)
-        let height = lines.reduce(CGFloat(0)) { partial, line in
-            partial + lineHeight(line)
-        }
-        let used = lines.map { lineWidth($0) }.max() ?? 0
-        return CGSize(width: width.isFinite ? width : used, height: height)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let lines = wrap(subviews, width: bounds.width)
-        var y = bounds.minY
-        for (index, line) in lines.enumerated() {
-            let sizes = line.map { $0.sizeThatFits(.unspecified) }
-            let textWidth = sizes.map(\.width).reduce(0, +)
-            let last = index == lines.count - 1 || line.count < 2
-            let gap = last
-                ? spacing
-                : max(spacing, (bounds.width - textWidth) / CGFloat(line.count - 1))
-            var x = bounds.minX
-            for (i, view) in line.enumerated() {
-                view.place(
-                    at: CGPoint(x: x, y: y),
-                    anchor: .topLeading,
-                    proposal: ProposedViewSize(width: sizes[i].width, height: sizes[i].height)
-                )
-                if i < line.count - 1 { x += sizes[i].width + gap }
-            }
-            y += lineHeight(line)
-        }
-    }
-
-    private func wrap(_ subviews: Subviews, width: CGFloat) -> [[LayoutSubview]] {
-        var lines: [[LayoutSubview]] = []
-        var line: [LayoutSubview] = []
-        var used: CGFloat = 0
-        let limit = width.isFinite ? width : .greatestFiniteMagnitude
-        for view in subviews {
-            let word = view.sizeThatFits(.unspecified).width
-            let gap: CGFloat = line.isEmpty ? 0 : spacing
-            if used + gap + word > limit, !line.isEmpty {
-                lines.append(line)
-                line = [view]
-                used = word
-            } else {
-                line.append(view)
-                used += gap + word
-            }
-        }
-        if !line.isEmpty { lines.append(line) }
-        return lines
-    }
-
-    private func lineHeight(_ line: [LayoutSubview]) -> CGFloat {
-        line.map { $0.sizeThatFits(.unspecified).height }.max() ?? 0
-    }
-
-    private func lineWidth(_ line: [LayoutSubview]) -> CGFloat {
-        let widths = line.map { $0.sizeThatFits(.unspecified).width }
-        return widths.reduce(0, +) + spacing * CGFloat(max(line.count - 1, 0))
+        .padding(.top, 4)
     }
 }
 

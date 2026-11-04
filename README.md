@@ -4,14 +4,14 @@ macOS menu-bar app for Cursor Spending quota: Cursor Models, Other, and Grok Bot
 
 ## Install
 
-**[Download QuotAI-0.16.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.16.0/QuotAI-0.16.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.17.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.17.0/QuotAI-0.17.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image (install steps are on the window background).
 2. Drag **QuotAI** → **Applications**, then double-click **Open QuotAI** (or open it from Applications). It lives in the menu bar.
 3. When Keychain asks for your login password, enter it and press **Always Allow** so QuotAI can read encrypted API keys without prompting every launch.
 4. If Gatekeeper blocks the first open, use System Settings → Privacy & Security → **Open Anyway** (optional; skip when the app launches fine).
 
-The 0.16.0 build is ad-hoc signed (hardened runtime off) unless the release was notarized.
+The 0.17.0 build is ad-hoc signed (hardened runtime off) unless the release was notarized.
 
 ## Screenshots
 
@@ -39,7 +39,7 @@ Settings → Menu pins which rows stay on the menu, including Open Cursor Spendi
 - **Dynamic refresh** applies one shared schedule independently to Cursor and Grok Bot from each family’s time to reset (fixed interval still refreshes both together). Menu and Settings show `Last refresh: Cursor … · Grok Bot …` (24-hour) with Refresh all / Cursor / Grok Bot.
 - **Corridor alerts** use under/over/exhausted bands for blink / notification / email; quiet stays neutral ([pace chrome](docs/pace-chrome.md)).
 - **Open Cursor Spending** opens [cursor.com/dashboard/spending](https://cursor.com/dashboard/spending) from the panel.
-- **Settings** cover ring style, beside-meter labels, ring center, refresh cadence, alert corridors, and which rows stay pinned.
+- **Settings** cover ring style, beside-meter labels, ring center, refresh cadence, alert corridors, and which rows stay pinned. Settings → Menu pins also sets the dropdown layout: `Compact` (smaller text, pinned rows in two columns) or `Normal` (regular text, one column).
 - **About** shows version, short commit SHA, in-app changelog, and a link to GitHub release notes.
 
 ## Requirements

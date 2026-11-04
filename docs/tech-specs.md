@@ -1,6 +1,6 @@
 # Tech specs — QuotAI
 
-Last updated: 2026-10-13
+Last updated: 2026-11-04
 
 ## Stack
 
@@ -28,6 +28,7 @@ Last updated: 2026-10-13
 | Quota response parsing | pure | Map Connect JSON → domain meters; missing Grok → unavailable |
 | Burn-rate / pace | pure | `PaceCalculator` from locked formula |
 | Menu presentation model | pure | Map meters + settings → bar title / dropdown rows |
+| Menu pin layout | pure | `MenuPinLayout.sections(isOn:)` — pinned rows grouped in `MenuPinGroup` order, empty groups hidden; `MenuPinDensity` columns (Compact 2, Normal 1) ([`MenuPinLayoutTests`](../QuotAICore/Tests/MenuPinLayoutTests.swift)) |
 | Smart pace alert bands | pure | `PaceAlertBands` over/under corridors; curve dials linear→parabolic (under mirrors across even pace; clamp to endpoint parallels) |
 | Alert decision | pure | `PaceAlertDecision` meters + channels → blink/notify/email + signature |
 | Alert cooldown | pure | `PaceAlertCooldown` edge + cooldown suppress |

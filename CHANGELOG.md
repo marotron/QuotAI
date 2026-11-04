@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.17.0 — 2026-11-04
+
+### Added
+
+- Menu pins: choose rows in Settings → Menu pins to show in the menu bar dropdown (Refresh all, Refresh Cursor, Refresh Grok Bot, Refresh interval, Open Cursor Spending, Menu bar style, Color mode, Show Other Models, Beside meter toggles, Center, Blink on significant pace)
+- Pinned dropdown rows read and write the same settings as Settings, in both directions; sections are titled in the rule (`—— ACTIONS ——`), with a vertical divider between the two columns in Compact
+- Settings → Menu pins → Dropdown layout: `Compact` (smaller text, pinned rows in two columns, switches aligned in a vertical line) or `Normal` (regular text, one column)
+- Dropdown rows use one text size and style: Compact matches the `Show icons` size, Normal matches Settings; hover highlight is menu blue with a white label; menu pickers show their current value with an up/down chevron instead of a bordered pop-up button
+
+### Changed
+
+- Settings help text on every tab uses the Alerts note style (caption, secondary, bulleted) and sits under the control, group, or tab it describes; notes match current behavior
+
 ## 0.16.0 — 2026-11-03
 
 ### Added
