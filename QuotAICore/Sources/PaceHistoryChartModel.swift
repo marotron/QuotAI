@@ -6,6 +6,7 @@ public enum PaceHistoryChartLayer: String, CaseIterable, Hashable, Sendable {
     case under
     case even
     case names
+    case icons
 }
 
 /// One point on the used % × elapsed % plane (both 0…100).
