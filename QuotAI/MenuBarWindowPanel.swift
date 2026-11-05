@@ -390,7 +390,7 @@ struct MenuBarWindowPanel: View {
         return "Used quota: \(String(format: "%.2f", pct))%"
     }
 
-    /// `Elapsed billing period: 24d 21h of 30d`
+    /// `Elapsed billing period: 24d 21h of 30d → 79.17%`
     private func elapsedHelp(_ meter: QuotaMeter) -> String {
         guard let start = meter.periodStart, let end = meter.periodEnd,
               end.timeIntervalSince(start) > 0 else {
@@ -398,8 +398,10 @@ struct MenuBarWindowPanel: View {
         }
         let total = end.timeIntervalSince(start)
         let gone = max(0, now.timeIntervalSince(start))
-        return "Elapsed billing period: "
+        let base = "Elapsed billing period: "
             + "\(RemainingTime.formatDetailed(seconds: gone)) of \(RemainingTime.formatDetailed(seconds: total))"
+        guard let pct = meter.periodElapsedPercent(now: now) else { return base }
+        return base + " → \(String(format: "%.2f", pct))%"
     }
 
     /// `Pace (used ÷ elapsed): 86.12%`

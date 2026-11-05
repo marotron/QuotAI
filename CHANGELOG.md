@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.2 — 2026-11-05
+
+### Changed
+
+- Elapsed hover tip appends the elapsed share to the billing period, e.g. `Elapsed billing period: 53m of 7d → 1.23%`, with 2-decimal percent
+
 ## 0.17.1 — 2026-11-05
 
 ### Changed
