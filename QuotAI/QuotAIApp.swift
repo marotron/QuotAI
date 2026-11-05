@@ -131,17 +131,6 @@ private final class MeterMenuBadges: NSObject {
         )
     }
 
-    /// Mark + title. Survives NSMenu; color is painted in `apply(to:)`.
-    static func titleWithFallbackMark(for meter: MenuMeterRow) -> String {
-        "\(fallbackMark(for: meter)) \(meter.title)"
-    }
-
-    /// Note prefixed with the same mark column as the title (invisible in AppKit apply).
-    static func noteWithIndent(for meter: MenuMeterRow) -> String? {
-        guard let note = meter.note else { return nil }
-        return "\(fallbackMark(for: meter)) \(note)"
-    }
-
     private static func fallbackMark(for meter: MenuMeterRow) -> String {
         switch meter.band {
         case .under: return "❄\(textStyle)"
