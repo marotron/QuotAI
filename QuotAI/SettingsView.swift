@@ -837,13 +837,3 @@ enum SettingsWindowElevator {
         }
     }
 }
-
-struct MenuSettingsButton: View {
-    @Environment(\.openSettings) private var openSettings
-
-    var body: some View {
-        Button("Settings") {
-            SettingsWindowElevator.show { openSettings() }
-        }
-    }
-}
