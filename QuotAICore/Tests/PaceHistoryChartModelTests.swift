@@ -27,10 +27,10 @@ final class PaceHistoryChartModelTests: XCTestCase {
         XCTAssertEqual(PaceHistoryChartModel.visibleLayers(from: filters), filters)
     }
 
-    func testLayerCasesAreCorridorsEvenAndNames() {
+    func testLayerCasesAreCorridorsEvenNamesAndIcons() {
         XCTAssertEqual(
             Set(PaceHistoryChartLayer.allCases),
-            [.over, .under, .even, .names]
+            [.over, .under, .even, .names, .icons]
         )
     }
 }

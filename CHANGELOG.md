@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.18.0 — 2026-11-05
+
+### Added
+
+- Pace chart `Icons` toggle: show or hide the series avatars at the end of each line and in the hover tip, independent of `Labels`
+
+### Changed
+
+- Pace chart legend: `Over corridor` / `Under corridor` → `Over burn` / `Under burn`; `Exact pace` → `Ideal pace`; `Names` → `Labels`
+- Burn chips use custom swatches: a blue band on top for under burn, an orange band on the bottom for over burn
+- Legend chips grouped: `Over burn | Under burn | Ideal pace` and `Labels | Icons`, with hairline dividers between buttons; the visibility group wraps below the corridor group when the chart is narrow
+- `Labels` and `Icons` no longer show eye icons; hidden chips dim instead
+
+### Fixed
+
+- Pace chart layer toggles stay as you set them after a reading refresh instead of resetting to all shown
+
 ## 0.17.0 — 2026-11-04
 
 ### Added

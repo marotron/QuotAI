@@ -8,9 +8,29 @@ struct PaceHistoryChart: View {
     var series: [PaceHistoryMeterId: [PaceHistorySample]]
     var showOtherModels: Bool
 
-    @State private var visibleLayers: Set<PaceHistoryChartLayer> = Set(PaceHistoryChartLayer.allCases)
+    /// Persisted, not `@State`: the chart is remounted on every history write (`.id(paceHistoryEpoch)`),
+    /// which would reset `@State`. Stores hidden layers so the empty default means "all shown".
+    @AppStorage("paceHistoryHiddenLayers") private var hiddenLayersRaw = ""
     @State private var hoverElapsed: Double?
     @Environment(\.colorScheme) private var colorScheme
+
+    private var hiddenLayers: Set<PaceHistoryChartLayer> {
+        Set(hiddenLayersRaw.split(separator: ",").compactMap { PaceHistoryChartLayer(rawValue: String($0)) })
+    }
+
+    private var visibleLayers: Set<PaceHistoryChartLayer> {
+        Set(PaceHistoryChartLayer.allCases).subtracting(hiddenLayers)
+    }
+
+    private func toggleLayer(_ layer: PaceHistoryChartLayer) {
+        var hidden = hiddenLayers
+        if hidden.contains(layer) {
+            hidden.remove(layer)
+        } else {
+            hidden.insert(layer)
+        }
+        hiddenLayersRaw = hidden.map(\.rawValue).sorted().joined(separator: ",")
+    }
 
     /// Panel 470 − 14×2 well margin − 14×2 well pad (same fill as proto `svg { width:100% }`).
     /// Fixed — no GeometryReader↔@State loop (that hung Charts / Metal on open).
@@ -33,6 +53,11 @@ struct PaceHistoryChart: View {
     private static let overFill = Color(red: 1, green: 0x9f / 255, blue: 0x0a / 255)
     private static let underFill = Color(red: 0x0a / 255, green: 0x84 / 255, blue: 1)
     private static let tertiary = Color(red: 0x8e / 255, green: 0x8e / 255, blue: 0x93 / 255)
+    /// Burn swatch colors from the over/under burn drawings.
+    private static let burnOverField = Color(red: 0xed / 255, green: 0xe2 / 255, blue: 0xd0 / 255)
+    private static let burnOverBand = Color(red: 0xf0 / 255, green: 0xaa / 255, blue: 0x55 / 255)
+    private static let burnUnderField = Color(red: 0xcf / 255, green: 0xdc / 255, blue: 0xee / 255)
+    private static let burnUnderBand = Color(red: 0x5b / 255, green: 0x94 / 255, blue: 0xf5 / 255)
 
     /// Plot box hairline — mirrors `MenuBarWindowPanel.divider` (card border).
     private var chartBoxBorder: Color {
@@ -250,8 +275,8 @@ struct PaceHistoryChart: View {
             .symbolSize(20)
             .foregroundStyle(color(for: end.meterId))
             .annotation(position: .trailing, alignment: .leading, spacing: 4) {
-                if visibleLayers.contains(.names) {
-                    HStack(spacing: 2) {
+                HStack(spacing: 2) {
+                    if visibleLayers.contains(.icons) {
                         // Other has no dedicated avatar asset — reuse the Cursor
                         // avatar inked in the Other fuchsia, matching the meter row.
                         Image(nsImage: BarIcon.tintedAvatar(
@@ -260,13 +285,15 @@ struct PaceHistoryChart: View {
                             pointSize: 10
                         ))
                         .frame(width: 10, height: 10)
+                    }
+                    if visibleLayers.contains(.names) {
                         Text(endLabel(for: end.meterId))
                             .font(.system(size: 8, weight: .medium))
                             .foregroundStyle(color(for: end.meterId))
                             .shadow(color: Color(nsColor: .windowBackgroundColor).opacity(0.7), radius: 1.2)
                     }
-                    .offset(y: nameNudgeY(for: end.meterId))
                 }
+                .offset(y: nameNudgeY(for: end.meterId))
             }
         }
     }
@@ -289,15 +316,39 @@ struct PaceHistoryChart: View {
         }
     }
 
+    /// Single row when it fits the 414pt well; otherwise corridors on top, visibility toggles right-aligned below.
     private var legend: some View {
-        HStack(spacing: 8) {
-            legendChip(.over, title: "Over corridor") {
-                Capsule().fill(Self.overFill).frame(width: 10, height: 3)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                corridorGroup
+                Spacer(minLength: 4)
+                visibilityGroup
             }
-            legendChip(.under, title: "Under corridor") {
-                Capsule().fill(Self.underFill).frame(width: 10, height: 3)
+            VStack(alignment: .leading, spacing: 6) {
+                corridorGroup
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    visibilityGroup
+                }
             }
-            legendChip(.even, title: "Exact pace") {
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Chart layer filters")
+    }
+
+    private var corridorGroup: some View {
+        chipGroup {
+            legendChip(.over, title: "Over burn") {
+                burnSwatch(over: true)
+            }
+            chipDivider
+            legendChip(.under, title: "Under burn") {
+                burnSwatch(over: false)
+            }
+            chipDivider
+            legendChip(.even, title: "Ideal pace") {
                 // Discrete capsules match Over/Under swatches — stroked dashes alias badly at 1pt.
                 HStack(spacing: 1.5) {
                     Capsule().fill(Self.evenColor).frame(width: 2.5, height: 1.5)
@@ -306,17 +357,65 @@ struct PaceHistoryChart: View {
                 }
                 .frame(width: 12, height: 8)
             }
-            Spacer(minLength: 4)
-            legendChip(.names, title: "Names") {
-                Image(systemName: visibleLayers.contains(.names) ? "eye" : "eye.slash")
-                    .font(.system(size: 10))
-                    .frame(width: 12, height: 8)
+        }
+    }
+
+    private var visibilityGroup: some View {
+        chipGroup {
+            legendChip(.names, title: "Labels") {
+                EmptyView()
+            }
+            chipDivider
+            legendChip(.icons, title: "Icons") {
+                EmptyView()
             }
         }
-        .font(.system(size: 11))
-        .foregroundStyle(.secondary)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Chart layer filters")
+    }
+
+    /// Mini bar for the burn chips: tinted field with a band along the bottom (over) or top (under) edge.
+    private func burnSwatch(over: Bool) -> some View {
+        Canvas { context, size in
+            let field = over ? Self.burnOverField : Self.burnUnderField
+            let band = over ? Self.burnOverBand : Self.burnUnderBand
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(field))
+            // Band thickness matches the exact-pace dashes (1.5pt).
+            let bandH: CGFloat = 1.5
+            let bandY = over ? size.height - bandH : 0
+            // Three blocks: short left, long centre, short right (proportions from the burn drawings).
+            for (x0, x1) in [(0.0, 0.083), (0.29, 0.708), (0.917, 1.0)] {
+                let rect = CGRect(
+                    x: size.width * x0,
+                    y: bandY,
+                    width: size.width * (x1 - x0),
+                    height: bandH
+                )
+                context.fill(Path(rect), with: .color(band))
+            }
+        }
+        .frame(width: 12, height: 8)
+    }
+
+    /// Hairline between chips inside a group; short (inset from the group edges) like toolbar separators.
+    private var chipDivider: some View {
+        Rectangle()
+            .fill(Color.secondary.opacity(0.35))
+            .frame(width: 1, height: 10)
+    }
+
+    /// Shared container so related chips read as one control.
+    private func chipGroup<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 0) {
+            content()
+        }
+        .padding(2)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.primary.opacity(0.035))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(Color.secondary.opacity(0.25), lineWidth: 0.5)
+                )
+        )
     }
 
     private func legendChip<Swatch: View>(
@@ -326,11 +425,7 @@ struct PaceHistoryChart: View {
     ) -> some View {
         let on = visibleLayers.contains(layer)
         return Button {
-            if on {
-                visibleLayers.remove(layer)
-            } else {
-                visibleLayers.insert(layer)
-            }
+            toggleLayer(layer)
         } label: {
             HStack(spacing: 4) {
                 swatch()
@@ -340,14 +435,6 @@ struct PaceHistoryChart: View {
             .padding(.leading, 5)
             .padding(.trailing, 7)
             .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(Color.primary.opacity(0.035))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5)
-                            .strokeBorder(Color.secondary.opacity(0.25), lineWidth: 0.5)
-                    )
-            )
             .opacity(on ? 1 : 0.38)
         }
         .buttonStyle(.plain)
@@ -534,7 +621,9 @@ struct PaceHistoryChart: View {
 
             ForEach(hoverDots) { dot in
                 HStack(spacing: 6) {
-                    tipAvatar(dot.id)
+                    if visibleLayers.contains(.icons) {
+                        tipAvatar(dot.id)
+                    }
                     Text(shortName(dot.id))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
