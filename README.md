@@ -68,6 +68,8 @@ The app is `QuotAI/` and `QuotAICore/`. Paths under `.scratch/` are not part of 
 
 ## Release
 
+**Versioning (0.x):** QuotAI uses SemVer (`MAJOR.MINOR.PATCH`). While the app is `0.x`, a breaking change bumps **MINOR** (e.g. `0.17.2` → `0.18.0`) and is listed under `### Breaking` in `CHANGELOG.md`.
+
 ```bash
 make dmg        # package only → dist/QuotAI-<version>.dmg
 make release    # run tests, then package
