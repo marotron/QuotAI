@@ -10,18 +10,7 @@ Follows SemVer (`MAJOR.MINOR.PATCH`), one version per app. Closeout block: see g
 
 ## Bump level
 
-The bump follows the **size** of the change; the CHANGELOG section follows the **kind** of change.
-
-| Change | Bump | CHANGELOG section |
-|---|---|---|
-| Tweak, fix, or default change to existing behaviour | PATCH | `### Changed` / `### Fixed` |
-| Small addition to an existing feature (toggle, chip, option, label) | PATCH | `### Added` |
-| Bigger addition to an existing feature | **Ask** PATCH or MINOR before shipping | `### Added` |
-| Clearly big new capability | MINOR | `### Added` |
-| Breaking | MAJOR (in `0.x`, MINOR is fine) | `### Breaking` |
-| Docs / chore / internal-only | none | none |
-
-Unclear → ask **before** the bump, tag, or release, not after.
+Bump levels and the size rule (MINOR vs PATCH, the CHANGELOG section for each kind of change) are defined only in the global `~/.cursor/rules/versioning.mdc`. Follow that table.
 
 ## Version bump = CHANGELOG entry (same commit)
 
