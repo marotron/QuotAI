@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.18.1 — 2026-11-07
+
+### Fixed
+
+- Launch after Keychain no longer stalls while discrepancy detection rescans Agent Host logs: scan runs in the background, log byte offsets persist across launches, and existing activity bootstraps offsets to EOF so upgrades skip a full historical re-parse
+- Pace chart Discrepancies strip includes unattributed meter bumps alongside unbilled activity (was unbilled-only)
+- Fewer false “Unattributed” discrepancies: a meter bump counts as explained when a same-meter turn’s active interval overlaps the bump (start through latest Agent Host activity for that UUID, or start alone), with a 20-minute lookback for meter lag
+- Discrepancy notice under the chart shows full date and time (day, month, year, hour, minute, second), not hour:minute alone
+
+## 0.18.0 — 2026-11-07
+
+### Added
+
+- Optional Cursor usage discrepancy detection: compare local Agent Host activity against Cursor Models and Other Models meter changes, show the latest mismatch in the menu panel, and optionally send a macOS notification
+- Current-billing-period-only local activity retention, with automatic reset when Cursor starts a new billing period
+
+### Changed
+
+- Discrepancy event list labels Cursor’s `default`/`auto` pool as `auto` (not `—`); strip kind text shortened to `Unbilled` / `Unattributed`
+
 ## 0.17.2 — 2026-11-05
 
 ### Changed

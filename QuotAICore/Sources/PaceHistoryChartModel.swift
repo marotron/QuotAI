@@ -7,6 +7,8 @@ public enum PaceHistoryChartLayer: String, CaseIterable, Hashable, Sendable {
     case even
     case names
     case icons
+    /// Soft discrepancy bands / strip filter (`"disc"` in the hidden-layers CSV).
+    case disc
 }
 
 /// One point on the used % × elapsed % plane (both 0…100).

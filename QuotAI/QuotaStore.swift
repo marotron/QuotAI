@@ -28,8 +28,12 @@ final class QuotaStore: ObservableObject {
     @Published private(set) var displayClock = Date()
     /// Bumps when pace-history samples are written so the window panel can redraw.
     @Published private(set) var paceHistoryEpoch = 0
+    /// Current billing-period detector events, published for the panel.
+    @Published private(set) var cursorDiscrepancyEvents: [CursorDiscrepancyEvent] = []
 
     let paceHistoryStore: PaceHistorySampleStore
+    let cursorActivityStore: CursorActivityStore
+    private let cursorLogActivityReader: CursorLogActivityReader
 
     #if PANEL_PREVIEW
         /// Set only by the design-preview initializer; short-circuits every fetch path so
@@ -51,6 +55,18 @@ final class QuotaStore: ObservableObject {
     private static let pollIntervalKey = "pollIntervalMinutes"
     private static let dynamicRefreshKey = "dynamicRefresh"
     private static let refreshScheduleKey = "refreshSchedule"
+    private static let discrepancyDetectionKey = "detectCursorUsageDiscrepancies"
+    private static let discrepancyNotificationsKey = "notifyCursorUsageDiscrepancies"
+    private static let discrepancyNotificationSignatureKey = "cursorDiscrepancyNotificationSignature"
+
+    private var detectorHasRecentTurn: Bool {
+        guard discrepancyDetectionEnabled,
+              let latest = cursorActivityStore.state.turns.last?.timestamp
+        else {
+            return false
+        }
+        return Date() <= latest.addingTimeInterval(CursorDiscrepancyReconciler.graceWindow)
+    }
 
     /// Fixed auto-refresh interval, kept so turning Dynamic off restores it.
     @Published var pollIntervalMinutes: Int {
@@ -85,6 +101,28 @@ final class QuotaStore: ObservableObject {
             if dynamicRefresh {
                 startPolling(refreshNow: false)
             }
+        }
+    }
+
+    @Published var discrepancyDetectionEnabled: Bool {
+        didSet {
+            guard discrepancyDetectionEnabled != oldValue else { return }
+            UserDefaults.standard.set(discrepancyDetectionEnabled, forKey: Self.discrepancyDetectionKey)
+            if discrepancyDetectionEnabled,
+               UserDefaults.standard.object(forKey: Self.discrepancyNotificationsKey) == nil {
+                discrepancyNotificationsEnabled = true
+            }
+            if discrepancyDetectionEnabled {
+                Task { await refresh(.cursor) }
+            }
+            startPolling(refreshNow: false)
+        }
+    }
+
+    @Published var discrepancyNotificationsEnabled: Bool {
+        didSet {
+            guard discrepancyNotificationsEnabled != oldValue else { return }
+            UserDefaults.standard.set(discrepancyNotificationsEnabled, forKey: Self.discrepancyNotificationsKey)
         }
     }
 
@@ -125,6 +163,8 @@ final class QuotaStore: ObservableObject {
             isPreview = false
         #endif
         paceHistoryStore = PaceHistorySampleStore()
+        cursorActivityStore = CursorActivityStore()
+        cursorLogActivityReader = CursorLogActivityReader()
         let stored = UserDefaults.standard.integer(forKey: Self.pollIntervalKey)
         pollIntervalMinutes = Self.pollIntervalChoices.contains(stored) ? stored : 10
         dynamicRefresh = UserDefaults.standard.bool(forKey: Self.dynamicRefreshKey)
@@ -132,6 +172,12 @@ final class QuotaStore: ObservableObject {
             refreshSchedule = RefreshSchedule.fromStoredJSON(data)
         } else {
             refreshSchedule = .default
+        }
+        discrepancyDetectionEnabled = UserDefaults.standard.bool(forKey: Self.discrepancyDetectionKey)
+        discrepancyNotificationsEnabled = UserDefaults.standard.object(forKey: Self.discrepancyNotificationsKey) == nil
+            || UserDefaults.standard.bool(forKey: Self.discrepancyNotificationsKey)
+        if discrepancyDetectionEnabled {
+            cursorDiscrepancyEvents = cursorActivityStore.state.events
         }
         startPolling(refreshNow: true)
         startDisplayClock()
@@ -149,9 +195,15 @@ final class QuotaStore: ObservableObject {
         init(previewHistoryFileURL: URL) {
             isPreview = true
             paceHistoryStore = PaceHistorySampleStore(fileURL: previewHistoryFileURL)
+            cursorActivityStore = CursorActivityStore(
+                fileURL: previewHistoryFileURL.deletingLastPathComponent().appendingPathComponent("cursor-activity.json")
+            )
+            cursorLogActivityReader = CursorLogActivityReader()
             pollIntervalMinutes = 10
             dynamicRefresh = false
             refreshSchedule = .default
+            discrepancyDetectionEnabled = false
+            discrepancyNotificationsEnabled = true
 
             let now = Date()
             let periodStart = Calendar.current.date(byAdding: .day, value: -25, to: now) ?? now
@@ -285,7 +337,9 @@ final class QuotaStore: ObservableObject {
     }
 
     private func handlePollTimer() async {
-        if dynamicRefresh {
+        if detectorHasRecentTurn {
+            await refresh(.cursor)
+        } else if dynamicRefresh {
             let due = plannerDueFamilies(now: Date())
             if due.contains(.cursor) && due.contains(.grok) {
                 await refresh(.all)
@@ -322,7 +376,7 @@ final class QuotaStore: ObservableObject {
     }
 
     private func plannerNextFire(now: Date) -> Date {
-        RefreshPlanner.nextFire(
+        let planned = RefreshPlanner.nextFire(
             dynamic: dynamicRefresh,
             fixedMinutes: pollIntervalMinutes,
             schedule: refreshSchedule,
@@ -332,6 +386,8 @@ final class QuotaStore: ObservableObject {
             lastGrok: lastGrokRefreshed,
             now: now
         )
+        guard detectorHasRecentTurn else { return planned }
+        return min(planned, now.addingTimeInterval(60))
     }
 
     /// Minute clock and a finished fetch retune the timer without an extra request.
@@ -498,6 +554,10 @@ final class QuotaStore: ObservableObject {
             try? paceHistoryStore.append(contentsOf: historyBatch)
             paceHistoryEpoch &+= 1
         }
+        if scope == .all || scope == .cursor {
+            // Do not await: Agent Host log scan must not stall meters / Keychain return.
+            scheduleCursorDiscrepancyDetector(at: stamp)
+        }
         authError = nil
         refreshError = nil
         didAttemptAuthFailureReimport = false
@@ -529,6 +589,108 @@ final class QuotaStore: ObservableObject {
             timestamp: now,
             periodStart: periodStart
         )
+    }
+
+    private var discrepancyDetectorTask: Task<Void, Never>?
+
+    private func scheduleCursorDiscrepancyDetector(at timestamp: Date) {
+        discrepancyDetectorTask = Task { [weak self] in
+            await self?.updateCursorDiscrepancyDetector(at: timestamp)
+        }
+    }
+
+    /// Keeps filesystem access in the app target and matching rules in QuotAICore.
+    private func updateCursorDiscrepancyDetector(at timestamp: Date) async {
+        guard discrepancyDetectionEnabled,
+              let periodStart = cursorModels.periodStart ?? otherModels.periodStart
+        else {
+            return
+        }
+        do {
+            try cursorActivityStore.replacePeriodIfNeeded(periodStart: periodStart)
+            var priorOffsets = cursorActivityStore.state.logByteOffsets
+            // Upgrade path: turns already on disk, offsets never persisted → mark EOF
+            // consumed so the first post-fix launch does not re-parse historical logs.
+            if priorOffsets.isEmpty, !cursorActivityStore.state.turns.isEmpty {
+                let reader = cursorLogActivityReader
+                priorOffsets = await Task.detached {
+                    reader.currentFileSizes()
+                }.value
+                try cursorActivityStore.replaceLogByteOffsets(priorOffsets)
+            }
+            // One-shot: retained turns lack `endedAt` but offsets already past history →
+            // re-read from 0 so active-turn intervals can suppress false unattributed bumps.
+            let needsEndedAtBackfill = !cursorActivityStore.state.didBackfillTurnEndedAt
+                && !priorOffsets.isEmpty
+                && cursorActivityStore.state.turns.contains(where: { $0.endedAt == nil })
+            if needsEndedAtBackfill {
+                priorOffsets = [:]
+            }
+            let reader = cursorLogActivityReader
+            let read = await Task.detached {
+                reader.readNewTurns(priorOffsets: priorOffsets)
+            }.value
+            try cursorActivityStore.replaceLogByteOffsets(read.offsets)
+            let turns = read.turns.filter { $0.timestamp >= periodStart }
+            try cursorActivityStore.append(turns: turns)
+            if needsEndedAtBackfill {
+                try cursorActivityStore.markTurnEndedAtBackfilled()
+            }
+            let paceSamples =
+                paceHistoryStore.series(for: .cursor) + paceHistoryStore.series(for: .other)
+            let backfilled = CursorDiscrepancySnapshotBackfill.snapshots(
+                from: paceSamples,
+                periodStart: periodStart
+            )
+            try cursorActivityStore.append(snapshots: backfilled)
+            try cursorActivityStore.append(
+                snapshots: [
+                    CursorMeterSnapshot(
+                        timestamp: timestamp,
+                        cursorModelsPercentUsed: cursorModels.percentUsed,
+                        otherModelsPercentUsed: otherModels.percentUsed
+                    )
+                ]
+            )
+
+            let state = cursorActivityStore.state
+            let events = CursorDiscrepancyReconciler.reconcile(
+                turns: state.turns,
+                snapshots: state.snapshots,
+                now: timestamp
+            )
+            let known = Set(state.events.map(\.notificationSignature))
+            let newEvents = events.filter { !known.contains($0.notificationSignature) }
+            try cursorActivityStore.replace(events: events)
+            cursorDiscrepancyEvents = cursorActivityStore.state.events
+
+            guard discrepancyNotificationsEnabled, !newEvents.isEmpty else { return }
+            let signature = newEvents.map(\.notificationSignature).sorted().joined(separator: "\n")
+            guard UserDefaults.standard.string(forKey: Self.discrepancyNotificationSignatureKey) != signature else {
+                return
+            }
+            let accepted = await NotificationAlertService.deliver(
+                subject: "QuotAI: Cursor usage discrepancy",
+                body: discrepancyNotificationBody(for: newEvents[newEvents.count - 1])
+            )
+            if accepted {
+                UserDefaults.standard.set(signature, forKey: Self.discrepancyNotificationSignatureKey)
+            }
+        } catch {
+            // A local detector-cache failure must never interrupt quota refresh.
+        }
+    }
+
+    private func discrepancyNotificationBody(for event: CursorDiscrepancyEvent) -> String {
+        let meter = event.meter == .cursorModels ? "Cursor Models" : "Other Models"
+        switch event.kind {
+        case .unbilledActivity:
+            let models = event.displayModelLabel
+            let modelsSuffix = models == "—" ? "" : " Models: \(models)."
+            return "Observed activity did not raise \(meter) within five minutes." + modelsSuffix
+        case .unattributedQuotaChange:
+            return "\(meter) increased without a matching local activity record."
+        }
     }
 
     /// One re-read of the Cursor session, then a real fetch. Calling `refresh` here

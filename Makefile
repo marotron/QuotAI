@@ -9,7 +9,8 @@ test: project
 	xcodebuild test -scheme QuotAI -destination 'platform=macOS' -quiet
 
 run: project
-	open QuotAI.xcodeproj
+	@xcodebuild -scheme QuotAI -configuration Debug -destination 'platform=macOS' -derivedDataPath .build build -quiet
+	@open .build/Build/Products/Debug/QuotAI.app
 
 # Kill → rebuild → relaunch the panel design-preview app in one step.
 preview: project

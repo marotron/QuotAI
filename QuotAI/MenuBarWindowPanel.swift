@@ -38,6 +38,13 @@ struct MenuBarWindowPanel: View {
                 .padding(.bottom, 6)
                 .padding(.horizontal, 14)
 
+            if store.discrepancyDetectionEnabled,
+               let event = store.cursorDiscrepancyEvents.last {
+                discrepancyWarning(event)
+                    .padding(.horizontal, 19)
+                    .padding(.bottom, 6)
+            }
+
             MenuPinsView(store: store)
 
             panelSeparator
@@ -283,7 +290,8 @@ struct MenuBarWindowPanel: View {
             PaceHistoryChart(
                 thresholds: smartThresholds,
                 series: historySeries,
-                showOtherModels: showOtherModels
+                showOtherModels: showOtherModels,
+                discrepancyClusters: discrepancyClustersForChart
             )
             .id(store.paceHistoryEpoch)
         }
@@ -305,6 +313,55 @@ struct MenuBarWindowPanel: View {
             map[id] = store.paceHistoryStore.series(for: id)
         }
         return map
+    }
+
+    private var discrepancyClustersForChart: [CursorDiscrepancyCluster] {
+        guard store.discrepancyDetectionEnabled,
+              let start = store.cursorModels.periodStart ?? store.otherModels.periodStart,
+              let end = store.cursorModels.periodEnd ?? store.otherModels.periodEnd
+        else {
+            return []
+        }
+        return CursorDiscrepancyClusterer.cluster(
+            events: store.cursorDiscrepancyEvents,
+            periodStart: start,
+            periodEnd: end
+        )
+    }
+
+    private func discrepancyWarning(_ event: CursorDiscrepancyEvent) -> some View {
+        HStack(alignment: .top, spacing: 7) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .padding(.top, 1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Cursor usage discrepancy")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(discrepancyText(for: event))
+                    .font(.system(size: 11))
+                    .foregroundStyle(secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Cursor usage discrepancy. \(discrepancyText(for: event))")
+    }
+
+    private func discrepancyText(for event: CursorDiscrepancyEvent) -> String {
+        let meter = event.meter == .cursorModels ? "Cursor Models" : "Other Models"
+        let direction: String
+        switch event.kind {
+        case .unbilledActivity:
+            direction = "\(meter): activity was not reflected in the meter"
+        case .unattributedQuotaChange:
+            direction = "\(meter): meter increased without local activity"
+        }
+        let when = event.timestamp.formatted(
+            .dateTime.day().month(.abbreviated).year().hour().minute().second()
+        )
+        let models = event.displayModelLabel
+        let modelsSuffix = models == "—" ? "" : " · \(models)"
+        return "\(direction) · \(when)\(modelsSuffix)"
     }
 
     // MARK: - Actions
