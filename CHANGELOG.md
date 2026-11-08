@@ -7,7 +7,7 @@
 - Launch after Keychain no longer stalls while discrepancy detection rescans Agent Host logs: scan runs in the background, log byte offsets persist across launches, and existing activity bootstraps offsets to EOF so upgrades skip a full historical re-parse
 - Pace chart Discrepancies strip includes unattributed meter bumps alongside unbilled activity (was unbilled-only)
 - Fewer false “Unattributed” discrepancies: a meter bump counts as explained when a same-meter turn’s active interval overlaps the bump (start through latest Agent Host activity for that UUID, or start alone), with a 20-minute lookback for meter lag
-- Discrepancy notice under the chart shows full date and time (day, month, year, hour, minute, second), not hour:minute alone
+- Discrepancy notice under the chart puts full date and time (day, month, year, hour, minute) on the title row, not inline in the body
 
 ## 0.18.0 — 2026-11-07
 

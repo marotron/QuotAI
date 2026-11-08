@@ -38,6 +38,8 @@ A written product spec plus a working macOS menu-bar app that shows remaining **
 - **CI/CD** → PR + `main` → `make test` (`ci.yml`); tag `v*` → `make test` then `make dmg` → GitHub Release. See [issues/14-ci-cd-pipeline.md](issues/14-ci-cd-pipeline.md) · [docs/agents/ci-cd.md](../../docs/agents/ci-cd.md).
 - **Signing / distribution** → Near-term: GitHub Releases, ad-hoc DMGs, manual updates; notarization deferred. Eventual: website landing → Release DMG first (Homebrew + App Store stay options). Optional `QUOTAI_SIGN_*` unused until enroll. See [issues/15-signing-distribution-strategy.md](issues/15-signing-distribution-strategy.md) · GitHub [#10](https://github.com/marotron/QuotAI/issues/10) closed.
 - **Pretty DMG + Keychain / Gatekeeper docs** → Drag → Applications + Keychain / Open Anyway copy on the background (`Scripts/release/dmg-assets/`); no helper applets (Gatekeeper blocks those too). See [issues/16-pretty-dmg-install-ux.md](issues/16-pretty-dmg-install-ux.md).
+- **Pace band chart quick view** → shipped in menu panel (pace history / band chart); GitHub [#16](https://github.com/marotron/QuotAI/issues/16) closed. See [issues/12-pace-band-quick-view.md](issues/12-pace-band-quick-view.md).
+- **Historical used / elapsed trajectories** → shipped on the pace glance surface; GitHub [#17](https://github.com/marotron/QuotAI/issues/17) closed. See [issues/13-pace-history-trajectories.md](issues/13-pace-history-trajectories.md).
 
 ## Not yet specified
 
@@ -47,9 +49,8 @@ GitHub mirrors (labels `roadmap` / `fog` / `next-version`):
 - Official Cursor API migration path detail (when/if one ships) → [#11](https://github.com/marotron/QuotAI/issues/11)
 - Pace dial visuals (log dial / colors) beyond text pace labels → [#13](https://github.com/marotron/QuotAI/issues/13)
 - Custom notification banners (top-aligned icon + agent marks) — next version → [#8](https://github.com/marotron/QuotAI/issues/8) · [issues/10-custom-notification-ui.md](issues/10-custom-notification-ui.md)
-- Pace band chart quick view (outside Settings → Alerts) — next version → [#16](https://github.com/marotron/QuotAI/issues/16) · [issues/12-pace-band-quick-view.md](issues/12-pace-band-quick-view.md)
-- Historical used / elapsed trajectories (normalized period) — after quick view → [#17](https://github.com/marotron/QuotAI/issues/17) · [issues/13-pace-history-trajectories.md](issues/13-pace-history-trajectories.md)
 - Quiet hours for auto-refresh (+ Refresh on wake toggle) — next version → [#31](https://github.com/marotron/QuotAI/issues/31) · [issues/17-quiet-hours-refresh.md](issues/17-quiet-hours-refresh.md)
+- AI model catalog & ranking module — parked / fog → [#37](https://github.com/marotron/QuotAI/issues/37) · [../ai-model-catalog/spec.md](../ai-model-catalog/spec.md)
 
 ## Out of scope
 

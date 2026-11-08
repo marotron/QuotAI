@@ -513,9 +513,24 @@
       margin-top: 1px;
       font-size: 12px;
     }
+    .disc-warning > div {
+      flex: 1;
+      min-width: 0;
+    }
     .disc-warning .warn-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
       font-weight: 600;
       margin: 0 0 2px;
+    }
+    .disc-warning .warn-when {
+      flex-shrink: 0;
+      font-weight: 400;
+      color: var(--secondary);
+      text-align: right;
+      white-space: nowrap;
     }
     .disc-warning .warn-body {
       margin: 0;
@@ -1009,8 +1024,8 @@
             <div class="disc-warning">
               <span class="warn-icon" aria-hidden="true">⚠</span>
               <div>
-                <p class="warn-title">Cursor usage discrepancy</p>
-                <p class="warn-body">Cursor Models: activity was not reflected in the meter · 16:31 · composer-2.5-fast</p>
+                <p class="warn-title"><span>Cursor usage discrepancy</span><span class="warn-when">7 Nov 2026, 16:31</span></p>
+                <p class="warn-body">Cursor Models: activity was not reflected in the meter · composer-2.5-fast</p>
               </div>
             </div>
             <div class="panel-rule">ACTIONS</div>
@@ -1065,8 +1080,8 @@
             <div class="disc-warning">
               <span class="warn-icon" aria-hidden="true">⚠</span>
               <div>
-                <p class="warn-title">Cursor usage discrepancy</p>
-                <p class="warn-body">Cursor Models: activity was not reflected in the meter · 16:31 · composer-2.5-fast</p>
+                <p class="warn-title"><span>Cursor usage discrepancy</span><span class="warn-when">7 Nov 2026, 16:31</span></p>
+                <p class="warn-body">Cursor Models: activity was not reflected in the meter · composer-2.5-fast</p>
               </div>
             </div>
             <div class="panel-rule">ACTIONS</div>
@@ -1121,8 +1136,8 @@
             <div class="disc-warning">
               <span class="warn-icon" aria-hidden="true">⚠</span>
               <div>
-                <p class="warn-title">Cursor usage discrepancy</p>
-                <p class="warn-body">Cursor Models: activity was not reflected in the meter · 16:31 · composer-2.5-fast</p>
+                <p class="warn-title"><span>Cursor usage discrepancy</span><span class="warn-when">7 Nov 2026, 16:31</span></p>
+                <p class="warn-body">Cursor Models: activity was not reflected in the meter · composer-2.5-fast</p>
               </div>
             </div>
             <div class="panel-rule">ACTIONS</div>

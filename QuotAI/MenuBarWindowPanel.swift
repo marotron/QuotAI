@@ -335,16 +335,32 @@ struct MenuBarWindowPanel: View {
                 .foregroundStyle(.orange)
                 .padding(.top, 1)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Cursor usage discrepancy")
-                    .font(.system(size: 11, weight: .semibold))
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("Cursor usage discrepancy")
+                        .font(.system(size: 11, weight: .semibold))
+                    Spacer(minLength: 8)
+                    Text(discrepancyWhen(for: event))
+                        .font(.system(size: 11))
+                        .foregroundStyle(secondaryText)
+                        .multilineTextAlignment(.trailing)
+                }
                 Text(discrepancyText(for: event))
                     .font(.system(size: 11))
                     .foregroundStyle(secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Cursor usage discrepancy. \(discrepancyText(for: event))")
+        .accessibilityLabel(
+            "Cursor usage discrepancy. \(discrepancyWhen(for: event)). \(discrepancyText(for: event))"
+        )
+    }
+
+    private func discrepancyWhen(for event: CursorDiscrepancyEvent) -> String {
+        event.timestamp.formatted(
+            .dateTime.day().month(.abbreviated).year().hour().minute()
+        )
     }
 
     private func discrepancyText(for event: CursorDiscrepancyEvent) -> String {
@@ -356,12 +372,9 @@ struct MenuBarWindowPanel: View {
         case .unattributedQuotaChange:
             direction = "\(meter): meter increased without local activity"
         }
-        let when = event.timestamp.formatted(
-            .dateTime.day().month(.abbreviated).year().hour().minute().second()
-        )
         let models = event.displayModelLabel
         let modelsSuffix = models == "—" ? "" : " · \(models)"
-        return "\(direction) · \(when)\(modelsSuffix)"
+        return "\(direction)\(modelsSuffix)"
     }
 
     // MARK: - Actions
