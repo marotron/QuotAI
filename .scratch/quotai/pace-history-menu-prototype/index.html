@@ -440,6 +440,29 @@
       -webkit-mask-image: url("avatars/grok.png");
       mask-image: url("avatars/grok.png");
     }
+    /* D only: avatar click cycles chart series (solo → hide → all). */
+    #variant-D .panel-window .meters .m-avatar-tone {
+      appearance: none;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    #variant-D .panel-window .meters .m-avatar-tone:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--series, var(--accent)) 70%, transparent);
+      outline-offset: 2px;
+    }
+    #variant-D .panel-window .meters .m-avatar-tone[data-cycle="solo"] {
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--series) 55%, transparent);
+    }
+    #variant-D .panel-window .meters .m-avatar-tone[data-cycle="dim"],
+    #variant-D .panel-window .meters .m-avatar-tone[data-cycle="hide"] {
+      opacity: 0.32;
+    }
+    #variant-D .panel-window .meters .m-avatar-tone[data-cycle="hide"] {
+      filter: grayscale(0.35);
+    }
     #variant-A .chart-tip .tip-row .swatch-tone , #variant-D .chart-tip .tip-row .swatch-tone {
       display: inline-block;
       width: 12px;
@@ -715,15 +738,14 @@
       margin-right: 5px;
       vertical-align: middle;
     }
-    /* D only: Names sits on the right; small thick tick as swatch. */
-    #variant-A .legend , #variant-D .legend {
+    /* A (locked): Names sits on the right; eye swatch. */
+    #variant-A .legend {
       width: 100%;
     }
-    #variant-A .legend .filter.names , #variant-D .legend .filter.names {
+    #variant-A .legend .filter.names {
       margin-left: auto;
     }
-    /* Eye = labels visible; slash path shows when pressed=false. */
-    #variant-A .legend .names .eye , #variant-D .legend .names .eye {
+    #variant-A .legend .names .eye {
       display: inline-block;
       width: 12px;
       height: 12px;
@@ -732,11 +754,197 @@
       flex-shrink: 0;
       color: var(--secondary);
     }
-    #variant-A .legend .names .eye .slash , #variant-D .legend .names .eye .slash {
+    #variant-A .legend .names .eye .slash {
       display: none;
     }
-    #variant-A .legend .names[aria-pressed="false"] .eye .slash , #variant-D .legend .names[aria-pressed="false"] .eye .slash {
+    #variant-A .legend .names[aria-pressed="false"] .eye .slash {
       display: block;
+    }
+
+    /* D (tweak): live 0.18.x legend chrome — chip groups, burn swatches, Labels/Icons. */
+    #variant-D .legend {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 8px;
+      margin-top: 6px;
+    }
+    #variant-D .legend .legend-primary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 8px;
+      width: 100%;
+    }
+    #variant-D .legend .chip-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      padding: 2px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--text) 3.5%, transparent);
+      box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--secondary) 25%, transparent);
+    }
+    #variant-D .legend .legend-trailing {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    #variant-D .legend .chip-div {
+      width: 1px;
+      height: 10px;
+      background: color-mix(in srgb, var(--secondary) 35%, transparent);
+      flex-shrink: 0;
+    }
+    #variant-D .legend .filter {
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      box-shadow: none;
+    }
+    #variant-D .legend .filter[aria-pressed="false"] {
+      text-decoration: line-through;
+      text-decoration-color: color-mix(in srgb, var(--secondary) 55%, transparent);
+    }
+    #variant-D .legend .burn-swatch {
+      display: inline-block;
+      width: 12px;
+      height: 8px;
+      margin-right: 5px;
+      border-radius: 1px;
+      vertical-align: middle;
+      position: relative;
+      overflow: hidden;
+    }
+    #variant-D .legend .burn-swatch.over {
+      background: color-mix(in srgb, #ff9f0a 22%, transparent);
+    }
+    #variant-D .legend .burn-swatch.over::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 1.5px;
+      background: #ff9f0a;
+    }
+    #variant-D .legend .burn-swatch.under {
+      background: color-mix(in srgb, #0a84ff 22%, transparent);
+    }
+    #variant-D .legend .burn-swatch.under::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 1.5px;
+      background: #0a84ff;
+    }
+    #variant-D .legend .even-swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 1.5px;
+      width: 12px;
+      height: 8px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    #variant-D .legend .even-swatch span {
+      display: inline-block;
+      width: 2.5px;
+      height: 1.5px;
+      border-radius: 1px;
+      background: var(--even);
+    }
+    #variant-D .legend .extra-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    #variant-D .legend .extra-toggle:hover {
+      background: color-mix(in srgb, var(--text) 7%, transparent);
+    }
+    #variant-D .legend .extra-toggle .sf-ellipsis {
+      display: block;
+      width: 13px;
+      height: 13px;
+    }
+    #variant-D .legend .extra-toggle .sf-ellipsis .ring {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 0.9;
+    }
+    #variant-D .legend .extra-toggle .sf-ellipsis .dot {
+      fill: currentColor;
+    }
+    #variant-D .disc-warning {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      margin: 0 5px 6px;
+      padding: 0 14px;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    #variant-D .disc-warning .warn-icon {
+      color: #ff9f0a;
+      flex-shrink: 0;
+      margin-top: 1px;
+      width: 12px;
+      height: 12px;
+    }
+    #variant-D .disc-warning > div {
+      flex: 1;
+      min-width: 0;
+    }
+    #variant-D .disc-warning .warn-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0;
+      font-weight: 600;
+      color: var(--text);
+    }
+    #variant-D .disc-warning .warn-when {
+      font-weight: 400;
+      color: var(--secondary);
+      white-space: nowrap;
+    }
+    #variant-D .disc-warning .warn-body {
+      margin: 2px 0 0;
+      color: var(--secondary);
+    }
+    /* Live MenuPins “—— ACTIONS ——” section rule. */
+    #variant-D .panel-rule {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 14px 2px;
+      padding: 6px 0;
+      color: var(--tertiary);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      user-select: none;
+    }
+    #variant-D .panel-rule::before,
+    #variant-D .panel-rule::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--divider);
     }
     .legend .onpace i {
       display: inline-block;
@@ -765,7 +973,8 @@
       vertical-align: middle;
       background: #0a84ff;
     }
-    .chart-host svg .layer[hidden] {
+    .chart-host svg .layer[hidden],
+    .chart-host svg .anno[hidden] {
       display: none;
     }
 
@@ -1025,10 +1234,9 @@
   <span class="proto-banner">Prototype — throwaway</span>
   <h1>Pace history · menu chrome</h1>
   <p class="question">
-    Native <code>.menu</code> cannot host Swift Charts. A is the locked window-panel baseline;
-    A is <strong>Corridor alerts</strong> (scrap on-pace). D is the tweak clone. B/C remain chrome
-    comparisons.
-    D: corridors + even diagonal only; pace cell = gauge + <code>N%</code>; alert icon column.
+    Native <code>.menu</code> cannot host Swift Charts.     A is the locked window-panel baseline (older chrome).
+    D tracks the live panel (v0.18.x burn legend, discrepancy notice, action rows) plus meter-avatar
+    series filter (solo → hide → all). B/C remain chrome comparisons.
   </p>
   <p class="open">
     Open: <code>open .scratch/quotai/pace-history-menu-prototype/index.html</code>
@@ -1144,43 +1352,62 @@
           </div>
         </div>
 
-        <!-- D — Tweak clone of A. Nit here; leave A alone until re-lock. -->
+        <!-- D — Tweak clone. Tracks live panel chrome (v0.18.x) + series-avatar cycle. -->
         <div class="variant" data-variant="D" id="variant-D">
           <div class="panel-window" role="dialog" aria-label="QuotAI panel">
             <div class="row secondary">
-              <span class="status-line">Last refresh: Cursor 09:57<span class="ago-badge">just now</span> · Grok Bot 09:41<span class="ago-badge">16m ago</span></span>
-              <span class="app-ver">v0.14.0</span>
+              <span class="status-line">Last refresh: Cursor 17:51<span class="ago-badge">6m ago</span> · Grok 17:51<span class="ago-badge">6m ago</span></span>
+              <span class="app-ver">v0.18.1</span>
             </div>
             <div class="sep"></div>
-            <!-- Order: used% ÷ elapsed% = pace% · corridorAlert? → time to reset -->
-            <!-- Pace = neutral fact (gauge + N%). Corridor alert: quiet checkmark / under / over / exhausted. -->
+            <!-- Avatar buttons: solo → hide → all (chart series filter). -->
             <div class="meters" role="table" aria-label="Quota meters">
-              <span class="m-avatar-tone series-cursor" aria-hidden="true"></span>
-              <span class="m-name">Models</span>
+              <button type="button" class="m-avatar-tone series-cursor" data-series="cursor" data-cycle="all" aria-label="Cursor Models chart filter" title="Chart: solo → hide → all"></button>
+              <span class="m-name">Cursor Models</span>
               <span class="fact" title="Quota used">
-                <span class="sf used" aria-hidden="true"></span> 46%
+                <span class="sf used" aria-hidden="true"></span> 65%
               </span>
               <span class="op" aria-hidden="true">÷</span>
               <span class="fact" title="Elapsed">
-                <span class="sf elapsed" aria-hidden="true"></span> 48%
+                <span class="sf elapsed" aria-hidden="true"></span> 64%
               </span>
               <span class="op" aria-hidden="true">=</span>
               <span class="fact pace-fact" title="Pace = used ÷ elapsed">
-                <span class="sf pace" aria-hidden="true"></span> 96%
+                <span class="sf pace" aria-hidden="true"></span> 101%
               </span>
               <span class="alert-slot quiet" title="On corridor" aria-label="On corridor">
-                <!-- SF: checkmark.circle -->
                 <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.15 7.15 6.05 9.05 9.85 4.9" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </span>
               <span class="op" aria-hidden="true">→</span>
               <span class="fact" title="Time to reset">
-                <span class="sf reset" aria-hidden="true"></span> 11d 4h left
+                <span class="sf reset" aria-hidden="true"></span> 11d 1h left
               </span>
 
-              <span class="m-avatar-tone series-other" aria-hidden="true"></span>
+              <button type="button" class="m-avatar-tone series-other" data-series="other" data-cycle="all" aria-label="Other Models chart filter" title="Chart: solo → hide → all"></button>
               <span class="m-name">Other Models</span>
               <span class="fact" title="Quota used">
-                <span class="sf used" aria-hidden="true"></span> 18%
+                <span class="sf used" aria-hidden="true"></span> 76%
+              </span>
+              <span class="op" aria-hidden="true">÷</span>
+              <span class="fact" title="Elapsed">
+                <span class="sf elapsed" aria-hidden="true"></span> 64%
+              </span>
+              <span class="op" aria-hidden="true">=</span>
+              <span class="fact pace-fact" title="Pace = used ÷ elapsed">
+                <span class="sf pace" aria-hidden="true"></span> 119%
+              </span>
+              <span class="alert-slot over" title="Over corridor" aria-label="Over corridor">
+                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M7 9.8V4.7M4.85 6.65 7 4.5l2.15 2.15" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="op" aria-hidden="true">→</span>
+              <span class="fact" title="Time to reset">
+                <span class="sf reset" aria-hidden="true"></span> 11d 1h left
+              </span>
+
+              <button type="button" class="m-avatar-tone series-grok" data-series="grok" data-cycle="all" aria-label="Grok Bot chart filter" title="Chart: solo → hide → all"></button>
+              <span class="m-name">Grok Bot</span>
+              <span class="fact" title="Quota used">
+                <span class="sf used" aria-hidden="true"></span> 45%
               </span>
               <span class="op" aria-hidden="true">÷</span>
               <span class="fact" title="Elapsed">
@@ -1188,58 +1415,54 @@
               </span>
               <span class="op" aria-hidden="true">=</span>
               <span class="fact pace-fact" title="Pace = used ÷ elapsed">
-                <span class="sf pace" aria-hidden="true"></span> 38%
+                <span class="sf pace" aria-hidden="true"></span> 94%
               </span>
-              <span class="alert-slot under" title="Under corridor" aria-label="Under corridor">
-                <!-- SF: arrow.down.circle -->
-                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M7 4.2v5.1M4.85 7.35 7 9.5l2.15-2.15" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-              <span class="op" aria-hidden="true">→</span>
-              <span class="fact" title="Time to reset">
-                <span class="sf reset" aria-hidden="true"></span> 11d 4h left
-              </span>
-
-              <span class="m-avatar-tone series-grok" aria-hidden="true"></span>
-              <span class="m-name">Grok Bot</span>
-              <span class="fact" title="Quota used">
-                <span class="sf used" aria-hidden="true"></span> 85%
-              </span>
-              <span class="op" aria-hidden="true">÷</span>
-              <span class="fact" title="Elapsed">
-                <span class="sf elapsed" aria-hidden="true"></span> 71%
-              </span>
-              <span class="op" aria-hidden="true">=</span>
-              <span class="fact pace-fact" title="Pace = used ÷ elapsed">
-                <span class="sf pace" aria-hidden="true"></span> 120%
-              </span>
-              <span class="alert-slot over" title="Over corridor" aria-label="Over corridor">
-                <!-- SF: arrow.up.circle -->
-                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M7 9.8V4.7M4.85 6.65 7 4.5l2.15 2.15" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="alert-slot quiet" title="On corridor" aria-label="On corridor">
+                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.15 7.15 6.05 9.05 9.85 4.9" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </span>
               <span class="op" aria-hidden="true">→</span>
               <span class="fact" title="Time to reset">
-                <span class="sf reset" aria-hidden="true"></span> 3d 2h left
+                <span class="sf reset" aria-hidden="true"></span> 3d 15h left
               </span>
             </div>
             <div class="chart-well">
               <div class="chart-host" data-chart="panel" data-annotate="1" data-yaxis="inside" data-onpace="0"></div>
-              <div class="legend" style="margin-top:6px" role="group" aria-label="Plot filters">
-                <button type="button" class="filter over" data-layer="over" aria-pressed="true"><i></i>Over corridor</button>
-                <button type="button" class="filter under" data-layer="under" aria-pressed="true"><i></i>Under corridor</button>
-                <button type="button" class="filter even" data-layer="even" aria-pressed="true"><i></i>Exact pace</button>
-                <button type="button" class="filter names" data-layer="names" aria-pressed="true" title="Show series names">
-                  <svg class="eye" viewBox="0 0 14 14" aria-hidden="true">
-                    <path fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" d="M1.4 7s2.2-3.6 5.6-3.6S12.6 7 12.6 7s-2.2 3.6-5.6 3.6S1.4 7 1.4 7z"/>
-                    <circle cx="7" cy="7" r="1.55" fill="currentColor"/>
-                    <path class="slash" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M3 11.2 11 2.8"/>
-                  </svg>
-                  Names
-                </button>
+              <div class="legend" role="group" aria-label="Plot filters">
+                <div class="legend-primary">
+                  <div class="chip-group burn">
+                    <button type="button" class="filter over" data-layer="over" aria-pressed="true"><span class="burn-swatch over" aria-hidden="true"></span>Over burn</button>
+                    <span class="chip-div" aria-hidden="true"></span>
+                    <button type="button" class="filter under" data-layer="under" aria-pressed="true"><span class="burn-swatch under" aria-hidden="true"></span>Under burn</button>
+                    <span class="chip-div" aria-hidden="true"></span>
+                    <button type="button" class="filter even" data-layer="even" aria-pressed="true"><span class="even-swatch" aria-hidden="true"><span></span><span></span><span></span></span>Ideal pace</button>
+                  </div>
+                  <div class="legend-trailing">
+                    <div class="chip-group visibility">
+                      <button type="button" class="filter names" data-layer="names" aria-pressed="true">Labels</button>
+                      <span class="chip-div" aria-hidden="true"></span>
+                      <button type="button" class="filter icons" data-layer="icons" aria-pressed="true">Icons</button>
+                    </div>
+                    <button type="button" class="extra-toggle" aria-expanded="false" aria-label="Advanced" title="Advanced">
+                      <svg class="sf-ellipsis" viewBox="0 0 14 14" aria-hidden="true"><circle class="ring" cx="7" cy="7" r="5.85"/><circle class="dot" cx="4.35" cy="7" r="0.7"/><circle class="dot" cx="7" cy="7" r="0.7"/><circle class="dot" cx="9.65" cy="7" r="0.7"/></svg>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
+            <div class="disc-warning">
+              <svg class="warn-icon" viewBox="0 0 14 14" aria-hidden="true"><path fill="currentColor" d="M7 1.2 13 12.2H1L7 1.2zm0 3.3c-.4 0-.7.3-.7.7v3.2c0 .4.3.7.7.7s.7-.3.7-.7V5.2c0-.4-.3-.7-.7-.7zm0 5.6a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z"/></svg>
+              <div>
+                <p class="warn-title"><span>Cursor usage discrepancy</span><span class="warn-when">6 Nov 2026, 12:42</span></p>
+                <p class="warn-body">Other Models: activity was not reflected in the meter · gpt-5.6-sol</p>
+              </div>
+            </div>
+            <div class="panel-rule">Actions</div>
             <div class="row action">Refresh all</div>
+            <div class="row action">Open Cursor Spending</div>
             <div class="sep"></div>
             <div class="row action">Settings… <span class="kbd">⌘,</span></div>
+            <div class="row action">About</div>
+            <div class="sep"></div>
             <div class="row action">Quit QuotAI <span class="kbd">⌘Q</span></div>
           </div>
         </div>
@@ -1442,7 +1665,7 @@
 
     const VARIANTS = [
       { id: "A", name: "Approved (window panel)" },
-      { id: "D", name: "Tweak clone (Corridor)" },
+      { id: "D", name: "Tweak clone (live chrome + series cycle)" },
       { id: "B", name: "Menu + popover" },
       { id: "C", name: "Detached glance" },
     ];
@@ -1450,7 +1673,78 @@
     const ui = {
       popoverOpen: true,
       detachedOpen: true,
+      // D only: avatar click → solo → hide → all (per series focus).
+      seriesFilter: { mode: "all", key: null },
     };
+
+    const SERIES_KEYS = ["cursor", "other", "grok"];
+
+    function seriesVisible(key) {
+      const { mode, key: focus } = ui.seriesFilter;
+      if (mode === "all" || !focus) return true;
+      if (mode === "solo") return key === focus;
+      if (mode === "hide") return key !== focus;
+      return true;
+    }
+
+    function applySeriesFilter() {
+      const panel = document.querySelector("#variant-D .panel-window");
+      if (!panel) return;
+      const { mode, key: focus } = ui.seriesFilter;
+      const host = panel.querySelector(".chart-host");
+
+      SERIES_KEYS.forEach((key) => {
+        const visible = seriesVisible(key);
+        if (host) {
+          host.querySelectorAll(`.layer[data-layer="${key}"]`).forEach((g) => {
+            if (visible) g.removeAttribute("hidden");
+            else g.setAttribute("hidden", "");
+          });
+          host.querySelectorAll(`.anno.${key}`).forEach((el) => {
+            if (visible) el.removeAttribute("hidden");
+            else el.setAttribute("hidden", "");
+          });
+          host.querySelectorAll(`.hover-dot.${key}`).forEach((d) => {
+            if (!visible) d.style.display = "none";
+          });
+        }
+
+        const btn = panel.querySelector(`.m-avatar-tone[data-series="${key}"]`);
+        if (!btn) return;
+        let cycle = "all";
+        if (mode === "solo" && focus) {
+          cycle = key === focus ? "solo" : "dim";
+        } else if (mode === "hide" && focus) {
+          cycle = key === focus ? "hide" : "all";
+        }
+        btn.dataset.cycle = cycle;
+        const label = LABELS[key] || key;
+        const tip =
+          mode === "solo" && focus === key
+            ? "Chart: showing only this · click to hide"
+            : mode === "hide" && focus === key
+              ? "Chart: hidden · click to show all"
+              : "Chart: solo → hide → all";
+        btn.title = tip;
+        btn.setAttribute(
+          "aria-label",
+          `${label} chart filter (${mode === "all" ? "all" : mode + " " + (LABELS[focus] || focus || "")})`
+        );
+      });
+    }
+
+    function cycleSeriesFilter(key) {
+      const { mode, key: focus } = ui.seriesFilter;
+      if (mode === "all" || focus !== key) {
+        ui.seriesFilter = { mode: "solo", key };
+      } else if (mode === "solo") {
+        ui.seriesFilter = { mode: "hide", key };
+      } else {
+        ui.seriesFilter = { mode: "all", key: null };
+      }
+      applySeriesFilter();
+      paintState();
+    }
 
     function interpolateUsed(points, elapsed) {
       if (!points.length) return null;
@@ -1612,7 +1906,7 @@
       let series = "";
       let nameLabels = "";
       let hoverDots = "";
-      for (const key of ["cursor", "other", "grok"]) {
+      for (const key of SERIES_KEYS) {
         const pts = SERIES[key];
         const last = pts[pts.length - 1];
         if (annotate) {
@@ -1694,9 +1988,14 @@
         }
 
         const rows = [];
-        for (const key of ["cursor", "other", "grok"]) {
+        for (const key of SERIES_KEYS) {
           const used = interpolateUsed(SERIES[key], elapsed);
           const dot = host.querySelector(`.hover-dot.${key}`);
+          // Honor D avatar filter when this host lives under #variant-D.
+          if (host.closest("#variant-D") && !seriesVisible(key)) {
+            if (dot) dot.style.display = "none";
+            continue;
+          }
           if (used == null) {
             if (dot) dot.style.display = "none";
             continue;
@@ -1826,10 +2125,11 @@
           },
           chrome: {
             A: "Approved locked baseline — window panel + inset axis chrome (Elapsed/Used replace mid ticks)",
-            D: "Proposed — Corridor alerts: plain pace N%, alert icon column, no on-pace band",
+            D: "Proposed — Corridor alerts: plain pace N%, alert icon column, no on-pace band; avatar cycle solo→hide→all",
             B: "Native .menu + NSPopover-style chart",
             C: "Native .menu + About-style NSWindow",
           },
+          seriesFilter: id === "D" ? ui.seriesFilter : null,
           popoverOpen: id === "B" ? ui.popoverOpen : null,
           detachedOpen: id === "C" ? ui.detachedOpen : null,
         },
@@ -1910,6 +2210,17 @@
       });
     }
 
+    function bindSeriesAvatarCycle() {
+      document.querySelectorAll("#variant-D .m-avatar-tone[data-series]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const key = btn.dataset.series;
+          if (!SERIES_KEYS.includes(key)) return;
+          cycleSeriesFilter(key);
+        });
+      });
+    }
+
     document.body.addEventListener("click", (e) => {
       const open = e.target.closest("[data-open]");
       if (!open) return;
@@ -1928,6 +2239,8 @@
 
     paintCharts();
     bindLayerFilters();
+    bindSeriesAvatarCycle();
+    applySeriesFilter();
     showVariant(currentId());
   </script>
 </body>

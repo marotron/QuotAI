@@ -9,6 +9,8 @@ struct PaceHistoryChart: View {
     var showOtherModels: Bool
     /// Precomputed discrepancy clusters for soft grey bands + advanced strip.
     var discrepancyClusters: [CursorDiscrepancyCluster] = []
+    /// Meter-avatar filter from the panel (solo / hide / all).
+    var seriesFilter: PaceHistorySeriesFilter = .all
 
     /// Persisted, not `@State`: the chart is remounted on every history write (`.id(paceHistoryEpoch)`),
     /// which would reset `@State`. Stores hidden layers so the empty default means "all shown".
@@ -81,14 +83,17 @@ struct PaceHistoryChart: View {
             chartBody
                 .frame(width: plotW, height: plotH + axisPadBottom)
                 .frame(maxWidth: .infinity)
+                // Keep Charts out of any residual layout animation on hide.
+                .geometryGroup()
+                .transaction { $0.animation = nil }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Pace history chart, used percent versus elapsed percent")
 
             legend
+                // Leaving the plot for the legend/… control often skips hover
+                // `.ended`; clear so the dashed RuleMark does not stick on the right.
+                .onHover { if $0 { hoverElapsed = nil } }
 
-            if advancedOpen, !discrepancyClusters.isEmpty {
-                discrepancyStrip
-            }
         }
     }
 
@@ -147,18 +152,26 @@ struct PaceHistoryChart: View {
         }
         .chartOverlay { proxy in
             GeometryReader { geo in
-                let plotOrigin: CGFloat = {
+                let plotRect: CGRect = {
                     if let anchor = proxy.plotFrame {
-                        return geo[anchor].origin.x
+                        return geo[anchor]
                     }
-                    return 0
+                    return CGRect(origin: .zero, size: geo.size)
                 }()
+                let plotOrigin = plotRect.origin.x
                 Rectangle()
                     .fill(Color.clear)
                     .contentShape(Rectangle())
                     .onContinuousHover { phase in
                         switch phase {
                         case .active(let location):
+                            // Axis gutter is still inside this overlay; ignore it so
+                            // exiting toward Labels / … does not park a RuleMark
+                            // near the right spine.
+                            guard plotRect.contains(location) else {
+                                hoverElapsed = nil
+                                return
+                            }
                             let localX = location.x - plotOrigin
                             if let elapsed: Double = proxy.value(atX: localX) {
                                 hoverElapsed = min(max(elapsed, 0), 100)
@@ -168,6 +181,7 @@ struct PaceHistoryChart: View {
                         }
                     }
                     .onTapGesture { location in
+                        guard plotRect.contains(location) else { return }
                         let localX = location.x - plotOrigin
                         guard let elapsed: Double = proxy.value(atX: localX) else { return }
                         selectCluster(atElapsed: min(max(elapsed, 0), 100))
@@ -372,19 +386,6 @@ struct PaceHistoryChart: View {
                 }
             }
 
-            if advancedOpen {
-                chipGroup {
-                    legendChip(.disc, title: "Discrepancies") {
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(Self.discColor.opacity(0.28))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 1)
-                                    .strokeBorder(Self.discColor.opacity(0.55), lineWidth: 0.5)
-                            )
-                            .frame(width: 8, height: 10)
-                    }
-                }
-            }
         }
         .font(.system(size: 11))
         .foregroundStyle(.secondary)
@@ -436,12 +437,7 @@ struct PaceHistoryChart: View {
     private var advancedToggle: some View {
         let count = discrepancyClusters.reduce(0) { $0 + $1.events.count }
         return Button {
-            advancedOpen.toggle()
-            if !advancedOpen {
-                stripBodyOpen = false
-            } else if selectedClusterID == nil {
-                selectedClusterID = discrepancyClusters.first?.id
-            }
+            setAdvancedOpen(!advancedOpen)
         } label: {
             Image(systemName: "ellipsis.circle")
                 .font(.system(size: 13, weight: .light))
@@ -459,6 +455,34 @@ struct PaceHistoryChart: View {
                 : "Show advanced, \(count) discrepancies"
         )
         .accessibilityAddTraits(advancedOpen ? .isSelected : [])
+        .popover(isPresented: $advancedOpen, arrowEdge: .bottom) {
+            advancedPopover
+        }
+    }
+
+    private var advancedPopover: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            chipGroup {
+                legendChip(.disc, title: "Discrepancies") {
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(Self.discColor.opacity(0.28))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 1)
+                                .strokeBorder(Self.discColor.opacity(0.55), lineWidth: 0.5)
+                        )
+                        .frame(width: 8, height: 10)
+                }
+            }
+
+            discrepancyStrip
+                .onHover { if $0 { hoverElapsed = nil } }
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(.secondary)
+        // Width matches the chart; height hugs content so collapse/expand
+        // does not leave empty popover chrome (safe — this is not MenuBarExtra).
+        .frame(width: plotW, alignment: .topLeading)
+        .padding(12)
     }
 
     /// Mini bar for the burn chips: tinted field with a band along the bottom (over) or top (under) edge.
@@ -651,8 +675,21 @@ struct PaceHistoryChart: View {
         return (lo, min(hi, 100))
     }
 
+    /// Advanced content lives in a separate content-sized popover, so this
+    /// state change never resizes the MenuBarExtra panel.
+    private func setAdvancedOpen(_ open: Bool) {
+        hoverElapsed = nil
+        advancedOpen = open
+        if !open {
+            stripBodyOpen = false
+        } else if selectedClusterID == nil {
+            selectedClusterID = discrepancyClusters.first?.id
+        }
+    }
+
     private func selectCluster(atElapsed elapsed: Double) {
         guard let cluster = hoverDiscCluster(at: elapsed) else { return }
+        hoverElapsed = nil
         selectedClusterID = cluster.id
         advancedOpen = true
         stripBodyOpen = true
@@ -745,7 +782,7 @@ struct PaceHistoryChart: View {
     private var plottedMeterIds: [PaceHistoryMeterId] {
         var ids: [PaceHistoryMeterId] = [.cursor, .grok]
         if showOtherModels { ids.insert(.other, at: 1) }
-        return ids.filter { !(series[$0] ?? []).isEmpty }
+        return ids.filter { !(series[$0] ?? []).isEmpty && seriesFilter.isVisible($0) }
     }
 
     private var overBoundary: [PaceHistoryChartPoint] {

@@ -2,6 +2,17 @@ import AppKit
 import SwiftUI
 import QuotAICore
 
+/// Native top-edge anchoring for the `MenuBarExtra` panel on macOS 26 and newer.
+private struct MenuBarWindowResizeAnchor: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.windowResizeAnchor(.top)
+        } else {
+            content
+        }
+    }
+}
+
 /// MenuBarExtra `.window` content: status, meters, pace history chart, actions.
 struct MenuBarWindowPanel: View {
     @ObservedObject var store: QuotaStore
@@ -12,6 +23,8 @@ struct MenuBarWindowPanel: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("menuPinDensity") private var menuPinDensity: MenuPinDensity = .compact
+    /// Meter-avatar chart filter (solo → hide → all). Lives on the panel so chart remounts keep it.
+    @State private var seriesFilter = PaceHistorySeriesFilter.all
 
     private var now: Date { store.displayClock }
 
@@ -68,6 +81,8 @@ struct MenuBarWindowPanel: View {
         .frame(width: 470)
         .environment(\.menuRowMetrics, MenuRowMetrics(density: menuPinDensity))
         .background(panelBackground)
+        // Native top-edge anchoring on macOS 26 and newer.
+        .modifier(MenuBarWindowResizeAnchor())
         .onAppear {
             store.snapDisplayClock()
             Task { await store.refreshIfStale() }
@@ -144,21 +159,24 @@ struct MenuBarWindowPanel: View {
                 title: "Cursor Models",
                 meter: store.cursorModels.projected(at: now),
                 avatar: .cursor,
-                series: .models
+                series: .models,
+                meterId: .cursor
             )
             if showOtherModels {
                 meterRow(
                     title: "Other Models",
                     meter: store.otherModels.projected(at: now),
                     avatar: .cursor,
-                    series: .other
+                    series: .other,
+                    meterId: .other
                 )
             }
             meterRow(
                 title: "Grok Bot",
                 meter: store.grokBot.projected(at: now),
                 avatar: .grok,
-                series: .grok
+                series: .grok,
+                meterId: .grok
             )
         }
         .padding(.horizontal, 14)
@@ -173,10 +191,11 @@ struct MenuBarWindowPanel: View {
         title: String,
         meter: QuotaMeter,
         avatar: BarIcon.Avatar,
-        series: PaceHistorySeriesColor
+        series: PaceHistorySeriesColor,
+        meterId: PaceHistoryMeterId
     ) -> some View {
         HStack(alignment: .center, spacing: 6) {
-            seriesAvatar(avatar, series: series)
+            seriesAvatarButton(avatar, series: series, meterId: meterId)
 
             Text(title)
                 .font(.system(size: 11))
@@ -222,10 +241,63 @@ struct MenuBarWindowPanel: View {
     private static let pctColumnWidth: CGFloat = 46
     private static let resetColumnWidth: CGFloat = 98
 
-    private func seriesAvatar(_ avatar: BarIcon.Avatar, series: PaceHistorySeriesColor) -> some View {
-        Image(nsImage: BarIcon.tintedAvatar(avatar, ink: Self.nsColor(hex: series.hex), pointSize: 14))
-            .frame(width: 14, height: 14)
-            .accessibilityHidden(true)
+    private func seriesAvatarButton(
+        _ avatar: BarIcon.Avatar,
+        series: PaceHistorySeriesColor,
+        meterId: PaceHistoryMeterId
+    ) -> some View {
+        let cycle = seriesFilter.avatarCycle(for: meterId)
+        let ink = Self.nsColor(hex: series.hex)
+        return Button {
+            seriesFilter = seriesFilter.cycling(tapped: meterId)
+        } label: {
+            Image(nsImage: BarIcon.tintedAvatar(avatar, ink: ink, pointSize: 14))
+                .frame(width: 14, height: 14)
+                .opacity(cycle == .dim || cycle == .hide ? 0.32 : 1)
+                .saturation(cycle == .hide ? 0.65 : 1)
+                .overlay {
+                    if cycle == .solo {
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .strokeBorder(Color(nsColor: ink).opacity(0.55), lineWidth: 1.5)
+                            .frame(width: 16, height: 16)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .help(seriesFilterHelp(cycle: cycle))
+        .accessibilityLabel("\(titleForMeter(meterId)) chart filter")
+        .accessibilityValue(seriesFilterAccessibilityValue(cycle: cycle, meterId: meterId))
+        .accessibilityHint("Cycles chart: solo, hide, all")
+    }
+
+    private func titleForMeter(_ id: PaceHistoryMeterId) -> String {
+        switch id {
+        case .cursor: return "Cursor Models"
+        case .other: return "Other Models"
+        case .grok: return "Grok Bot"
+        }
+    }
+
+    private func seriesFilterHelp(cycle: PaceHistorySeriesAvatarCycle) -> String {
+        switch cycle {
+        case .solo: return "Chart: showing only this · click to hide"
+        case .hide: return "Chart: hidden · click to show all"
+        case .dim, .all: return "Chart: solo → hide → all"
+        }
+    }
+
+    private func seriesFilterAccessibilityValue(
+        cycle: PaceHistorySeriesAvatarCycle,
+        meterId: PaceHistoryMeterId
+    ) -> String {
+        switch seriesFilter.mode {
+        case .all:
+            return "all series"
+        case .solo:
+            return cycle == .solo ? "solo" : "dimmed"
+        case .hide:
+            return seriesFilter.focus == meterId ? "hidden" : "shown"
+        }
     }
 
     private static func nsColor(hex: String) -> NSColor {
@@ -291,7 +363,8 @@ struct MenuBarWindowPanel: View {
                 thresholds: smartThresholds,
                 series: historySeries,
                 showOtherModels: showOtherModels,
-                discrepancyClusters: discrepancyClustersForChart
+                discrepancyClusters: discrepancyClustersForChart,
+                seriesFilter: seriesFilter
             )
             .id(store.paceHistoryEpoch)
         }

@@ -1,0 +1,31 @@
+---
+description: Track and prevent repeated solutions for the MenuBarExtra top-strip glitch
+alwaysApply: true
+---
+
+# MenuBarExtra top-strip troubleshooting
+
+When investigating the menu-bar panel resize glitch, always read and follow:
+
+`.scratch/quotai/menu-bar-top-pin-solutions.md`
+
+Before trying a new solution:
+
+1. Read the troubleshooting log.
+2. Search its **Do not retry** notes and current status.
+3. Record the new hypothesis and mark it `In progress` before editing code.
+4. Do not repeat a solution marked `Failed`, `Crash`, or `Insufficient` unless
+   new evidence materially changes its diagnosis.
+
+After testing:
+
+1. Update the same log entry with the implementation, evidence, and result.
+2. Distinguish build/test success from visual confirmation in the running app.
+3. Record user-reported visual results before selecting another approach.
+
+For this bug specifically:
+
+- Never use dynamic `isa` mutation or runtime subclassing of the private
+  `MenuBarExtra` window.
+- Do not use post-frame KVO as the primary fix for a one-frame geometry glitch.
+- Do not assume animation removal alone controls the AppKit window frame.

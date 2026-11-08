@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.18.2 — 2026-11-08
+
+### Added
+
+- Meter avatars in the menu panel cycle the pace chart: click once to solo that series, again to hide it, again to show all
+
+### Fixed
+
+- Advanced discrepancies open in a content-sized popover under the chart ellipsis, so expanding or collapsing the list no longer drops the menu-bar panel away from the menu bar
+
 ## 0.18.1 — 2026-11-07
 
 ### Fixed

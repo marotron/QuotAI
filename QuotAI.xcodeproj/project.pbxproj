@@ -32,6 +32,7 @@
 		3498F01BB3B5BCDC98192BAE /* CursorVscdbImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */; };
 		37031A88F12F70098989B788 /* PercentDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BA1B979CE208DC53FD1E1A /* PercentDial.swift */; };
 		3BD34F90717179447A2DC2FE /* MenuOptionTitles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D07303DB72FBD8BEC5E9DF /* MenuOptionTitles.swift */; };
+		3C54887A5448A2E1E20B2112 /* PaceHistorySeriesFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59AAAE5EDF7EA2DA84B33E25 /* PaceHistorySeriesFilterTests.swift */; };
 		3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65831D21C9C2B6C291737D22 /* QuotaPercent.swift */; };
 		3F5777DF22D0C5E36DCED8D9 /* MenuPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACFFF12333707318644EED0 /* MenuPresenterTests.swift */; };
 		41254106484CD48E3D6CA36D /* PaceMeterPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */; };
@@ -91,6 +92,7 @@
 		BBEABA081CA2F226610DB285 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */; };
 		C6448794FDF1AD2A9FA7942D /* PaceHistoryTipPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */; };
 		C66146299548948984B4AA28 /* RefreshFreshnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4358AC58989BD9B67A58DB /* RefreshFreshnessTests.swift */; };
+		CE2DE693EF9F9710A517D305 /* PaceHistorySeriesFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */; };
 		CE7A9064D2EA35C569483CE2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172E517E55BB1919952F6374 /* SettingsView.swift */; };
 		D0A82923EF1EA1BFA9361ED0 /* MenuPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0248EF36AED12752B7A8D9 /* MenuPresentation.swift */; };
 		D3170FE07F5DD7F1B5FD9E03 /* PaceHistorySampleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */; };
@@ -210,6 +212,7 @@
 		4C4F4D22979B55C7E8491E85 /* PaceHistoryChartModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartModelTests.swift; sourceTree = "<group>"; };
 		4E43043E693935CE5D71BAB9 /* AlertMessageBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertMessageBuilderTests.swift; sourceTree = "<group>"; };
 		4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceMeterPresentationTests.swift; sourceTree = "<group>"; };
+		59AAAE5EDF7EA2DA84B33E25 /* PaceHistorySeriesFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySeriesFilterTests.swift; sourceTree = "<group>"; };
 		5BCD6BD67F062EB51D2E62F2 /* QuotAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C43130568DD9233B80DB58F /* EmailAlertService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailAlertService.swift; sourceTree = "<group>"; };
 		5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBandsTests.swift; sourceTree = "<group>"; };
@@ -225,6 +228,7 @@
 		782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaResponseParserTests.swift; sourceTree = "<group>"; };
 		787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		7C32FF53DBE2300A57A24E9C /* PaceAlertCooldownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertCooldownTests.swift; sourceTree = "<group>"; };
+		81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySeriesFilter.swift; sourceTree = "<group>"; };
 		8A84478A2DFA344FC905215F /* QuotAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotAIApp.swift; sourceTree = "<group>"; };
 		8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = QuotAICore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CECF6449BA30923428C5B11 /* RefreshPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshPlannerTests.swift; sourceTree = "<group>"; };
@@ -339,6 +343,7 @@
 				A17414D5B95FCA174737FB00 /* PaceChromeTests.swift */,
 				4C4F4D22979B55C7E8491E85 /* PaceHistoryChartModelTests.swift */,
 				27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */,
+				59AAAE5EDF7EA2DA84B33E25 /* PaceHistorySeriesFilterTests.swift */,
 				0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */,
 				4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */,
 				7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */,
@@ -409,6 +414,7 @@
 				BB305BE65819B58250DECEB2 /* PaceChrome.swift */,
 				442F33986FCB2D359079BCF4 /* PaceHistoryChartModel.swift */,
 				143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */,
+				81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */,
 				3B2202564AF01C5E6670DC28 /* PaceHistoryTipPresentation.swift */,
 				1AF376352ED7DAC78952FF8E /* PaceMeterPresentation.swift */,
 				A1B666266F381CBC367A25A8 /* QuotAIKeychain.swift */,
@@ -642,6 +648,7 @@
 				F1310C7DC5CE0CE3576CD98D /* PaceChrome.swift in Sources */,
 				2984654BBD4D766F7C6150E5 /* PaceHistoryChartModel.swift in Sources */,
 				743C92E109E1CC3BE7E83E12 /* PaceHistorySampleStore.swift in Sources */,
+				CE2DE693EF9F9710A517D305 /* PaceHistorySeriesFilter.swift in Sources */,
 				E64A5BAF9FE516C09322F46B /* PaceHistoryTipPresentation.swift in Sources */,
 				A84BDA50449824D9F4EB2445 /* PaceMeterPresentation.swift in Sources */,
 				DCE51FCCEA2E00D48A69D5DF /* QuotAIKeychain.swift in Sources */,
@@ -709,6 +716,7 @@
 				9068D6720D88199A9B6C838E /* PaceChromeTests.swift in Sources */,
 				EBE0E039627341EE7BC52CD5 /* PaceHistoryChartModelTests.swift in Sources */,
 				D3170FE07F5DD7F1B5FD9E03 /* PaceHistorySampleStoreTests.swift in Sources */,
+				3C54887A5448A2E1E20B2112 /* PaceHistorySeriesFilterTests.swift in Sources */,
 				C6448794FDF1AD2A9FA7942D /* PaceHistoryTipPresentationTests.swift in Sources */,
 				41254106484CD48E3D6CA36D /* PaceMeterPresentationTests.swift in Sources */,
 				258406DDBA6376123299D5BF /* QuotaPercentTests.swift in Sources */,
@@ -919,7 +927,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 39;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -930,7 +938,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.18.1;
+				MARKETING_VERSION = 0.18.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};
@@ -958,7 +966,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 39;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -969,7 +977,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.18.1;
+				MARKETING_VERSION = 0.18.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};
