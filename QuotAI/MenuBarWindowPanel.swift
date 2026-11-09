@@ -2,17 +2,6 @@ import AppKit
 import SwiftUI
 import QuotAICore
 
-/// Native top-edge anchoring for the `MenuBarExtra` panel on macOS 26 and newer.
-private struct MenuBarWindowResizeAnchor: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            content.windowResizeAnchor(.top)
-        } else {
-            content
-        }
-    }
-}
-
 /// MenuBarExtra `.window` content: status, meters, pace history chart, actions.
 struct MenuBarWindowPanel: View {
     @ObservedObject var store: QuotaStore
@@ -81,8 +70,6 @@ struct MenuBarWindowPanel: View {
         .frame(width: 470)
         .environment(\.menuRowMetrics, MenuRowMetrics(density: menuPinDensity))
         .background(panelBackground)
-        // Native top-edge anchoring on macOS 26 and newer.
-        .modifier(MenuBarWindowResizeAnchor())
         .onAppear {
             store.snapDisplayClock()
             Task { await store.refreshIfStale() }

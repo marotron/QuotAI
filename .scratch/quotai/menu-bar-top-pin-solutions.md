@@ -247,7 +247,10 @@ an acceptable closed-state design.
 discrepancy controls in a separate SwiftUI popover attached to the ellipsis
 button. The popover keeps a fixed chart-matched width and hugs its content
 height, so collapse/expand of the event list resizes only the popover. The
-`MenuBarExtra` panel's layout and frame remain unchanged.
+`MenuBarExtra` panel's layout and frame remain unchanged. Do not keep a
+compile-time `windowResizeAnchor(.top)` call gated only with
+`#available(macOS 26.0, *)` — CI’s Xcode 16.4 / macOS 15 SDK lacks that API
+and the availability check does not skip the compile error.
 
 **Why this is new:** Entries 1–9 modify or intercept the main panel resize,
 and entry 10 reserves changing content inside the main panel. Entry 11 removes
