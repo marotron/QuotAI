@@ -71,7 +71,7 @@ Tag must be `v` + semver equal to `MARKETING_VERSION`. `Scripts/release/dmg.sh` 
 3. **`make test`**
 4. **`make dmg`** with `RELEASE_TAG` set → `dist/QuotAI-<version>.dmg`  
    Optional secrets: `QUOTAI_SIGN_IDENTITY`, `QUOTAI_NOTARY_PROFILE` (otherwise ad-hoc sign).
-5. **`Scripts/release/notes.sh`** → `dist/RELEASE_NOTES.md` (CHANGELOG section + [`.github/RELEASE_BODY.md`](../../.github/RELEASE_BODY.md)).
+5. **`Scripts/release/notes.sh`** → `dist/RELEASE_NOTES.md` (every CHANGELOG section since the previous tag + [`.github/RELEASE_BODY.md`](../../.github/RELEASE_BODY.md)).
 6. **`softprops/action-gh-release`** — full release titled **`QuotAI X.Y.Z`**, attach DMG, `prerelease: false`.
 
 ### Local packaging (no publish)

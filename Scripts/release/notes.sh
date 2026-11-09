@@ -54,7 +54,6 @@ CHANGES="$(
       prev_key = ENVIRON["PREV_KEY"]
     }
     /^## [0-9]/ {
-      if (printing) exit
       section = $0
       sub(/^## /, "", section)
       # Keep only leading X.Y.Z (drop em dash / date).
@@ -62,11 +61,14 @@ CHANGES="$(
       section = parts[1]
       n = split(section, a, ".")
       section_key = sprintf("%05d%05d%05d", a[1]+0, (n>=2?a[2]+0:0), (n>=3?a[3]+0:0))
+      # Include every section from this release back to (but not including)
+      # the previous tagged version — do not stop after the first header.
       if (section_key <= cur_key && (prev_key == "" || section_key > prev_key)) {
         printing = 1
         print
         next
       }
+      if (printing) exit
       next
     }
     printing { print }
