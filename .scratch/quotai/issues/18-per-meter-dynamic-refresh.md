@@ -1,5 +1,9 @@
 # Per-meter Dynamic refresh
 
+Type: task
+Status: resolved
+GitHub: [#32](https://github.com/marotron/QuotAI/pull/32)
+
 Branch: `feat/per-meter-dynamic-refresh` · Plan: `~/.cursor/plans/per-meter_dynamic_refresh_a5971045.plan.md`
 
 ## Locked

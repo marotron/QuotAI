@@ -4,7 +4,7 @@
 
 **Status:** Locked visual source of truth (Corridor alerts · scrap on-pace).  
 **Prototype:** [`index.html`](index.html) · open with `?variant=A` (default).  
-**Tweak clone:** Variant D — nit there; promote D → A to re-lock.  
+**Tweak clone:** Variant D — tracks live panel chrome (burn legend, discrepancy notice, action rows) and meter-avatar series cycle; promote D → A to re-lock.  
 **Screenshots:** refresh after this promote (see §12).
 
 | File | Captures |

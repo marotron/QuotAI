@@ -266,6 +266,25 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle(
+                    "Detect Cursor usage discrepancies",
+                    isOn: $store.discrepancyDetectionEnabled
+                )
+                SettingsNotes(lines: [
+                    "Reads local Cursor Agent Host logs and compares observed activity with the Cursor Models and Other Models quota meters.",
+                    "QuotAI retains only deduplicated local activity from the current Cursor billing period."
+                ])
+                if store.discrepancyDetectionEnabled {
+                    Toggle(
+                        "Send macOS notifications",
+                        isOn: $store.discrepancyNotificationsEnabled
+                    )
+                }
+            } header: {
+                Text("Cursor activity")
+            }
+
+            Section {
                 VStack(alignment: .leading, spacing: 0) {
                     Button("Re-auth from Cursor") {
                         Task { await store.reauthFromCursor() }

@@ -7,11 +7,19 @@ struct PaceHistoryChart: View {
     var thresholds: PaceAlertThresholds
     var series: [PaceHistoryMeterId: [PaceHistorySample]]
     var showOtherModels: Bool
+    /// Precomputed discrepancy clusters for soft grey bands + advanced strip.
+    var discrepancyClusters: [CursorDiscrepancyCluster] = []
+    /// Meter-avatar filter from the panel (solo / hide / all).
+    var seriesFilter: PaceHistorySeriesFilter = .all
 
     /// Persisted, not `@State`: the chart is remounted on every history write (`.id(paceHistoryEpoch)`),
     /// which would reset `@State`. Stores hidden layers so the empty default means "all shown".
     @AppStorage("paceHistoryHiddenLayers") private var hiddenLayersRaw = ""
     @State private var hoverElapsed: Double?
+    /// Advanced disclosure only — not persisted across launches / chart remounts.
+    @State private var advancedOpen = false
+    @State private var stripBodyOpen = false
+    @State private var selectedClusterID: String?
     @Environment(\.colorScheme) private var colorScheme
 
     private var hiddenLayers: Set<PaceHistoryChartLayer> {
@@ -53,11 +61,15 @@ struct PaceHistoryChart: View {
     private static let overFill = Color(red: 1, green: 0x9f / 255, blue: 0x0a / 255)
     private static let underFill = Color(red: 0x0a / 255, green: 0x84 / 255, blue: 1)
     private static let tertiary = Color(red: 0x8e / 255, green: 0x8e / 255, blue: 0x93 / 255)
+    /// Discrepancy band / chip grey (proto `--disc`).
+    private static let discColor = Color(red: 0x8e / 255, green: 0x8e / 255, blue: 0x93 / 255)
     /// Burn swatch colors from the over/under burn drawings.
     private static let burnOverField = Color(red: 0xed / 255, green: 0xe2 / 255, blue: 0xd0 / 255)
     private static let burnOverBand = Color(red: 0xf0 / 255, green: 0xaa / 255, blue: 0x55 / 255)
     private static let burnUnderField = Color(red: 0xcf / 255, green: 0xdc / 255, blue: 0xee / 255)
     private static let burnUnderBand = Color(red: 0x5b / 255, green: 0x94 / 255, blue: 0xf5 / 255)
+    /// ~1.5pt min band width in elapsed-% space at `plotW`.
+    private var discMinElapsedSpan: Double { Double(1.5 / plotW * 100) }
 
     /// Plot box hairline — mirrors `MenuBarWindowPanel.divider` (card border).
     private var chartBoxBorder: Color {
@@ -71,15 +83,23 @@ struct PaceHistoryChart: View {
             chartBody
                 .frame(width: plotW, height: plotH + axisPadBottom)
                 .frame(maxWidth: .infinity)
+                // Keep Charts out of any residual layout animation on hide.
+                .geometryGroup()
+                .transaction { $0.animation = nil }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Pace history chart, used percent versus elapsed percent")
 
             legend
+                // Leaving the plot for the legend/… control often skips hover
+                // `.ended`; clear so the dashed RuleMark does not stick on the right.
+                .onHover { if $0 { hoverElapsed = nil } }
+
         }
     }
 
     private var chartBody: some View {
         Chart {
+            discBandMarks
             overMarks
             underMarks
             evenMarks
@@ -132,18 +152,26 @@ struct PaceHistoryChart: View {
         }
         .chartOverlay { proxy in
             GeometryReader { geo in
-                let plotOrigin: CGFloat = {
+                let plotRect: CGRect = {
                     if let anchor = proxy.plotFrame {
-                        return geo[anchor].origin.x
+                        return geo[anchor]
                     }
-                    return 0
+                    return CGRect(origin: .zero, size: geo.size)
                 }()
+                let plotOrigin = plotRect.origin.x
                 Rectangle()
                     .fill(Color.clear)
                     .contentShape(Rectangle())
                     .onContinuousHover { phase in
                         switch phase {
                         case .active(let location):
+                            // Axis gutter is still inside this overlay; ignore it so
+                            // exiting toward Labels / … does not park a RuleMark
+                            // near the right spine.
+                            guard plotRect.contains(location) else {
+                                hoverElapsed = nil
+                                return
+                            }
                             let localX = location.x - plotOrigin
                             if let elapsed: Double = proxy.value(atX: localX) {
                                 hoverElapsed = min(max(elapsed, 0), 100)
@@ -152,6 +180,12 @@ struct PaceHistoryChart: View {
                             hoverElapsed = nil
                         }
                     }
+                    .onTapGesture { location in
+                        guard plotRect.contains(location) else { return }
+                        let localX = location.x - plotOrigin
+                        guard let elapsed: Double = proxy.value(atX: localX) else { return }
+                        selectCluster(atElapsed: min(max(elapsed, 0), 100))
+                    }
                     .overlay(alignment: .topLeading) {
                         if let hoverElapsed, !hoverDots.isEmpty {
                             tipView(elapsed: hoverElapsed)
@@ -159,7 +193,8 @@ struct PaceHistoryChart: View {
                                     tipOffset(
                                         in: geo.size,
                                         plotOrigin: plotOrigin,
-                                        elapsed: hoverElapsed
+                                        elapsed: hoverElapsed,
+                                        includesDisc: hoverDiscCluster(at: hoverElapsed) != nil
                                     )
                                 )
                         }
@@ -170,6 +205,23 @@ struct PaceHistoryChart: View {
     }
 
     // MARK: - Chart content builders
+
+    @ChartContentBuilder
+    private var discBandMarks: some ChartContent {
+        if visibleLayers.contains(.disc) {
+            ForEach(discrepancyClusters) { cluster in
+                let span = paintedDiscSpan(for: cluster)
+                let active = cluster.id == resolvedSelectedClusterID
+                RectangleMark(
+                    xStart: .value("DiscStart", span.lo),
+                    xEnd: .value("DiscEnd", span.hi),
+                    yStart: .value("Bottom", 0.0),
+                    yEnd: .value("Top", 100.0)
+                )
+                .foregroundStyle(Self.discColor.opacity(active ? 0.26 : 0.14))
+            }
+        }
+    }
 
     @ChartContentBuilder
     private var overMarks: some ChartContent {
@@ -316,26 +368,36 @@ struct PaceHistoryChart: View {
         }
     }
 
-    /// Single row when it fits the 414pt well; otherwise corridors on top, visibility toggles right-aligned below.
+    /// Primary row matches v0.18; advanced opens a second row for the Discrepancies chip.
     private var legend: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
-                corridorGroup
-                Spacer(minLength: 4)
-                visibilityGroup
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                corridorGroup
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    visibilityGroup
+        VStack(alignment: .leading, spacing: 6) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    corridorGroup
+                    Spacer(minLength: 4)
+                    legendTrailing
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    corridorGroup
+                    HStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        legendTrailing
+                    }
                 }
             }
+
         }
         .font(.system(size: 11))
         .foregroundStyle(.secondary)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Chart layer filters")
+    }
+
+    private var legendTrailing: some View {
+        HStack(spacing: 6) {
+            visibilityGroup
+            advancedToggle
+        }
     }
 
     private var corridorGroup: some View {
@@ -370,6 +432,57 @@ struct PaceHistoryChart: View {
                 EmptyView()
             }
         }
+    }
+
+    private var advancedToggle: some View {
+        let count = discrepancyClusters.reduce(0) { $0 + $1.events.count }
+        return Button {
+            setAdvancedOpen(!advancedOpen)
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.system(size: 13, weight: .light))
+                .frame(width: 20, height: 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(advancedOpen ? Color.primary.opacity(0.06) : Color.clear)
+                )
+        }
+        .buttonStyle(.plain)
+        .help(advancedOpen ? "Hide advanced" : "Advanced")
+        .accessibilityLabel(
+            advancedOpen
+                ? "Advanced, \(count) discrepancies"
+                : "Show advanced, \(count) discrepancies"
+        )
+        .accessibilityAddTraits(advancedOpen ? .isSelected : [])
+        .popover(isPresented: $advancedOpen, arrowEdge: .bottom) {
+            advancedPopover
+        }
+    }
+
+    private var advancedPopover: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            chipGroup {
+                legendChip(.disc, title: "Discrepancies") {
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(Self.discColor.opacity(0.28))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 1)
+                                .strokeBorder(Self.discColor.opacity(0.55), lineWidth: 0.5)
+                        )
+                        .frame(width: 8, height: 10)
+                }
+            }
+
+            discrepancyStrip
+                .onHover { if $0 { hoverElapsed = nil } }
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(.secondary)
+        // Width matches the chart; height hugs content so collapse/expand
+        // does not leave empty popover chrome (safe — this is not MenuBarExtra).
+        .frame(width: plotW, alignment: .topLeading)
+        .padding(12)
     }
 
     /// Mini bar for the burn chips: tinted field with a band along the bottom (over) or top (under) edge.
@@ -443,12 +556,233 @@ struct PaceHistoryChart: View {
         .accessibilityValue(on ? "Shown" : "Hidden")
     }
 
+    // MARK: - Discrepancy strip
+
+    private var discrepancyStrip: some View {
+        let cluster = selectedCluster
+        let idx = selectedClusterIndex
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                stripBodyOpen.toggle()
+            } label: {
+                HStack(spacing: 6) {
+                    Text("\(cluster.events.count)")
+                        .font(.system(size: 10, weight: .semibold).monospacedDigit())
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(
+                            Capsule().fill(Self.discColor.opacity(0.18))
+                        )
+                    (
+                        Text("Discrepancies").fontWeight(.semibold)
+                            + Text(" · \(clusterPeriodRangeLabel(cluster))")
+                    )
+                    .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text(
+                        "\(Int(cluster.elapsedLo.rounded()))–\(Int(cluster.elapsedHi.rounded()))% elapsed"
+                    )
+                    .foregroundStyle(Self.tertiary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .rotationEffect(.degrees(stripBodyOpen ? 90 : 0))
+                        .foregroundStyle(Self.tertiary)
+                }
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Discrepancy cluster details")
+
+            if stripBodyOpen {
+                HStack(spacing: 8) {
+                    Button("←") { stepCluster(by: -1) }
+                        .buttonStyle(.plain)
+                    Text("Cluster \(idx + 1) of \(discrepancyClusters.count)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Button("→") { stepCluster(by: 1) }
+                        .buttonStyle(.plain)
+                    Spacer(minLength: 0)
+                    Text(kindMixLabel(for: cluster))
+                        .font(.system(size: 11))
+                        .foregroundStyle(Self.tertiary)
+                }
+                .padding(.top, 6)
+
+                // ScrollView + maxHeight alone often collapses to 0 in a VStack; pin an
+                // explicit height capped at discEventListMaxHeight so rows stay visible.
+                // LazyVStack keeps large clusters (100+) from laying out every row up front.
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(cluster.events.enumerated()), id: \.offset) { offset, event in
+                            if offset > 0 {
+                                Divider().opacity(0.35)
+                            }
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(meterDotColor(event.meter))
+                                    .frame(width: 6, height: 6)
+                                Text("\(kindLabel(event.kind)) · \(meterLabel(event.meter))")
+                                    .lineLimit(1)
+                                Text(event.displayModelLabel)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                Spacer(minLength: 4)
+                                Text(discEventTimeLabel(event.timestamp))
+                                    .foregroundStyle(Self.tertiary)
+                                    .monospacedDigit()
+                            }
+                            .font(.system(size: 11))
+                            .padding(.vertical, 4)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(height: discEventListHeight(for: cluster.events.count))
+                .padding(.top, 4)
+            }
+        }
+        .padding(.horizontal, 2)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var selectedCluster: CursorDiscrepancyCluster {
+        if let id = resolvedSelectedClusterID,
+           let match = discrepancyClusters.first(where: { $0.id == id }) {
+            return match
+        }
+        return discrepancyClusters[0]
+    }
+
+    private var selectedClusterIndex: Int {
+        discrepancyClusters.firstIndex(where: { $0.id == selectedCluster.id }) ?? 0
+    }
+
+    private var resolvedSelectedClusterID: String? {
+        if let selectedClusterID,
+           discrepancyClusters.contains(where: { $0.id == selectedClusterID }) {
+            return selectedClusterID
+        }
+        return discrepancyClusters.first?.id
+    }
+
+    private func paintedDiscSpan(for cluster: CursorDiscrepancyCluster) -> (lo: Double, hi: Double) {
+        let lo = cluster.elapsedLo
+        let hi = max(cluster.elapsedHi, lo + discMinElapsedSpan)
+        return (lo, min(hi, 100))
+    }
+
+    /// Advanced content lives in a separate content-sized popover, so this
+    /// state change never resizes the MenuBarExtra panel.
+    private func setAdvancedOpen(_ open: Bool) {
+        hoverElapsed = nil
+        advancedOpen = open
+        if !open {
+            stripBodyOpen = false
+        } else if selectedClusterID == nil {
+            selectedClusterID = discrepancyClusters.first?.id
+        }
+    }
+
+    private func selectCluster(atElapsed elapsed: Double) {
+        guard let cluster = hoverDiscCluster(at: elapsed) else { return }
+        hoverElapsed = nil
+        selectedClusterID = cluster.id
+        advancedOpen = true
+        stripBodyOpen = true
+    }
+
+    /// Cluster under the cursor when the Discrepancies layer is visible.
+    private func hoverDiscCluster(at elapsed: Double) -> CursorDiscrepancyCluster? {
+        guard visibleLayers.contains(.disc) else { return nil }
+        let pad = 0.4
+        return discrepancyClusters.first(where: {
+            let span = paintedDiscSpan(for: $0)
+            return elapsed >= span.lo - pad && elapsed <= span.hi + pad
+        })
+    }
+
+    private func stepCluster(by delta: Int) {
+        guard !discrepancyClusters.isEmpty else { return }
+        let next = (selectedClusterIndex + delta + discrepancyClusters.count) % discrepancyClusters.count
+        selectedClusterID = discrepancyClusters[next].id
+        stripBodyOpen = true
+    }
+
+    /// First→last event clock span for the strip title (no "this period" / density labels).
+    private func clusterPeriodRangeLabel(_ cluster: CursorDiscrepancyCluster) -> String {
+        guard let first = cluster.events.map(\.timestamp).min(),
+              let last = cluster.events.map(\.timestamp).max() else {
+            return "—"
+        }
+        let firstDay = first.formatted(.dateTime.month(.abbreviated).day())
+        let lastDay = last.formatted(.dateTime.month(.abbreviated).day())
+        let firstTime = first.formatted(.dateTime.hour().minute())
+        let lastTime = last.formatted(.dateTime.hour().minute())
+        if Calendar.current.isDate(first, inSameDayAs: last) {
+            if firstTime == lastTime {
+                return "\(firstDay) \(firstTime)"
+            }
+            return "\(firstDay) \(firstTime)–\(lastTime)"
+        }
+        return "\(firstDay) \(firstTime) – \(lastDay) \(lastTime)"
+    }
+
+    private func discEventTimeLabel(_ date: Date) -> String {
+        let day = date.formatted(.dateTime.month(.abbreviated).day())
+        let time = date.formatted(.dateTime.hour().minute())
+        return "\(day) \(time)"
+    }
+
+    private func kindLabel(_ kind: CursorDiscrepancyEvent.Kind) -> String {
+        switch kind {
+        case .unbilledActivity: return "Unbilled"
+        case .unattributedQuotaChange: return "Unattributed"
+        }
+    }
+
+    private func meterLabel(_ meter: CursorMeterClassification) -> String {
+        switch meter {
+        case .cursorModels: return "Cursor Models"
+        case .otherModels: return "Other Models"
+        }
+    }
+
+    private func meterDotColor(_ meter: CursorMeterClassification) -> Color {
+        switch meter {
+        case .cursorModels: return Self.cursorColor
+        case .otherModels: return Self.otherColor
+        }
+    }
+
+    private func kindMixLabel(for cluster: CursorDiscrepancyCluster) -> String {
+        var counts: [CursorDiscrepancyEvent.Kind: Int] = [:]
+        for event in cluster.events {
+            counts[event.kind, default: 0] += 1
+        }
+        return CursorDiscrepancyEvent.Kind.allCases.compactMap { kind in
+            guard let n = counts[kind], n > 0 else { return nil }
+            return "\(n) \(kindLabel(kind))"
+        }.joined(separator: " · ")
+    }
+
+    private static let discEventListMaxHeight: CGFloat = 120
+    private static let discEventRowHeight: CGFloat = 26
+
+    private func discEventListHeight(for count: Int) -> CGFloat {
+        guard count > 0 else { return 0 }
+        return min(Self.discEventListMaxHeight, CGFloat(count) * Self.discEventRowHeight)
+    }
+
     // MARK: - Data
 
     private var plottedMeterIds: [PaceHistoryMeterId] {
         var ids: [PaceHistoryMeterId] = [.cursor, .grok]
         if showOtherModels { ids.insert(.other, at: 1) }
-        return ids.filter { !(series[$0] ?? []).isEmpty }
+        return ids.filter { !(series[$0] ?? []).isEmpty && seriesFilter.isVisible($0) }
     }
 
     private var overBoundary: [PaceHistoryChartPoint] {
@@ -595,7 +929,7 @@ struct PaceHistoryChart: View {
         String(Int(n.rounded())) + "%"
     }
 
-    /// Proto tip: Elapsed line → when readings → per-series rows → over / under bands.
+    /// Proto tip: Elapsed line → when readings → per-series rows → disc (if any) → over / under.
     private func tipView(elapsed: Double) -> some View {
         let t = elapsed / 100
         let overU = clampPct(PaceAlertBands.overUsed(atElapsed: t, thresholds: thresholds) * 100)
@@ -604,6 +938,7 @@ struct PaceHistoryChart: View {
             ? clampPct(PaceAlertBands.underUsed(atElapsed: t, thresholds: thresholds) * 100)
             : nil as Double?
         let readings = tipWhenReadings(atElapsed: elapsed)
+        let discCluster = hoverDiscCluster(at: elapsed)
 
         return VStack(alignment: .leading, spacing: 0) {
             // Elapsed leads the tip on its own first line.
@@ -637,6 +972,10 @@ struct PaceHistoryChart: View {
                 .padding(.top, 2)
             }
 
+            if let discCluster {
+                tipDiscSection(discCluster, atElapsed: elapsed)
+            }
+
             // Divider between the used list and the corridor bands.
             Rectangle()
                 .fill(Color.secondary.opacity(0.35))
@@ -666,6 +1005,89 @@ struct PaceHistoryChart: View {
                 .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
         )
         .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private func tipDiscSection(_ cluster: CursorDiscrepancyCluster, atElapsed elapsed: Double) -> some View {
+        let events = tipDiscEvents(in: cluster, atElapsed: elapsed)
+        if !events.isEmpty {
+            Rectangle()
+                .fill(Color.secondary.opacity(0.35))
+                .frame(height: 1)
+                .padding(.top, 6)
+                .padding(.bottom, 4)
+
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(Array(events.enumerated()), id: \.offset) { _, event in
+                    Text(shortDiscEventLine(event))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        }
+    }
+
+    /// Closest event in the cluster to the hover clock, plus its in-cluster neighbors (1–3 rows).
+    private func tipDiscEvents(
+        in cluster: CursorDiscrepancyCluster,
+        atElapsed elapsed: Double
+    ) -> [CursorDiscrepancyEvent] {
+        let ordered = cluster.events.sorted { $0.timestamp < $1.timestamp }
+        guard !ordered.isEmpty else { return [] }
+
+        let pivotIndex: Int = {
+            guard let at = tipDateForDiscMatch(atElapsed: elapsed) else { return 0 }
+            var best = 0
+            var bestDelta = abs(ordered[0].timestamp.timeIntervalSince(at))
+            for i in ordered.indices.dropFirst() {
+                let delta = abs(ordered[i].timestamp.timeIntervalSince(at))
+                if delta < bestDelta {
+                    best = i
+                    bestDelta = delta
+                }
+            }
+            return best
+        }()
+
+        var picked: [CursorDiscrepancyEvent] = []
+        if pivotIndex > 0 {
+            picked.append(ordered[pivotIndex - 1])
+        }
+        picked.append(ordered[pivotIndex])
+        if pivotIndex + 1 < ordered.count {
+            picked.append(ordered[pivotIndex + 1])
+        }
+        return picked
+    }
+
+    private func tipDateForDiscMatch(atElapsed elapsed: Double) -> Date? {
+        // Prefer Cursor billing window — discrepancy meters live there.
+        tipWhenReadings(atElapsed: elapsed)
+            .first(where: { $0.family == nil || $0.family == .cursor })?
+            .at
+            ?? tipWhenReadings(atElapsed: elapsed).first?.at
+    }
+
+    /// Strip-style row, compressed for the tip: `unbilled · other claude-4.5-sonnet 09:18`.
+    private func shortDiscEventLine(_ event: CursorDiscrepancyEvent) -> String {
+        let kind: String = {
+            switch event.kind {
+            case .unbilledActivity: return "unbilled"
+            case .unattributedQuotaChange: return "unattributed"
+            }
+        }()
+        let meter: String = {
+            switch event.meter {
+            case .cursorModels: return "cursor"
+            case .otherModels: return "other"
+            }
+        }()
+        let models = event.displayModelLabel
+        let time = event.timestamp.formatted(.dateTime.hour().minute())
+        if models == "—" {
+            return "\(kind) · \(meter) \(time)"
+        }
+        return "\(kind) · \(meter) \(models) \(time)"
     }
 
     private func tipBandRow(label: String, value: String) -> some View {
@@ -761,8 +1183,13 @@ struct PaceHistoryChart: View {
         }
     }
 
-    private func tipOffset(in size: CGSize, plotOrigin: CGFloat, elapsed: Double) -> CGSize {
-        let tipW: CGFloat = 168
+    private func tipOffset(
+        in size: CGSize,
+        plotOrigin: CGFloat,
+        elapsed: Double,
+        includesDisc: Bool
+    ) -> CGSize {
+        let tipW: CGFloat = includesDisc ? 210 : 168
         let x = plotOrigin + CGFloat(
             PaceHistoryTipPresentation.tipLeadingX(
                 elapsedPct: elapsed,

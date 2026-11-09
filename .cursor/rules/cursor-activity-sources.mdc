@@ -1,0 +1,33 @@
+---
+description: QuotAI Cursor activity sources — local log only; CSV is research aid
+globs:
+alwaysApply: true
+---
+
+# Cursor activity sources (QuotAI)
+
+## Runtime / product
+
+QuotAI uses the **local Cursor Agent Host log** (and meter snapshots / pace history) only.
+
+- No CSV import
+- No shipping dependency on usage exports
+- Do not design features that require the user to keep dropping CSVs
+
+## Usage CSV in chat / research
+
+Any usage export looked at in chat is a **research aid only**: reverse-engineer whether a billing/label signal already exists (or can be derived) in the local log. If it does, teach the parser; if it does not, leave the gap explicit.
+
+Field notes: `.scratch/quotai/research/usage-csv-fields.md`
+
+## Model display / store
+
+Source of the string shown in the discrepancy strip is the **local Agent Host `modelId`**, with one rewrite: `default` → `auto`.
+
+| Local log has | Show / store |
+| --- | --- |
+| `default` | `auto` |
+| Full id (e.g. `claude-sonnet-5-5-medium`) | That full id |
+| Short / base id (e.g. `glm-5p3-flash`) | That short id — do **not** invent `-high` / `-low` / `-thinking-*` |
+
+Never upgrade a short local id via CSV timestamp join (or any heuristic) when the variant is ambiguous. Do not reclassify third-party `modelId`s onto Cursor Models because a Task ran “under Auto.”

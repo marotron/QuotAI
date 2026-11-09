@@ -37,6 +37,9 @@ Last updated: 2026-11-04
 | Dynamic refresh schedule | pure | `RefreshSchedule.interval(periodEnds:now:)` — per-family period ends, first step strictly under the threshold; bad or duplicate JSON → default |
 | Per-meter refresh planner | pure | `RefreshPlanner` due families + next fire from shared schedule/fixed minutes and dual last-fetch times |
 | Last refresh status line | pure | `LastRefreshStatus.line` — `Last refresh: Cursor {HH:mm} · Grok Bot {HH:mm}` (24-hour; `—` when nil) |
+| Cursor activity parser | pure | `CursorActivityParser` reads selected Agent Host runtime records, validates payloads, de-duplicates `generationUUID` values, and sets optional `endedAt` from later log lines that mention the same UUID |
+| Cursor discrepancy reconciler | pure | `CursorDiscrepancyReconciler` matches local turns to same-meter quota increases within a five-minute grace window (a meter increase counts as unattributed only if no same-meter turn’s active interval overlaps the bump’s explain window: start through `endedAt` or start, with a 20-minute lookback), then emits unbilled / unattributed events with stable notification signatures |
+| Cursor activity store | pure persistence | `CursorActivityStore` JSON state for the current Cursor billing period only: turns, meter snapshots, and discrepancy events; a new `periodStart` clears and reseeds it |
 | Network + Keychain + SMTP + UserNotifications | untested | Thin adapters |
 
 ## Modules (initial)
@@ -52,3 +55,4 @@ Last updated: 2026-11-04
 - Pace: one UserDefaults sample per meter per local day; live `%` / days on every refresh
 - Manual **Refresh** in menu (background poll still fog)
 - On successful refresh → `PaceAlertOrchestrator` (decision → cooldown → notify/email)
+- Optional Cursor discrepancy detection reads local `Cursor Agent Host*.log` records incrementally. While a recent turn is inside the five-minute grace window, Cursor meter refreshes are temporarily limited to roughly one minute; detector state is retained for the active billing period only. Pace chart Discrepancies bands/strip cluster both unbilled activity and unattributed meter bumps; the panel notice shows the latest event with full date and time.
