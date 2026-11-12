@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.3 — 2026-11-12
+
+### Fixed
+
+- Pace history chart downsamples to 200 X-points and 1% Y-levels before building marks, which removes the menu-panel open latency from large histories; `.interpolationMethod(.monotone)` draws smooth Retina curves between the reduced points
+
 ## 0.18.2 — 2026-11-08
 
 ### Added

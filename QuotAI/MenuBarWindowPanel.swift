@@ -14,6 +14,9 @@ struct MenuBarWindowPanel: View {
     @AppStorage("menuPinDensity") private var menuPinDensity: MenuPinDensity = .compact
     /// Meter-avatar chart filter (solo → hide → all). Lives on the panel so chart remounts keep it.
     @State private var seriesFilter = PaceHistorySeriesFilter.all
+    #if DEBUG
+    @State private var menuOpenStart: Date?
+    #endif
 
     private var now: Date { store.displayClock }
 
@@ -71,6 +74,9 @@ struct MenuBarWindowPanel: View {
         .environment(\.menuRowMetrics, MenuRowMetrics(density: menuPinDensity))
         .background(panelBackground)
         .onAppear {
+            #if DEBUG
+            menuOpenStart = Date()
+            #endif
             store.snapDisplayClock()
             Task { await store.refreshIfStale() }
         }
@@ -364,6 +370,26 @@ struct MenuBarWindowPanel: View {
                         .strokeBorder(divider.opacity(0.8), lineWidth: 0.5)
                 )
         )
+        #if DEBUG
+        // A GeometryReader is laid out with the chart well, so this records the
+        // first panel layout after the menu's `onAppear` timestamp.
+        .background {
+            GeometryReader { _ in
+                Color.clear
+                    .onChange(of: menuOpenStart, initial: true) { _, start in
+                        guard let start else { return }
+                        let elapsed = Date().timeIntervalSince(start) * 1_000
+                        print(
+                            String(
+                                format: "QuotAI menu panel first layout: %.1f ms",
+                                elapsed
+                            )
+                        )
+                        menuOpenStart = nil
+                    }
+            }
+        }
+        #endif
     }
 
     private var historySeries: [PaceHistoryMeterId: [PaceHistorySample]] {
