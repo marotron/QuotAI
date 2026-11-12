@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.2 — 2026-11-12
+
+### Fixed
+
+- Pace chart hover tip keeps the same gap from the hover guide on both halves of the chart, whether or not the discrepancy section is shown
+
+### Changed
+
+- Pace chart hover tip uses a light translucent material with a faint blur on macOS 14–25 (Liquid Glass on macOS 26+ is unchanged)
+
 ## 0.19.1 — 2026-11-12
 
 ### Fixed
