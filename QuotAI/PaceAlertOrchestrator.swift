@@ -28,14 +28,9 @@ enum PaceAlertOrchestrator {
     ) async -> PaceAlertDeliveryResult {
         let defaults = UserDefaults.standard
         let smart = defaults.object(forKey: "useSmartPaceAlerts") as? Bool ?? true
-        let thresholds = PaceAlertThresholds(
-            overMaxStartPct: Double(defaults.object(forKey: "overMaxStartPct") as? Int ?? 25),
-            overEmptyBeforePct: Double(defaults.object(forKey: "overEmptyBeforePct") as? Int ?? 95),
-            underAfterPct: Double(defaults.object(forKey: "underAfterPct") as? Int ?? 25),
-            underMinEndPct: Double(defaults.object(forKey: "underMinEndPct") as? Int ?? 95),
-            overCurvePct: Double(defaults.object(forKey: "overCurvePct") as? Int ?? 0),
-            underCurvePct: Double(defaults.object(forKey: "underCurvePct") as? Int ?? 0)
-        )
+        let ints = PaceAlertThresholdStore.intMap(from: defaults)
+        let cursorThresholds = PaceAlertThresholdStore.cursor(from: ints)
+        let grokThresholds = PaceAlertThresholdStore.grok(from: ints)
         let legacyUnder = Double(defaults.object(forKey: "blinkUnderPercent") as? Int ?? 75) / 100
         let legacyOver = Double(defaults.object(forKey: "blinkOverPercent") as? Int ?? 130) / 100
         let blinkEnabled = defaults.bool(forKey: "blinkSignificantPace")
@@ -55,7 +50,8 @@ enum PaceAlertOrchestrator {
 
         let decision = PaceAlertDecision.evaluate(
             meters: inputs,
-            thresholds: thresholds,
+            cursorThresholds: cursorThresholds,
+            grokThresholds: grokThresholds,
             smart: smart,
             legacyUnder: legacyUnder,
             legacyOver: legacyOver,

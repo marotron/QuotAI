@@ -63,7 +63,8 @@ private struct PanelPreviewRoot: View {
                 store: store,
                 showOtherModels: true,
                 corridorAlertsEnabled: true,
-                smartThresholds: .default
+                cursorThresholds: .default,
+                grokThresholds: .grokDefault
             )
             .preferredColorScheme(appearance.scheme)
         }

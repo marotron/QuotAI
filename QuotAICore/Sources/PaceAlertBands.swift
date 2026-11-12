@@ -36,6 +36,16 @@ public struct PaceAlertThresholds: Equatable, Sendable {
         overCurvePct: 0,
         underCurvePct: 0
     )
+
+    /// Grok Bot seed (Settings prototype): wider start slack / earlier full-before.
+    public static let grokDefault = PaceAlertThresholds(
+        overMaxStartPct: 35,
+        overEmptyBeforePct: 85,
+        underAfterPct: 40,
+        underMinEndPct: 90,
+        overCurvePct: 20,
+        underCurvePct: 20
+    )
 }
 
 public enum PaceAlertKind: Equatable, Sendable {

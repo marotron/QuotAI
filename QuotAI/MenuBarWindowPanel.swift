@@ -7,13 +7,17 @@ struct MenuBarWindowPanel: View {
     @ObservedObject var store: QuotaStore
     var showOtherModels: Bool
     var corridorAlertsEnabled: Bool
-    var smartThresholds: PaceAlertThresholds
+    /// Cursor Models + Other corridor (also painted on menu pace history this PR).
+    var cursorThresholds: PaceAlertThresholds
+    var grokThresholds: PaceAlertThresholds
 
     @Environment(\.openSettings) private var openSettings
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("menuPinDensity") private var menuPinDensity: MenuPinDensity = .compact
     /// Meter-avatar chart filter (solo → hide → all). Lives on the panel so chart remounts keep it.
     @State private var seriesFilter = PaceHistorySeriesFilter.all
+    /// Pace chart X zoom (elapsed %). Session state — survives history remounts; clears with the panel.
+    @State private var paceChartXDomain: ClosedRange<Double> = PaceHistoryChartZoom.fullDomain
     #if DEBUG
     @State private var menuOpenStart: Date?
     #endif
@@ -353,11 +357,13 @@ struct MenuBarWindowPanel: View {
     private var chartWell: some View {
         VStack(alignment: .leading, spacing: 0) {
             PaceHistoryChart(
-                thresholds: smartThresholds,
+                cursorThresholds: cursorThresholds,
+                grokThresholds: grokThresholds,
                 series: historySeries,
                 showOtherModels: showOtherModels,
                 discrepancyClusters: discrepancyClustersForChart,
-                seriesFilter: seriesFilter
+                seriesFilter: seriesFilter,
+                xDomain: $paceChartXDomain
             )
             .id(store.paceHistoryEpoch)
         }
@@ -370,6 +376,14 @@ struct MenuBarWindowPanel: View {
                         .strokeBorder(divider.opacity(0.8), lineWidth: 0.5)
                 )
         )
+        // Zoomed corridor AreaMarks spill into this well’s padding — keep the
+        // spill as context, but wash it out so only the plot box stays vivid.
+        .overlay {
+            if PaceHistoryChartZoom.isZoomed(paceChartXDomain) {
+                zoomSpillMuteVeil
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8))
         #if DEBUG
         // A GeometryReader is laid out with the chart well, so this records the
         // first panel layout after the menu's `onAppear` timestamp.
@@ -390,6 +404,30 @@ struct MenuBarWindowPanel: View {
             }
         }
         #endif
+    }
+
+    /// Semi-transparent wash over the well padding (outside the plot box).
+    /// Plot stays clear; spilled over/under fills read as muted context.
+    /// Height includes the x-axis gutter — under-burn often stubs into the
+    /// bottom-right pad below the plot floor.
+    private var zoomSpillMuteVeil: some View {
+        // Match PaceHistoryChart: plotW 414, plotH 207, axisPadBottom 22, well pad 14.
+        let pad: CGFloat = 14
+        let plotH: CGFloat = 414 / 2
+        let axisPadBottom: CGFloat = 22
+        let veilH = plotH + axisPadBottom
+        return GeometryReader { geo in
+            let veil = Color(nsColor: .windowBackgroundColor).opacity(0.62)
+            ZStack(alignment: .topLeading) {
+                veil
+                    .frame(width: pad, height: veilH)
+                    .offset(x: 0, y: pad)
+                veil
+                    .frame(width: pad, height: veilH)
+                    .offset(x: geo.size.width - pad, y: pad)
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     private var historySeries: [PaceHistoryMeterId: [PaceHistorySample]] {
@@ -583,10 +621,13 @@ struct MenuBarWindowPanel: View {
            let start = meter.periodStart,
            let end = meter.periodEnd,
            let t = PaceCalculator.elapsedFraction(periodStart: start, periodEnd: end, now: now) {
+            let thresholds = PaceAlertFamily.resolve(meterName: meter.name) == .grok
+                ? grokThresholds
+                : cursorThresholds
             return PaceAlertBands.evaluate(
                 percentUsed: pct,
                 elapsedFraction: t,
-                thresholds: smartThresholds,
+                thresholds: thresholds,
                 smart: true
             )
         }

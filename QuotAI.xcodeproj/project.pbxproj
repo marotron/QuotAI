@@ -14,6 +14,7 @@
 		0E66D145B86BE8C6A6ADB4F1 /* CursorSafeStorageKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C63BBC52053CDA4BE6AEBD /* CursorSafeStorageKey.swift */; };
 		0E7FFAD2282D5608EF41F69A /* CursorAuthActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42221A63599893EAE95BCF0C /* CursorAuthActions.swift */; };
 		10F40A01C619D3725F202EB4 /* PaceHistoryChartDownsample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 960B3E9ED195EEAA918969F4 /* PaceHistoryChartDownsample.swift */; };
+		12F58430BB0560A459A372D6 /* PeriodDurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCFAFB3DC2E71B999995F431 /* PeriodDurationTests.swift */; };
 		14F8A41E7E0F4214973DBC75 /* PreviewApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DD824683EB5A25350088F4 /* PreviewApp.swift */; };
 		158342EFCE61917EEA75EBAD /* BarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A474AF98F62D2275255057D5 /* BarIcon.swift */; };
 		1662147F4652E067D89B275A /* QuotAIAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E364CC587B574EDA89401BE2 /* QuotAIAboutView.swift */; };
@@ -45,12 +46,15 @@
 		53AC03AF4844D781A5C76CAE /* QuotAICore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		5489EBC2858AA40C0FB968DF /* MenuOptionTitles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D07303DB72FBD8BEC5E9DF /* MenuOptionTitles.swift */; };
 		573458FFC33BA33EE6B5218C /* CursorDiscrepancyClustererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B4D11D972B953514BEFC89 /* CursorDiscrepancyClustererTests.swift */; };
+		591B7B7E3844A3F266842C7E /* PaceAlertThresholdStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D8D7ECE698C38261DD59F1 /* PaceAlertThresholdStoreTests.swift */; };
+		592F271C548C47950C94809F /* PaceAlertFamilyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C9701F74E3F456086252DB2 /* PaceAlertFamilyTests.swift */; };
 		5A9FB09FB6C1FC94462D0F2D /* CursorSealedToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03348913E147E1A98D87B3E /* CursorSealedToken.swift */; };
 		5BFC260AAFA68BBF7C9DF073 /* MenuPins.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A1170CBF0717A973229E129 /* MenuPins.swift */; };
 		5C0F500364002FA7EA6D1D97 /* PaceAlertBandChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */; };
 		5C3685E0B0936DF76FF1D4F1 /* CursorActivityParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A634315FCD00056AC526ACA4 /* CursorActivityParserTests.swift */; };
 		5E77B6A9C260CEA75C67ED15 /* QuotAICore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; };
 		61B41F97E9FD3001E1BE1196 /* EmailAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C43130568DD9233B80DB58F /* EmailAlertService.swift */; };
+		639B803DE74B65CC85EE141D /* PaceAlertFamily.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8257F1DD6FE08B50A3B613CE /* PaceAlertFamily.swift */; };
 		63FAB8D069873E14E9D56DE4 /* CursorVscdbImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */; };
 		64994325D781B5E4ABF70296 /* BarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A474AF98F62D2275255057D5 /* BarIcon.swift */; };
 		682A20A53422EE349CECDC37 /* CursorLogActivityReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90ECA3EB3FB1C69788FC4FE /* CursorLogActivityReader.swift */; };
@@ -78,6 +82,7 @@
 		9317637690F297E552B2924E /* PaceAlertDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42C45002964F1D37AEF7A57 /* PaceAlertDecisionTests.swift */; };
 		9340A0320269F6E161D02A93 /* AlertMessageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41246CF6E708CBB9C7E79255 /* AlertMessageBuilder.swift */; };
 		949E10C25EC450C91A5B10B5 /* AboutWindowHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BF38C8A35CA757AEEEC0B21 /* AboutWindowHost.swift */; };
+		94D3BF51129072B418C4217E /* PaceHistoryChartZoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25443308466C84E30F29B30D /* PaceHistoryChartZoom.swift */; };
 		988E8D070DE68CEB9D4DBB9A /* RemainingTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100900970A7EB9E28EF6C831 /* RemainingTime.swift */; };
 		9DF1B0F9D9FFCB1D5DE6DA79 /* NotificationAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */; };
 		A108881CC1E979DDC1AA8BDB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172E517E55BB1919952F6374 /* SettingsView.swift */; };
@@ -89,9 +94,11 @@
 		A9088611056BC0F2DBAAD7BD /* PaceHistoryChartDownsampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E61D2DB2B198A5D64C4B934B /* PaceHistoryChartDownsampleTests.swift */; };
 		AB2BB7A3F81DE014F8DB300C /* PaceAlertCooldownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C32FF53DBE2300A57A24E9C /* PaceAlertCooldownTests.swift */; };
 		AD18FB2510286FE5965DBA74 /* LastRefreshStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384DBDA8A5819994DC483BDC /* LastRefreshStatus.swift */; };
+		B8BA93AE72953D50A0C1DC06 /* PeriodDuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22214B4E58D15F795A32BBE5 /* PeriodDuration.swift */; };
 		BA912E4145A0BB2BBF628AB8 /* MenuPinLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE79ED45E16F062344B5FD08 /* MenuPinLayoutTests.swift */; };
 		BAF66F190A8C5BBDCFD56DE2 /* PaceAlertBandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */; };
 		BBEABA081CA2F226610DB285 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */; };
+		BF6C1EDFD31D2E7A678F35CC /* PaceAlertThresholdStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33EDB2C3A66CC39BC7B49CB /* PaceAlertThresholdStore.swift */; };
 		C6448794FDF1AD2A9FA7942D /* PaceHistoryTipPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */; };
 		C66146299548948984B4AA28 /* RefreshFreshnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4358AC58989BD9B67A58DB /* RefreshFreshnessTests.swift */; };
 		CE2DE693EF9F9710A517D305 /* PaceHistorySeriesFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */; };
@@ -188,6 +195,7 @@
 		02286B806D675393484B4815 /* QuotAIPanelPreview.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotAIPanelPreview.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		02D07303DB72FBD8BEC5E9DF /* MenuOptionTitles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuOptionTitles.swift; sourceTree = "<group>"; };
 		0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryTipPresentationTests.swift; sourceTree = "<group>"; };
+		05D8D7ECE698C38261DD59F1 /* PaceAlertThresholdStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertThresholdStoreTests.swift; sourceTree = "<group>"; };
 		09A98BF53179A39771BBE07A /* RingDialSegments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingDialSegments.swift; sourceTree = "<group>"; };
 		0C377C78FBBBB551CB294212 /* MenuPinsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPinsView.swift; sourceTree = "<group>"; };
 		100900970A7EB9E28EF6C831 /* RemainingTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTime.swift; sourceTree = "<group>"; };
@@ -198,7 +206,9 @@
 		1A3B27473A43C29FD29082B0 /* RefreshFreshness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshFreshness.swift; sourceTree = "<group>"; };
 		1AF376352ED7DAC78952FF8E /* PaceMeterPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceMeterPresentation.swift; sourceTree = "<group>"; };
 		1D196ED81F1692DCDD4A5447 /* RingIconPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingIconPreview.swift; sourceTree = "<group>"; };
+		22214B4E58D15F795A32BBE5 /* PeriodDuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeriodDuration.swift; sourceTree = "<group>"; };
 		22F0F40FD1FE615DF92CCF71 /* RemainingTimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTimeTests.swift; sourceTree = "<group>"; };
+		25443308466C84E30F29B30D /* PaceHistoryChartZoom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartZoom.swift; sourceTree = "<group>"; };
 		27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySampleStoreTests.swift; sourceTree = "<group>"; };
 		2D65735D0AC0BD39999794D7 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		384DBDA8A5819994DC483BDC /* LastRefreshStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastRefreshStatus.swift; sourceTree = "<group>"; };
@@ -207,6 +217,7 @@
 		3ABB5D0F4B699BEDF9A4B8B6 /* PaceAlertOrchestrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertOrchestrator.swift; sourceTree = "<group>"; };
 		3B2202564AF01C5E6670DC28 /* PaceHistoryTipPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryTipPresentation.swift; sourceTree = "<group>"; };
 		3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBandChart.swift; sourceTree = "<group>"; };
+		3C9701F74E3F456086252DB2 /* PaceAlertFamilyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertFamilyTests.swift; sourceTree = "<group>"; };
 		41246CF6E708CBB9C7E79255 /* AlertMessageBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertMessageBuilder.swift; sourceTree = "<group>"; };
 		42221A63599893EAE95BCF0C /* CursorAuthActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorAuthActions.swift; sourceTree = "<group>"; };
 		442F33986FCB2D359079BCF4 /* PaceHistoryChartModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartModel.swift; sourceTree = "<group>"; };
@@ -231,6 +242,7 @@
 		787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		7C32FF53DBE2300A57A24E9C /* PaceAlertCooldownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertCooldownTests.swift; sourceTree = "<group>"; };
 		81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySeriesFilter.swift; sourceTree = "<group>"; };
+		8257F1DD6FE08B50A3B613CE /* PaceAlertFamily.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertFamily.swift; sourceTree = "<group>"; };
 		8A84478A2DFA344FC905215F /* QuotAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotAIApp.swift; sourceTree = "<group>"; };
 		8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = QuotAICore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CECF6449BA30923428C5B11 /* RefreshPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshPlannerTests.swift; sourceTree = "<group>"; };
@@ -249,6 +261,7 @@
 		B90ECA3EB3FB1C69788FC4FE /* CursorLogActivityReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorLogActivityReader.swift; sourceTree = "<group>"; };
 		BB305BE65819B58250DECEB2 /* PaceChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceChrome.swift; sourceTree = "<group>"; };
 		BBF747F505C53CE0286EBF6D /* FreshnessBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreshnessBadgeView.swift; sourceTree = "<group>"; };
+		BCFAFB3DC2E71B999995F431 /* PeriodDurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeriodDurationTests.swift; sourceTree = "<group>"; };
 		BD54EF9FAB7890CB1EC1A309 /* IconLookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconLookTests.swift; sourceTree = "<group>"; };
 		BE79ED45E16F062344B5FD08 /* MenuPinLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPinLayoutTests.swift; sourceTree = "<group>"; };
 		C0447CCB4161A89612D76A3F /* LastRefreshStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastRefreshStatusTests.swift; sourceTree = "<group>"; };
@@ -257,6 +270,7 @@
 		C7A145FDCDD83F3F7243FAD8 /* QuotaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaStore.swift; sourceTree = "<group>"; };
 		CB8D0D3DA480E05872E591D4 /* CursorDiscrepancySnapshotBackfillTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorDiscrepancySnapshotBackfillTests.swift; sourceTree = "<group>"; };
 		CCA93C4905C6D4098659DE62 /* PaceHistoryChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChart.swift; sourceTree = "<group>"; };
+		D33EDB2C3A66CC39BC7B49CB /* PaceAlertThresholdStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertThresholdStore.swift; sourceTree = "<group>"; };
 		D38663DAC42813CB673B58AA /* PaceAlertBands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBands.swift; sourceTree = "<group>"; };
 		D42C45002964F1D37AEF7A57 /* PaceAlertDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertDecisionTests.swift; sourceTree = "<group>"; };
 		D5738338B3AFDC10195F8BF3 /* CursorSealedTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSealedTokenTests.swift; sourceTree = "<group>"; };
@@ -343,6 +357,8 @@
 				5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */,
 				7C32FF53DBE2300A57A24E9C /* PaceAlertCooldownTests.swift */,
 				D42C45002964F1D37AEF7A57 /* PaceAlertDecisionTests.swift */,
+				3C9701F74E3F456086252DB2 /* PaceAlertFamilyTests.swift */,
+				05D8D7ECE698C38261DD59F1 /* PaceAlertThresholdStoreTests.swift */,
 				4AAFD417E417B50DE713398C /* PaceCalculatorTests.swift */,
 				A17414D5B95FCA174737FB00 /* PaceChromeTests.swift */,
 				E61D2DB2B198A5D64C4B934B /* PaceHistoryChartDownsampleTests.swift */,
@@ -351,6 +367,7 @@
 				59AAAE5EDF7EA2DA84B33E25 /* PaceHistorySeriesFilterTests.swift */,
 				0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */,
 				4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */,
+				BCFAFB3DC2E71B999995F431 /* PeriodDurationTests.swift */,
 				7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */,
 				782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */,
 				DD4358AC58989BD9B67A58DB /* RefreshFreshnessTests.swift */,
@@ -415,14 +432,18 @@
 				D38663DAC42813CB673B58AA /* PaceAlertBands.swift */,
 				F0372F0AA05AB178D5EA1251 /* PaceAlertCooldown.swift */,
 				C656D72D3DC80308EE35332A /* PaceAlertDecision.swift */,
+				8257F1DD6FE08B50A3B613CE /* PaceAlertFamily.swift */,
+				D33EDB2C3A66CC39BC7B49CB /* PaceAlertThresholdStore.swift */,
 				E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */,
 				BB305BE65819B58250DECEB2 /* PaceChrome.swift */,
 				960B3E9ED195EEAA918969F4 /* PaceHistoryChartDownsample.swift */,
 				442F33986FCB2D359079BCF4 /* PaceHistoryChartModel.swift */,
+				25443308466C84E30F29B30D /* PaceHistoryChartZoom.swift */,
 				143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */,
 				81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */,
 				3B2202564AF01C5E6670DC28 /* PaceHistoryTipPresentation.swift */,
 				1AF376352ED7DAC78952FF8E /* PaceMeterPresentation.swift */,
+				22214B4E58D15F795A32BBE5 /* PeriodDuration.swift */,
 				A1B666266F381CBC367A25A8 /* QuotAIKeychain.swift */,
 				65831D21C9C2B6C291737D22 /* QuotaPercent.swift */,
 				B4D5560D8CAD91D26D28FC1C /* QuotaResponseParser.swift */,
@@ -650,14 +671,18 @@
 				6D7CE40B79A4F097A6203104 /* PaceAlertBands.swift in Sources */,
 				1B8661FD4F037A083FB94E1E /* PaceAlertCooldown.swift in Sources */,
 				29F5287C1AF7B0766A79F8AC /* PaceAlertDecision.swift in Sources */,
+				639B803DE74B65CC85EE141D /* PaceAlertFamily.swift in Sources */,
+				BF6C1EDFD31D2E7A678F35CC /* PaceAlertThresholdStore.swift in Sources */,
 				0892FE50EFCD8B19A5562708 /* PaceCalculator.swift in Sources */,
 				F1310C7DC5CE0CE3576CD98D /* PaceChrome.swift in Sources */,
 				10F40A01C619D3725F202EB4 /* PaceHistoryChartDownsample.swift in Sources */,
 				2984654BBD4D766F7C6150E5 /* PaceHistoryChartModel.swift in Sources */,
+				94D3BF51129072B418C4217E /* PaceHistoryChartZoom.swift in Sources */,
 				743C92E109E1CC3BE7E83E12 /* PaceHistorySampleStore.swift in Sources */,
 				CE2DE693EF9F9710A517D305 /* PaceHistorySeriesFilter.swift in Sources */,
 				E64A5BAF9FE516C09322F46B /* PaceHistoryTipPresentation.swift in Sources */,
 				A84BDA50449824D9F4EB2445 /* PaceMeterPresentation.swift in Sources */,
+				B8BA93AE72953D50A0C1DC06 /* PeriodDuration.swift in Sources */,
 				DCE51FCCEA2E00D48A69D5DF /* QuotAIKeychain.swift in Sources */,
 				3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */,
 				FD24C4805DBDBBB0AFC5BA3F /* QuotaResponseParser.swift in Sources */,
@@ -719,6 +744,8 @@
 				BAF66F190A8C5BBDCFD56DE2 /* PaceAlertBandsTests.swift in Sources */,
 				AB2BB7A3F81DE014F8DB300C /* PaceAlertCooldownTests.swift in Sources */,
 				9317637690F297E552B2924E /* PaceAlertDecisionTests.swift in Sources */,
+				592F271C548C47950C94809F /* PaceAlertFamilyTests.swift in Sources */,
+				591B7B7E3844A3F266842C7E /* PaceAlertThresholdStoreTests.swift in Sources */,
 				F6B16EE2F78F625179F0AD15 /* PaceCalculatorTests.swift in Sources */,
 				9068D6720D88199A9B6C838E /* PaceChromeTests.swift in Sources */,
 				A9088611056BC0F2DBAAD7BD /* PaceHistoryChartDownsampleTests.swift in Sources */,
@@ -727,6 +754,7 @@
 				3C54887A5448A2E1E20B2112 /* PaceHistorySeriesFilterTests.swift in Sources */,
 				C6448794FDF1AD2A9FA7942D /* PaceHistoryTipPresentationTests.swift in Sources */,
 				41254106484CD48E3D6CA36D /* PaceMeterPresentationTests.swift in Sources */,
+				12F58430BB0560A459A372D6 /* PeriodDurationTests.swift in Sources */,
 				258406DDBA6376123299D5BF /* QuotaPercentTests.swift in Sources */,
 				8F53C68CC8303EDA7842DF5B /* QuotaResponseParserTests.swift in Sources */,
 				C66146299548948984B4AA28 /* RefreshFreshnessTests.swift in Sources */,
@@ -935,7 +963,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 40;
+				CURRENT_PROJECT_VERSION = 41;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -946,7 +974,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.18.3;
+				MARKETING_VERSION = 0.19.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};
@@ -974,7 +1002,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 40;
+				CURRENT_PROJECT_VERSION = 41;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -985,7 +1013,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.18.3;
+				MARKETING_VERSION = 0.19.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};

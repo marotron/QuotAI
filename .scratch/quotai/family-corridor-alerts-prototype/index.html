@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuotAI — family corridor alerts (prototype)</title>
+  <style>
+    /*
+      Question: Where does Cursor|Grok family switching sit on the *live*
+      Settings → Alerts chrome (screenshot 2026-11-09)?
+      Base = shipped Form + PercentDial + PaceAlertBandChart + notes.
+      Family affordance differs across variants. Day/hour equivalents appear only
+      in a dial tooltip while adjusting (not permanently under dials). Band-chart
+      hover tip keeps Used % and shows days/hours left to reset for the focus family.
+      Throwaway — open .scratch/quotai/family-corridor-alerts-prototype/index.html
+    */
+    :root {
+      --bg: #ececec;
+      --window: #f2f2f7;
+      --group: #ffffff;
+      --text: #1d1d1f;
+      --secondary: #6e6e73;
+      --tertiary: #8e8e93;
+      --divider: rgba(60, 60, 67, 0.18);
+      --accent: #007aff;
+      --over: #ff9f0a;
+      --under: #0a84ff;
+      --quiet: #8e8e93;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+      --warn: #f59e0b;
+      --track: rgba(60, 60, 67, 0.18);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e;
+        --window: #1c1c1e;
+        --group: #2c2c2e;
+        --text: #f5f5f7;
+        --secondary: #98989d;
+        --tertiary: #8e8e93;
+        --divider: rgba(84, 84, 88, 0.65);
+        --track: rgba(235, 235, 245, 0.18);
+        --quiet: #98989d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 20px 120px;
+    }
+    .proto-banner {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--warn);
+      border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .question {
+      margin: 0 0 6px;
+      max-width: 46rem;
+      color: var(--secondary);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .open {
+      margin: 0 0 20px;
+      font-size: 13px;
+      color: var(--tertiary);
+    }
+    .open code { font-size: 12px; color: var(--secondary); }
+
+    /* —— Settings window (match live Alerts screenshot) —— */
+    .settings {
+      width: min(560px, 100%);
+      background: var(--window);
+      border-radius: 10px;
+      box-shadow:
+        0 0 0 0.5px rgba(0, 0, 0, 0.12),
+        0 12px 40px rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid var(--divider);
+      background: color-mix(in srgb, var(--window) 92%, var(--text));
+    }
+    .toolbar .tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      min-width: 52px;
+      font-size: 10px;
+      color: var(--secondary);
+      user-select: none;
+    }
+    .toolbar .tab.active { color: var(--accent); }
+    .toolbar .icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--group) 70%, var(--text));
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .toolbar .tab.active .icon {
+      background: var(--accent);
+      color: #fff;
+    }
+    .form {
+      padding: 16px 18px 20px;
+      max-height: min(78vh, 720px);
+      overflow: auto;
+    }
+    .section {
+      background: var(--group);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 36px;
+      padding: 8px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .row:last-child { border-bottom: none; }
+    .row .left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .row .sub {
+      font-size: 11px;
+      color: var(--secondary);
+      line-height: 1.3;
+    }
+    .row .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--accent);
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 2px 0;
+    }
+    .btn:hover { text-decoration: underline; }
+    .toggle {
+      width: 38px;
+      height: 22px;
+      border-radius: 999px;
+      background: #34c759;
+      position: relative;
+      flex-shrink: 0;
+      border: none;
+      padding: 0;
+      cursor: default;
+    }
+    .toggle.off { background: color-mix(in srgb, var(--secondary) 45%, transparent); }
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    }
+    .toggle.off::after { right: auto; left: 2px; }
+
+    .corridor-pad {
+      padding: 10px 14px 12px;
+    }
+    .family-slot {
+      margin-bottom: 10px;
+    }
+    .family-slot:empty { display: none; }
+
+    .segment {
+      display: inline-flex;
+      background: color-mix(in srgb, var(--window) 55%, var(--text));
+      border-radius: 8px;
+      padding: 2px;
+    }
+    .segment button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--secondary);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 550;
+      padding: 3px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .segment button.active {
+      background: var(--group);
+      color: var(--text);
+      box-shadow: 0 0.5px 1.5px rgba(0,0,0,0.2);
+    }
+    .segment button .seg-icon {
+      width: 12px;
+      height: 12px;
+      display: inline-block;
+      flex-shrink: 0;
+      background-color: currentColor;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+    }
+    .segment button .seg-icon.cursor {
+      -webkit-mask-image: url("../pace-history-menu-prototype/avatars/cursor.png");
+      mask-image: url("../pace-history-menu-prototype/avatars/cursor.png");
+    }
+    .segment button .seg-icon.grok {
+      -webkit-mask-image: url("../pace-history-menu-prototype/avatars/grok.png");
+      mask-image: url("../pace-history-menu-prototype/avatars/grok.png");
+    }
+    .period-line {
+      margin: 6px 0 0;
+      font-size: 11px;
+      color: var(--secondary);
+      font-variant-numeric: tabular-nums;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .period-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      color: var(--secondary);
+      background: color-mix(in srgb, var(--secondary) 10%, var(--group));
+      border: 0.5px solid color-mix(in srgb, var(--secondary) 18%, transparent);
+      white-space: nowrap;
+    }
+
+    .dial-chart {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .dials-col { flex: 0 0 auto; }
+    .band-title {
+      font-size: 11px;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }
+    .band-title.over { color: color-mix(in srgb, var(--over) 85%, var(--text)); }
+    .band-title.under { color: color-mix(in srgb, var(--under) 85%, var(--text)); margin-top: 8px; }
+    .dials {
+      display: flex;
+      gap: 2px;
+    }
+
+    /* PercentDial replica — 270° track from 135° */
+    .dial {
+      width: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      user-select: none;
+      touch-action: none;
+    }
+    .dial .knob {
+      width: 32px;
+      height: 32px;
+      position: relative;
+      cursor: ns-resize;
+    }
+    .dial .knob svg { width: 32px; height: 32px; display: block; }
+    .dial .knob .val {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 9px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      pointer-events: none;
+    }
+    .dial .title {
+      font-size: 10px;
+      line-height: 1.2;
+      color: var(--secondary);
+      text-align: center;
+      width: 60px;
+      min-height: 2.4em;
+    }
+    .dial-tip {
+      display: none;
+      position: fixed;
+      z-index: 40;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--group) 94%, transparent);
+      border: 0.5px solid color-mix(in srgb, var(--text) 12%, transparent);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+      font-size: 11px;
+      line-height: 1.3;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .dial-tip[data-show="1"] { display: block; }
+    .dial-tip .tip-pct {
+      color: var(--secondary);
+      margin-right: 6px;
+    }
+    .dial-tip .tip-sep {
+      color: var(--tertiary);
+    }
+
+    .chart-wrap {
+      flex: 1;
+      min-width: 0;
+      padding-top: 6px;
+      display: flex;
+      justify-content: flex-end;
+      position: relative;
+    }
+    .chart {
+      width: 210px;
+      position: relative;
+    }
+    .chart svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+      cursor: crosshair;
+    }
+    .chart-tip {
+      display: none;
+      position: absolute;
+      z-index: 5;
+      min-width: 132px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--group) 92%, transparent);
+      border: 0.5px solid color-mix(in srgb, var(--text) 12%, transparent);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+      font-size: 10px;
+      line-height: 1.35;
+      color: var(--secondary);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .chart-tip[data-show="1"] { display: block; }
+    .chart-tip .tip-lead {
+      color: color-mix(in srgb, var(--secondary) 85%, transparent);
+      margin-bottom: 4px;
+    }
+    .chart-tip .tip-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 2px;
+    }
+    .chart-tip .tip-row strong {
+      font-weight: 600;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .chart-tip .tip-div {
+      height: 1px;
+      background: color-mix(in srgb, var(--secondary) 35%, transparent);
+      margin: 6px 0 4px;
+    }
+    .chart .axis-label {
+      font-size: 9px;
+      fill: var(--secondary);
+    }
+    .chart .tick {
+      font-size: 8px;
+      fill: var(--tertiary);
+      font-variant-numeric: tabular-nums;
+    }
+    .chart .meter-label {
+      font-size: 8px;
+      fill: var(--secondary);
+    }
+
+    .notes {
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .notes li {
+      position: relative;
+      padding-left: 12px;
+      margin-bottom: 5px;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--secondary);
+    }
+    .notes li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--tertiary);
+    }
+
+    /* Variant B — family chips as row under toggle */
+    .family-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--divider);
+      font-size: 13px;
+    }
+
+    /* Variant C — compact family picker inline with period */
+    .family-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .state {
+      margin-top: 18px;
+      width: min(560px, 100%);
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: color-mix(in srgb, var(--group) 80%, #000);
+      border: 1px solid var(--divider);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--secondary);
+      white-space: pre-wrap;
+    }
+    .switcher {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #111;
+      color: #f5f5f7;
+      border-radius: 999px;
+      padding: 8px 14px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+      z-index: 50;
+      font-size: 13px;
+      user-select: none;
+    }
+    .switcher button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+    .switcher .label {
+      min-width: 17rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <span class="proto-banner">Prototype — throwaway</span>
+  <h1>Family corridor alerts</h1>
+  <p class="question">
+    Same Alerts chrome as the live app (toggles, PercentDials, band chart, notes).
+    Only question: where does <strong>Cursor | Grok Bot</strong> sit? Timeline dials
+    (Full quota before / Under alerts after) show elapsed + left-to-reset in a drag tooltip.
+  </p>
+  <p class="open">
+    Open: <code>open .scratch/quotai/family-corridor-alerts-prototype/index.html</code>
+    · ← → variants · drag dials vertically · base dials match your screenshot (30 / 98 / 27)
+  </p>
+
+  <div class="settings" id="host">
+    <div class="toolbar" aria-hidden="true">
+      <div class="tab"><div class="icon">▣</div>Display</div>
+      <div class="tab"><div class="icon">👤</div>Account</div>
+      <div class="tab active"><div class="icon">🔔</div>Alerts</div>
+      <div class="tab"><div class="icon">✉</div>Email</div>
+      <div class="tab"><div class="icon">☰</div>Menu pins</div>
+    </div>
+
+    <div class="form">
+      <div class="section">
+        <div class="row">
+          <span>Blink on significant pace</span>
+          <button class="toggle" type="button" aria-label="On"></button>
+        </div>
+        <div class="row">
+          <div class="left">
+            <span>macOS notifications</span>
+            <span class="sub">Pace alert on hold (same alert within the last hour).</span>
+          </div>
+          <div class="actions">
+            <button class="btn" type="button">Send test notification</button>
+            <button class="toggle" type="button" aria-label="On"></button>
+          </div>
+        </div>
+        <div class="row">
+          <span>Email alerts</span>
+          <button class="toggle off" type="button" aria-label="Off"></button>
+        </div>
+      </div>
+
+      <div class="section" id="corridor-section">
+        <!-- family chrome injected per variant -->
+        <div class="row" id="corridor-toggle-row">
+          <span>Use corridor alerts</span>
+          <button class="toggle" type="button" aria-label="On"></button>
+        </div>
+        <div class="corridor-pad">
+          <div class="family-slot" id="family-slot"></div>
+          <div class="dial-chart">
+            <div class="dials-col" id="dials-root"></div>
+            <div class="chart-wrap">
+              <div class="chart">
+                <svg id="band-chart" viewBox="0 0 210 188" aria-label="Pace alert band chart"></svg>
+                <div class="chart-tip" id="chart-tip" role="tooltip" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+          <ul class="notes">
+            <li>Over alert when usage is above the over line. The line starts at “Max usage at period start” and reaches 100% at “Full quota before”.</li>
+            <li>Exhausted when usage reaches 100%, at any point in the period.</li>
+            <li>Wait until “Under alerts after” share of the period has elapsed before considering an under alert.</li>
+            <li>Under alert if usage would finish the period below “Min usage by period end”.</li>
+            <li>Curve dials bend each corridor (0% linear → 100% parabolic). Under mirrors over across even pace; curves stay on the near side of parallels through Full quota before / Min usage by period end.</li>
+            <li>Tint and blink follow corridor under / over / exhausted only. Quiet or alerts off → neutral.</li>
+            <li id="family-note">Models + Other share the Cursor corridor profile.</li>
+            <li id="period-api-note">Period length (the days badge) comes from each family’s live usage API window — Cursor billing cycle start→end, Grok Bot period start→reset. Cursor months can be 28–31 days; do not assume a fixed 31. Dial and chart day/hour tips use that same duration.</li>
+            <li>Drag any dial: tooltip shows the %. “Full quota before” / “Under alerts after” also show elapsed + time left to reset (days, or hours on short periods).</li>
+            <li>Hover the preview chart: Used % stays; elapsed becomes time left to reset (days, or hours when under a day) for the focused family.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dial-tip" id="dial-tip" role="tooltip" aria-hidden="true"></div>
+  <pre class="state" id="state"></pre>
+
+  <div class="switcher" role="navigation" aria-label="Prototype variants">
+    <button type="button" id="prev" aria-label="Previous variant">←</button>
+    <span class="label" id="switch-label">A — Segment under toggle</span>
+    <button type="button" id="next" aria-label="Next variant">→</button>
+  </div>
+
+  <script>
+    const VARIANTS = [
+      { id: "A", name: "Segment under toggle" },
+      { id: "B", name: "Family row (label + segment)" },
+      { id: "C", name: "Inline bar + period" },
+    ];
+
+    // Sample live periods for this account (API start→end). Never hard-code in app —
+    // Cursor calendar months are 28–31d; Grok window varies by account.
+    const PERIODS = { cursor: 31.0, grok: 3.1 };
+
+    // dayKind "elapsed": dial marks a point on the period timeline → tip shows elapsed + left.
+    const KEYS = [
+      { key: "overMaxStartPct", title: "Max usage at period start", band: "over", range: [0, 50], dayKind: null },
+      { key: "overEmptyBeforePct", title: "Full quota before", band: "over", range: [50, 100], dayKind: "elapsed" },
+      { key: "overCurvePct", title: "Curve (linear→parabolic)", band: "over", range: [0, 100], dayKind: null },
+      { key: "underAfterPct", title: "Under alerts after", band: "under", range: [0, 50], dayKind: "elapsed" },
+      { key: "underMinEndPct", title: "Min usage by period end", band: "under", range: [50, 100], dayKind: null },
+      { key: "underCurvePct", title: "Curve (linear→parabolic)", band: "under", range: [0, 100], dayKind: null },
+    ];
+
+    // Screenshot dials as Cursor seed; Grok = wider end slack / later under-gate.
+    const state = {
+      focus: "cursor",
+      profiles: {
+        cursor: {
+          overMaxStartPct: 30,
+          overEmptyBeforePct: 98,
+          overCurvePct: 27,
+          underAfterPct: 30,
+          underMinEndPct: 98,
+          underCurvePct: 27,
+        },
+        grok: {
+          overMaxStartPct: 35,
+          overEmptyBeforePct: 85,
+          overCurvePct: 20,
+          underAfterPct: 40,
+          underMinEndPct: 90,
+          underCurvePct: 20,
+        },
+      },
+    };
+
+    // Live-ish meter positions from the screenshot (used for chart dots).
+    const METERS = [
+      { name: "Grok Bot", usedPct: 25, elapsedPct: 5.5, family: "grok" },
+      { name: "Cursor", usedPct: 70, elapsedPct: 60, family: "cursor" },
+      { name: "Other", usedPct: 74, elapsedPct: 60, family: "cursor" },
+    ];
+
+    /** Whole days + hours (no decimal days). Under 1d → hours; under 1h → minutes. */
+    function fmtDuration(days) {
+      if (!Number.isFinite(days)) return "";
+      let totalH = Math.max(days, 0) * 24;
+      let d = Math.floor(totalH / 24);
+      let h = Math.round(totalH - d * 24);
+      if (h === 24) {
+        d += 1;
+        h = 0;
+      }
+      if (d >= 1) return h > 0 ? d + "d " + h + "h" : d + "d";
+      if (totalH >= 1) return Math.max(1, Math.round(totalH)) + "h";
+      return Math.max(1, Math.round(totalH * 60)) + "m";
+    }
+
+    function fmtLeft(daysLeft) {
+      if (!Number.isFinite(daysLeft)) return "—";
+      return fmtDuration(Math.max(daysLeft, 0)) + " left";
+    }
+
+    // Plot geometry for hover (viewBox coords → client mapping in bindChartHover).
+    const chartGeom = { ox: 8, oy: 14, side: 148, bound: false };
+
+    /** Timeline dials get elapsed + left; all dials get a % tip while dragging. */
+    function dialTimeTip(family, key, value) {
+      const meta = KEYS.find((k) => k.key === key);
+      if (!meta || meta.dayKind !== "elapsed") return null;
+      const period = PERIODS[family];
+      const elapsedDays = (value / 100) * period;
+      const leftDays = Math.max(period - elapsedDays, 0);
+      return {
+        elapsed: fmtDuration(elapsedDays) + " elapsed",
+        left: fmtDuration(leftDays) + " left",
+      };
+    }
+
+    function showDialTip(dialEl, family, key, value) {
+      const tip = document.getElementById("dial-tip");
+      if (!tip || !dialEl) return;
+      const time = dialTimeTip(family, key, value);
+      tip.innerHTML = time
+        ? '<span class="tip-pct">' +
+          value +
+          "%</span>" +
+          time.elapsed +
+          '<span class="tip-sep"> · </span>' +
+          time.left
+        : value + "%";
+      tip.dataset.show = "1";
+      tip.setAttribute("aria-hidden", "false");
+      const rect = dialEl.getBoundingClientRect();
+      const tipW = tip.offsetWidth || (time ? 160 : 40);
+      const tipH = tip.offsetHeight || 28;
+      let left = rect.left + rect.width / 2 - tipW / 2;
+      let top = rect.top - tipH - 8;
+      if (left < 8) left = 8;
+      if (left + tipW > window.innerWidth - 8) left = window.innerWidth - tipW - 8;
+      if (top < 8) top = rect.bottom + 8;
+      tip.style.left = left + "px";
+      tip.style.top = top + "px";
+    }
+
+    function hideDialTip() {
+      const tip = document.getElementById("dial-tip");
+      if (!tip) return;
+      tip.dataset.show = "0";
+      tip.setAttribute("aria-hidden", "true");
+      tip.innerHTML = "";
+    }
+
+    function curvePower(curvePct) {
+      return 1 + Math.min(Math.max(curvePct / 100, 0), 1);
+    }
+    function overFloor(t, th) {
+      const b = Math.max(th.overEmptyBeforePct / 100, 1e-6);
+      return t + (1 - b);
+    }
+    function underCeiling(t, th) {
+      const d = th.underMinEndPct / 100;
+      return t + (d - 1);
+    }
+    function overUsed(t, th) {
+      const a = th.overMaxStartPct / 100;
+      const b = Math.max(th.overEmptyBeforePct / 100, 1e-6);
+      const p = curvePower(th.overCurvePct);
+      const s = Math.max(t / b, 0);
+      const raw = a + (1 - a) * Math.pow(s, p);
+      return Math.max(raw, overFloor(t, th));
+    }
+    function underUsed(t, th) {
+      const c = th.underAfterPct / 100;
+      const d = th.underMinEndPct / 100;
+      const denom = Math.max(1 - c, 1e-6);
+      const p = curvePower(th.underCurvePct);
+      const s = Math.max((t - c) / denom, 0);
+      const raw = d * Math.pow(s, 1 / p);
+      return Math.min(raw, underCeiling(t, th));
+    }
+    function evaluate(usedPct, elapsedPct, th) {
+      const u = usedPct / 100;
+      const t = Math.min(Math.max(elapsedPct / 100, 1e-6), 1);
+      if (u >= 1) return "exhausted";
+      if (u > overUsed(t, th)) return "over";
+      const c = th.underAfterPct / 100;
+      if (t > c && u < underUsed(t, th)) return "under";
+      return "quiet";
+    }
+    function kindColor(kind) {
+      if (kind === "under") return "var(--under)";
+      if (kind === "over" || kind === "exhausted") return "var(--over)";
+      return "var(--quiet)";
+    }
+
+    function dialSVG(value, range, tint) {
+      const span = range[1] - range[0];
+      const frac = span > 0 ? Math.min(Math.max((value - range[0]) / span, 0), 1) : 0;
+      const track = 0.75;
+      const r = 13;
+      const c = 2 * Math.PI * r;
+      const trackLen = c * track;
+      const fillLen = trackLen * frac;
+      // Circle path starts at 3 o'clock; rotate -135° so gap sits at bottom (PercentDial).
+      return (
+        '<svg viewBox="0 0 32 32" aria-hidden="true">' +
+        '<g transform="rotate(135 16 16)">' +
+        '<circle cx="16" cy="16" r="' + r + '" fill="none" stroke="var(--track)" stroke-width="2.5" ' +
+        'stroke-linecap="round" stroke-dasharray="' + trackLen.toFixed(2) + " " + (c - trackLen).toFixed(2) + '" />' +
+        '<circle cx="16" cy="16" r="' + r + '" fill="none" stroke="' + tint + '" stroke-width="2.5" ' +
+        'stroke-linecap="round" stroke-dasharray="' + fillLen.toFixed(2) + " " + c.toFixed(2) + '" />' +
+        "</g></svg>"
+      );
+    }
+
+    function renderDials() {
+      const family = state.focus;
+      const th = state.profiles[family];
+      const over = KEYS.filter((k) => k.band === "over");
+      const under = KEYS.filter((k) => k.band === "under");
+      function row(title, band, keys) {
+        const tint = band === "over" ? "var(--over)" : "var(--under)";
+        return (
+          '<div class="band-title ' + band + '">' + title + "</div>" +
+          '<div class="dials">' +
+          keys
+            .map((meta) => {
+              const v = th[meta.key];
+              return (
+                '<div class="dial" data-family="' + family + '" data-key="' + meta.key +
+                '" data-min="' + meta.range[0] + '" data-max="' + meta.range[1] + '">' +
+                '<div class="knob">' + dialSVG(v, meta.range, tint) +
+                '<div class="val">' + v + "%</div></div>" +
+                '<div class="title">' + meta.title + "</div>" +
+                "</div>"
+              );
+            })
+            .join("") +
+          "</div>"
+        );
+      }
+      document.getElementById("dials-root").innerHTML =
+        row("Over-pace", "over", over) + row("Under-pace", "under", under);
+    }
+
+    function renderFamilyChrome() {
+      const variant = currentId();
+      const slot = document.getElementById("family-slot");
+      const section = document.getElementById("corridor-section");
+      const existingRow = section.querySelector(".family-row");
+      if (existingRow) existingRow.remove();
+
+      const seg =
+        '<div class="segment" role="tablist" aria-label="Corridor family">' +
+        '<button type="button" data-family="cursor"' +
+        (state.focus === "cursor" ? ' class="active"' : "") +
+        ' aria-label="Cursor">' +
+        '<span class="seg-icon cursor" aria-hidden="true"></span>Cursor</button>' +
+        '<button type="button" data-family="grok"' +
+        (state.focus === "grok" ? ' class="active"' : "") +
+        ' aria-label="Grok Bot">' +
+        '<span class="seg-icon grok" aria-hidden="true"></span>Grok Bot</button></div>';
+
+      const periodDays = PERIODS[state.focus];
+      const periodBadge =
+        '<span class="period-badge">' +
+        (periodDays === Math.floor(periodDays)
+          ? periodDays.toFixed(0)
+          : periodDays.toFixed(1)) +
+        " days</span>";
+      const periodRest =
+        state.focus === "cursor"
+          ? '<span class="period-rest">· Models + Other share this profile</span>'
+          : "";
+      const periodLine = "Period " + periodBadge + periodRest;
+
+      if (variant === "A") {
+        slot.innerHTML = seg + '<p class="period-line">' + periodLine + "</p>";
+      } else if (variant === "B") {
+        slot.innerHTML = "";
+        const row = document.createElement("div");
+        row.className = "family-row";
+        row.innerHTML =
+          "<span>Corridor profile</span>" + seg;
+        const toggleRow = document.getElementById("corridor-toggle-row");
+        toggleRow.after(row);
+        slot.innerHTML = '<p class="period-line" style="margin:0 0 8px">' + periodLine + "</p>";
+      } else {
+        slot.innerHTML =
+          '<div class="family-bar">' +
+          seg +
+          '<span class="period-line" style="margin:0">' +
+          periodLine +
+          "</span></div>";
+      }
+
+      document.getElementById("family-note").textContent =
+        state.focus === "cursor"
+          ? "Editing Cursor profile (Models + Other). Switch to Grok Bot for the short window."
+          : "Editing Grok Bot profile. Cursor dials are unchanged.";
+    }
+
+    function paintChart() {
+      const th = state.profiles[state.focus];
+      const svg = document.getElementById("band-chart");
+      // Plot box matches PaceAlertBandChart square; room for axes + Used % label.
+      const ox = chartGeom.ox;
+      const oy = chartGeom.oy;
+      const side = chartGeom.side;
+      const right = ox + side;
+      const bottom = oy + side;
+
+      function xy(elapsed, used) {
+        return [
+          ox + (elapsed / 100) * side,
+          oy + (1 - used / 100) * side,
+        ];
+      }
+
+      const samples = [];
+      for (let i = 0; i <= 50; i++) samples.push(i / 50);
+
+      const b = th.overEmptyBeforePct / 100;
+      let overPts = samples.filter((t) => t <= b);
+      if (b > 0 && b < 1 && !overPts.some((t) => Math.abs(t - b) < 1e-9)) {
+        overPts = overPts.concat([b]).sort((a, c) => a - c);
+      }
+      const cGate = th.underAfterPct / 100;
+      let underPts = samples.filter((t) => t >= cGate);
+      if (cGate >= 0 && cGate < 1 && !underPts.some((t) => Math.abs(t - cGate) < 1e-9)) {
+        underPts = underPts.concat([cGate]).sort((a, c) => a - c);
+      }
+
+      function path(pts, yFn) {
+        return pts
+          .map((t, i) => {
+            const [x, y] = xy(t * 100, Math.min(Math.max(yFn(t) * 100, 0), 100));
+            return (i === 0 ? "M" : "L") + x.toFixed(2) + " " + y.toFixed(2);
+          })
+          .join(" ");
+      }
+
+      const even = (() => {
+        const [x0, y0] = xy(0, 0);
+        const [x1, y1] = xy(100, 100);
+        return "M" + x0 + " " + y0 + " L" + x1 + " " + y1;
+      })();
+
+      const ticks = [0, 25, 50, 75, 100];
+      const xTicks = ticks
+        .map((v) => {
+          const [x] = xy(v, 0);
+          return (
+            '<text class="tick" x="' +
+            x.toFixed(1) +
+            '" y="' +
+            (bottom + 12) +
+            '" text-anchor="middle">' +
+            v +
+            "</text>"
+          );
+        })
+        .join("");
+      const yTicks = ticks
+        .map((v) => {
+          const [, y] = xy(0, v);
+          return (
+            '<text class="tick" x="' +
+            (right + 4) +
+            '" y="' +
+            (y + 3).toFixed(1) +
+            '">' +
+            v +
+            "</text>"
+          );
+        })
+        .join("");
+
+      const meters = METERS.map((m) => {
+        // Evaluate each meter against the *focused* family's corridor (proto simplification).
+        const kind = evaluate(m.usedPct, m.elapsedPct, th);
+        const [x, y] = xy(m.elapsedPct, m.usedPct);
+        const dim =
+          (state.focus === "cursor" && m.family === "grok") ||
+          (state.focus === "grok" && m.family === "cursor")
+            ? 0.35
+            : 1;
+        return (
+          '<g opacity="' +
+          dim +
+          '">' +
+          '<circle cx="' +
+          x.toFixed(1) +
+          '" cy="' +
+          y.toFixed(1) +
+          '" r="3.2" fill="' +
+          kindColor(kind) +
+          '" />' +
+          '<text class="meter-label" x="' +
+          x.toFixed(1) +
+          '" y="' +
+          (y - 6).toFixed(1) +
+          '" text-anchor="middle">' +
+          m.name +
+          "</text></g>"
+        );
+      }).join("");
+
+      svg.innerHTML =
+        '<rect x="' +
+        ox +
+        '" y="' +
+        oy +
+        '" width="' +
+        side +
+        '" height="' +
+        side +
+        '" fill="none" stroke="var(--divider)" stroke-width="0.75"/>' +
+        '<path d="' +
+        even +
+        '" fill="none" stroke="var(--quiet)" stroke-width="1" stroke-dasharray="4 3"/>' +
+        '<path d="' +
+        path(overPts, (t) => overUsed(t, th)) +
+        '" fill="none" stroke="var(--over)" stroke-width="2"/>' +
+        '<path d="' +
+        path(underPts, (t) => underUsed(t, th)) +
+        '" fill="none" stroke="var(--under)" stroke-width="2"/>' +
+        meters +
+        xTicks +
+        yTicks +
+        '<text class="axis-label" x="' +
+        (ox + side / 2) +
+        '" y="' +
+        (bottom + 24) +
+        '" text-anchor="middle">Elapsed %</text>' +
+        '<text class="axis-label" x="' +
+        (right + 28) +
+        '" y="' +
+        (oy + side / 2) +
+        '" text-anchor="middle" transform="rotate(90 ' +
+        (right + 28) +
+        " " +
+        (oy + side / 2) +
+        ')">Used %</text>' +
+        '<line id="hover-x" x1="0" y1="' +
+        oy +
+        '" x2="0" y2="' +
+        bottom +
+        '" stroke="var(--secondary)" stroke-width="1" stroke-dasharray="2 3" opacity="0"/>' +
+        '<line id="hover-y" x1="' +
+        ox +
+        '" y1="0" x2="' +
+        right +
+        '" y2="0" stroke="var(--secondary)" stroke-width="1" stroke-dasharray="2 3" opacity="0"/>' +
+        '<circle id="hover-dot" cx="0" cy="0" r="3" fill="var(--accent)" opacity="0"/>';
+
+      bindChartHover();
+    }
+
+    function bindChartHover() {
+      const svg = document.getElementById("band-chart");
+      const tip = document.getElementById("chart-tip");
+      if (!svg || !tip) return;
+
+      function hide() {
+        tip.dataset.show = "0";
+        tip.setAttribute("aria-hidden", "true");
+        const hx = document.getElementById("hover-x");
+        const hy = document.getElementById("hover-y");
+        const hd = document.getElementById("hover-dot");
+        if (hx) hx.setAttribute("opacity", "0");
+        if (hy) hy.setAttribute("opacity", "0");
+        if (hd) hd.setAttribute("opacity", "0");
+      }
+
+      function showAt(clientX, clientY) {
+        const rect = svg.getBoundingClientRect();
+        const vb = svg.viewBox.baseVal;
+        const sx = vb.width / rect.width;
+        const sy = vb.height / rect.height;
+        const vx = (clientX - rect.left) * sx;
+        const vy = (clientY - rect.top) * sy;
+        const { ox, oy, side } = chartGeom;
+        if (vx < ox || vx > ox + side || vy < oy || vy > oy + side) {
+          hide();
+          return;
+        }
+
+        const elapsedPct = ((vx - ox) / side) * 100;
+        const usedPct = (1 - (vy - oy) / side) * 100;
+        const period = PERIODS[state.focus];
+        const daysLeft = (1 - elapsedPct / 100) * period;
+        const th = state.profiles[state.focus];
+        const t = Math.min(Math.max(elapsedPct / 100, 1e-6), 1);
+        const overU = overUsed(t, th) * 100;
+        const underReady = t >= th.underAfterPct / 100 - 1e-9;
+        const underU = underReady ? underUsed(t, th) * 100 : null;
+        const familyLabel = state.focus === "cursor" ? "Cursor" : "Grok Bot";
+
+        tip.innerHTML =
+          '<div class="tip-lead">' +
+          familyLabel +
+          " · " +
+          fmtLeft(daysLeft) +
+          "</div>" +
+          '<div class="tip-row"><span>Used</span><strong>' +
+          Math.round(usedPct) +
+          "%</strong></div>" +
+          '<div class="tip-div"></div>' +
+          '<div class="tip-row"><span>Over ≥</span><strong>' +
+          Math.round(overU) +
+          "% used</strong></div>" +
+          (underU == null
+            ? '<div class="tip-row"><span>Under</span><strong>n/a yet</strong></div>'
+            : '<div class="tip-row"><span>Under ≤</span><strong>' +
+              Math.round(underU) +
+              "% used</strong></div>");
+
+        const hx = document.getElementById("hover-x");
+        const hy = document.getElementById("hover-y");
+        const hd = document.getElementById("hover-dot");
+        if (hx) {
+          hx.setAttribute("x1", vx.toFixed(1));
+          hx.setAttribute("x2", vx.toFixed(1));
+          hx.setAttribute("opacity", "0.55");
+        }
+        if (hy) {
+          hy.setAttribute("y1", vy.toFixed(1));
+          hy.setAttribute("y2", vy.toFixed(1));
+          hy.setAttribute("opacity", "0.55");
+        }
+        if (hd) {
+          hd.setAttribute("cx", vx.toFixed(1));
+          hd.setAttribute("cy", vy.toFixed(1));
+          hd.setAttribute("opacity", "1");
+        }
+
+        tip.dataset.show = "1";
+        tip.setAttribute("aria-hidden", "false");
+
+        // Position tip in .chart CSS pixels; keep inside chart box.
+        const localX = clientX - rect.left;
+        const localY = clientY - rect.top;
+        const tipW = tip.offsetWidth || 140;
+        const tipH = tip.offsetHeight || 72;
+        let left = localX + 12;
+        let top = localY - tipH - 10;
+        if (left + tipW > rect.width) left = localX - tipW - 12;
+        if (top < 0) top = localY + 14;
+        tip.style.left = left + "px";
+        tip.style.top = top + "px";
+      }
+
+      svg.onmousemove = (e) => showAt(e.clientX, e.clientY);
+      svg.onmouseleave = hide;
+    }
+
+    function paint() {
+      renderFamilyChrome();
+      renderDials();
+      paintChart();
+      document.getElementById("state").textContent = JSON.stringify(
+        {
+          variant: currentId(),
+          focus: state.focus,
+          periodsDays: PERIODS,
+          profiles: state.profiles,
+          dialTimeTips: {
+            cursor: Object.fromEntries(
+              KEYS.filter((k) => k.dayKind === "elapsed").map((k) => {
+                const tip = dialTimeTip("cursor", k.key, state.profiles.cursor[k.key]);
+                return [k.key, tip ? tip.elapsed + " · " + tip.left : ""];
+              })
+            ),
+            grok: Object.fromEntries(
+              KEYS.filter((k) => k.dayKind === "elapsed").map((k) => {
+                const tip = dialTimeTip("grok", k.key, state.profiles.grok[k.key]);
+                return [k.key, tip ? tip.elapsed + " · " + tip.left : ""];
+              })
+            ),
+          },
+        },
+        null,
+        2
+      );
+    }
+
+    function currentId() {
+      const p = new URLSearchParams(location.search).get("variant");
+      return VARIANTS.some((v) => v.id === p) ? p : "A";
+    }
+
+    function showVariant(id) {
+      const meta = VARIANTS.find((v) => v.id === id) || VARIANTS[0];
+      document.getElementById("switch-label").textContent =
+        meta.id + " — " + meta.name;
+      const url = new URL(location.href);
+      url.searchParams.set("variant", id);
+      history.replaceState(null, "", url);
+      paint();
+    }
+
+    function cycle(delta) {
+      const i = VARIANTS.findIndex((v) => v.id === currentId());
+      showVariant(VARIANTS[(i + delta + VARIANTS.length) % VARIANTS.length].id);
+    }
+
+    document.getElementById("prev").addEventListener("click", () => cycle(-1));
+    document.getElementById("next").addEventListener("click", () => cycle(1));
+    document.addEventListener("keydown", (e) => {
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable))
+        return;
+      if (e.key === "ArrowLeft") cycle(-1);
+      if (e.key === "ArrowRight") cycle(1);
+    });
+
+    document.getElementById("host").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-family]");
+      if (!btn || btn.tagName !== "BUTTON") return;
+      state.focus = btn.dataset.family;
+      paint();
+    });
+
+    // Vertical drag on PercentDial knobs (same gesture as SwiftUI).
+    // Day/hour tip only while dragging time-based dials; paint() recreates dials,
+    // so re-query by data-key after each paint.
+    let drag = null;
+
+    function activeDialEl() {
+      if (!drag) return null;
+      return document.querySelector(
+        '.dial[data-family="' + drag.family + '"][data-key="' + drag.key + '"]'
+      );
+    }
+
+    function refreshDragTip() {
+      if (!drag) return;
+      const el = activeDialEl();
+      const value = state.profiles[drag.family][drag.key];
+      showDialTip(el, drag.family, drag.key, value);
+    }
+
+    document.getElementById("host").addEventListener("pointerdown", (e) => {
+      const dial = e.target.closest(".dial");
+      if (!dial) return;
+      e.preventDefault();
+      const key = dial.dataset.key;
+      const family = dial.dataset.family;
+      const min = Number(dial.dataset.min);
+      const max = Number(dial.dataset.max);
+      drag = {
+        key,
+        family,
+        min,
+        max,
+        origin: state.profiles[family][key],
+        y0: e.clientY,
+        pointerId: e.pointerId,
+      };
+      dial.setPointerCapture?.(e.pointerId);
+      showDialTip(dial, family, key, drag.origin);
+    });
+    document.getElementById("host").addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const delta = Math.round(-(e.clientY - drag.y0) / 4);
+      const next = Math.min(Math.max(drag.origin + delta, drag.min), drag.max);
+      if (next === state.profiles[drag.family][drag.key]) {
+        refreshDragTip();
+        return;
+      }
+      state.profiles[drag.family][drag.key] = next;
+      paint();
+      refreshDragTip();
+    });
+    function endDrag() {
+      drag = null;
+      hideDialTip();
+    }
+    document.getElementById("host").addEventListener("pointerup", endDrag);
+    document.getElementById("host").addEventListener("pointercancel", endDrag);
+
+    showVariant(currentId());
+  </script>
+</body>
+</html>

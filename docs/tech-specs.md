@@ -29,8 +29,11 @@ Last updated: 2026-11-04
 | Burn-rate / pace | pure | `PaceCalculator` from locked formula |
 | Menu presentation model | pure | Map meters + settings → bar title / dropdown rows |
 | Menu pin layout | pure | `MenuPinLayout.sections(isOn:)` — pinned rows grouped in `MenuPinGroup` order, empty groups hidden; `MenuPinDensity` columns (Compact 2, Normal 1) ([`MenuPinLayoutTests`](../QuotAICore/Tests/MenuPinLayoutTests.swift)) |
-| Smart pace alert bands | pure | `PaceAlertBands` over/under corridors; curve dials linear→parabolic (under mirrors across even pace; clamp to endpoint parallels) |
-| Alert decision | pure | `PaceAlertDecision` meters + channels → blink/notify/email + signature |
+| Smart pace alert bands | pure | `PaceAlertBands` over/under corridors; curve dials linear→parabolic (under mirrors across even pace; clamp to endpoint parallels). Cursor default `25/95/25/95/0/0`; Grok seed `35/85/40/90/20/20` |
+| Alert family | pure | `PaceAlertFamily` — `cursor`/`other` share Cursor profile; `grok` has its own |
+| Alert thresholds store | pure | `PaceAlertThresholdStore` — Cursor legacy keys + `grok*` keys |
+| Period duration tips | pure | `PeriodDuration` — live `periodEnd − periodStart` for Settings badge / dial / chart tips |
+| Alert decision | pure | `PaceAlertDecision` meters + per-family thresholds + channels → blink/notify/email + signature |
 | Alert cooldown | pure | `PaceAlertCooldown` edge + cooldown suppress |
 | Pace chrome | pure | `PaceChromeResolver` — corridor under/over/exhausted tint + blink; quiet / alerts-off → neutral ([docs/pace-chrome.md](pace-chrome.md)) |
 | Alert message builder | pure | `AlertMessageBuilder` subject/body |

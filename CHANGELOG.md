@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.19.0 — 2026-11-12
+
+### Added
+
+- Pace history chart X zoom: drag left↔right across the plot to select an elapsed range and expand up to ×10 (nested zooms allowed); live green/red selection feedback with a previewing ×N pill, and a `×N Reset` badge, double-click, or Esc to reset. Zoom is session-only — it survives history refresh remounts and clears when the panel closes
+- Per-family corridor alerts: Cursor Models (+ Other) and Grok Bot each get their own corridor threshold profile; Settings → Alerts switches between the Cursor and Grok Bot profiles with independent dials, and the menu pace chart paints each family's corridor separately (overlapping fills dim to 10%)
+- Grok Bot corridor defaults seed wider slack (over start 35%, full-before 85%, under-after 40%, under-min-end 90%, curve 20/20)
+- Threshold dials show a drag tip with the period split, e.g. `40% · 2d 21h full quota before` (live billing-period length via `PeriodDuration`)
+
 ## 0.18.3 — 2026-11-12
 
 ### Fixed

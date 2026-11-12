@@ -3,7 +3,7 @@
 How QuotAI picks **fill color** and **blink** for each quota meter when color mode is by level.
 
 **Code:** `PaceChromeResolver` in QuotAICore · tests: `PaceChromeTests`  
-**Settings:** Alerts (corridor alerts + blink toggle)
+**Settings:** Alerts (per-family Cursor | Grok Bot corridor dials + blink toggle)
 
 ## Definitions
 
@@ -41,6 +41,8 @@ flowchart TD
 3. Corridor **under / over / exhausted** → that color; **blink** if the blink toggle is on.
 
 Panel meter pace text is always neutral `N%` (no under/over/on-pace words). Notify / email use the same corridor significance, with a cooldown — separate from live blink.
+
+The menu pace history chart can **X-zoom** elapsed % (brush select, ×10 cap, session-only domain on the panel). Y stays 0…100. Corridor fills that spill past the plot box while zoomed stay as context but are washed semi-transparent; inside the box stays full strength. Settings alert-band charts stay fixed full-plane.
 
 ## Scenario matrix
 
