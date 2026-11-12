@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.1 — 2026-11-12
+
+### Fixed
+
+- Pace chart zoom now redraws the selected elapsed range at full chart resolution, using raw Y values so the visible curve aligns with its hover readings
+
 ## 0.19.0 — 2026-11-12
 
 ### Added

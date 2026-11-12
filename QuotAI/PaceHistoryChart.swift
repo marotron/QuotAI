@@ -1131,7 +1131,16 @@ struct PaceHistoryChart: View {
     }
 
     private func downsampledSeriesPoints(for meterId: PaceHistoryMeterId) -> [SeriesPoint] {
-        PaceHistoryChartDownsample.downsample(samples: series[meterId] ?? [])
+        // Use the whole mark budget inside the visible range. A global 200-point
+        // reduction made a ×10 zoom only draw about 20 points, while the hover
+        // dot correctly interpolated from the full history. Keep full-range
+        // quantisation, but retain source Y precision when inspecting a zoom.
+        let zoomed = PaceHistoryChartZoom.isZoomed(xDomain)
+        return PaceHistoryChartDownsample.downsample(
+            samples: series[meterId] ?? [],
+            domain: xDomain,
+            yResolution: zoomed ? 0 : PaceHistoryChartDownsample.yResolution
+        )
             .enumerated()
             .map { idx, sample in
                 SeriesPoint(
