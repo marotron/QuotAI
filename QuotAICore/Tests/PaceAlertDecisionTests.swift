@@ -68,4 +68,22 @@ final class PaceAlertDecisionTests: XCTestCase {
         XCTAssertEqual(a.signature, "cursor:over|grok:under")
         XCTAssertTrue(a.shouldBlink && a.shouldNotify && a.shouldEmail)
     }
+
+    /// Same (u, t): Cursor default over-line fires; Grok prototype seed stays quiet.
+    func testPerFamilyThresholdsCanDisagreeAtSamePoint() {
+        let meters = [
+            PaceAlertMeterInput(id: "cursor", name: "Cursor Models", percentUsed: 30, elapsedFraction: 0.05),
+            PaceAlertMeterInput(id: "grok", name: "Grok Bot", percentUsed: 30, elapsedFraction: 0.05)
+        ]
+        let result = PaceAlertDecision.evaluate(
+            meters: meters,
+            cursorThresholds: .default,
+            grokThresholds: .grokDefault,
+            smart: true,
+            channels: PaceAlertChannels(blink: true, notify: true, email: true)
+        )
+        XCTAssertEqual(result.signature, "cursor:over")
+        XCTAssertEqual(result.alerts.map(\.id), ["cursor"])
+        XCTAssertEqual(result.alerts.first?.kind, .over)
+    }
 }

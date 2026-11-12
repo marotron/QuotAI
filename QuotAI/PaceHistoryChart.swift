@@ -4,23 +4,42 @@ import QuotAICore
 
 /// Panel pace-history plot: 2:1 used × elapsed with corridors, trajectories, and hover tip.
 struct PaceHistoryChart: View {
-    var thresholds: PaceAlertThresholds
+    var cursorThresholds: PaceAlertThresholds
+    var grokThresholds: PaceAlertThresholds
     var series: [PaceHistoryMeterId: [PaceHistorySample]]
     var showOtherModels: Bool
     /// Precomputed discrepancy clusters for soft grey bands + advanced strip.
     var discrepancyClusters: [CursorDiscrepancyCluster] = []
     /// Meter-avatar filter from the panel (solo / hide / all).
     var seriesFilter: PaceHistorySeriesFilter = .all
+    /// X (elapsed %) domain. Held by the panel so remounts via `.id(paceHistoryEpoch)` keep zoom.
+    @Binding var xDomain: ClosedRange<Double>
 
     /// Persisted, not `@State`: the chart is remounted on every history write (`.id(paceHistoryEpoch)`),
     /// which would reset `@State`. Stores hidden layers so the empty default means "all shown".
     @AppStorage("paceHistoryHiddenLayers") private var hiddenLayersRaw = ""
+    /// Family corridor visibility (separate from over/under/even chips). Default: Cursor only.
+    @AppStorage("paceHistoryShowCursorCorridor") private var showCursorCorridor = true
+    @AppStorage("paceHistoryShowGrokCorridor") private var showGrokCorridor = false
     @State private var hoverElapsed: Double?
+    /// Live brush while dragging (session-only; cleared on release).
+    @State private var brush: BrushSelection?
     /// Advanced disclosure only — not persisted across launches / chart remounts.
     @State private var advancedOpen = false
     @State private var stripBodyOpen = false
     @State private var selectedClusterID: String?
+    /// Zoom badge hover — "Reset" turns blue while the pointer is over the capsule.
+    @State private var zoomBadgeHovered = false
     @Environment(\.colorScheme) private var colorScheme
+
+    private struct BrushSelection: Equatable {
+        var a: Double
+        var b: Double
+        var lo: Double { min(a, b) }
+        var hi: Double { max(a, b) }
+        var span: Double { hi - lo }
+        var isValid: Bool { PaceHistoryChartZoom.isValidSelection(span: span) }
+    }
 
     private var hiddenLayers: Set<PaceHistoryChartLayer> {
         Set(hiddenLayersRaw.split(separator: ",").compactMap { PaceHistoryChartLayer(rawValue: String($0)) })
@@ -46,13 +65,11 @@ struct PaceHistoryChart: View {
     private var plotH: CGFloat { plotW / 2 }
     /// 22 — gutter below the plot that hosts the outside x-axis labels.
     private let axisPadBottom: CGFloat = 22
-    /// 83.5 hosts the "Elapsed" title in the gap between the 75% label and the
-    /// right-aligned "100%" (label-only strip); 87.5 hosts the x "100%" label
-    /// between 75 and the right edge (no tick at 100 — the corner label would
-    /// crowd the right spine).
-    private let axisTicks: [Double] = [0, 25, 50, 75, 83.5, 87.5]
     /// Y-only: 87.5 hosts the rotated "Used %" title between 100 and 75.
     private let axisTicksY: [Double] = [0, 25, 50, 75, 87.5, 100]
+    private var axisTicksX: [Double] {
+        PaceHistoryChartZoom.xAxisTickValues(domain: xDomain)
+    }
 
     private static let cursorColor = Color(red: 0x8b / 255, green: 0x5c / 255, blue: 0xf6 / 255)
     private static let otherColor = Color(red: 0xd9 / 255, green: 0x46 / 255, blue: 0xef / 255)
@@ -106,13 +123,13 @@ struct PaceHistoryChart: View {
             seriesMarks
             hoverMarks
         }
-        .chartXScale(domain: 0...100)
+        .chartXScale(domain: xDomain)
         .chartYScale(domain: 0...100)
         .chartXAxis {
-            AxisMarks(values: axisTicks) { value in
-                // Interior dashed grid only — 0/100 sit on the solid axis rect;
-                // 87.5 and 83.5 are label-only strips (no grid).
-                if let n = value.as(Double.self), !isPlotPerimeterTick(n),
+            AxisMarks(values: axisTicksX) { value in
+                // Interior dashed grid only — domain ends sit on the solid axis rect;
+                // 87.5 and 83.5 are label-only strips on the full plane (no grid).
+                if let n = value.as(Double.self), !isXPerimeterTick(n),
                    abs(n - 87.5) > 0.01, abs(n - 83.5) > 0.01 {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [2, 3]))
                         .foregroundStyle(Color.secondary.opacity(0.35))
@@ -159,49 +176,238 @@ struct PaceHistoryChart: View {
                     return CGRect(origin: .zero, size: geo.size)
                 }()
                 let plotOrigin = plotRect.origin.x
-                Rectangle()
-                    .fill(Color.clear)
-                    .contentShape(Rectangle())
-                    .onContinuousHover { phase in
-                        switch phase {
-                        case .active(let location):
-                            // Axis gutter is still inside this overlay; ignore it so
-                            // exiting toward Labels / … does not park a RuleMark
-                            // near the right spine.
-                            guard plotRect.contains(location) else {
+                ZStack(alignment: .topLeading) {
+                    brushOverlay(proxy: proxy, plotRect: plotRect)
+
+                    // When zoomed, corridor fills can paint past the plot hairline.
+                    // Leave that spill (context), but wash it so only the box stays vivid.
+                    zoomSpillMuteVeil(plotRect: plotRect, in: geo.size)
+
+                    Rectangle()
+                        .fill(Color.clear)
+                        .contentShape(Rectangle())
+                        .onContinuousHover { phase in
+                            guard brush == nil else {
                                 hoverElapsed = nil
                                 return
                             }
-                            let localX = location.x - plotOrigin
-                            if let elapsed: Double = proxy.value(atX: localX) {
-                                hoverElapsed = min(max(elapsed, 0), 100)
+                            switch phase {
+                            case .active(let location):
+                                // Axis gutter is still inside this overlay; ignore it so
+                                // exiting toward Labels / … does not park a RuleMark
+                                // near the right spine.
+                                guard plotRect.contains(location) else {
+                                    hoverElapsed = nil
+                                    return
+                                }
+                                let localX = location.x - plotOrigin
+                                if let elapsed: Double = proxy.value(atX: localX) {
+                                    hoverElapsed = clampToDomain(elapsed)
+                                }
+                            case .ended:
+                                hoverElapsed = nil
                             }
-                        case .ended:
-                            hoverElapsed = nil
                         }
-                    }
-                    .onTapGesture { location in
-                        guard plotRect.contains(location) else { return }
-                        let localX = location.x - plotOrigin
-                        guard let elapsed: Double = proxy.value(atX: localX) else { return }
-                        selectCluster(atElapsed: min(max(elapsed, 0), 100))
-                    }
-                    .overlay(alignment: .topLeading) {
-                        if let hoverElapsed, !hoverDots.isEmpty {
-                            tipView(elapsed: hoverElapsed)
-                                .offset(
-                                    tipOffset(
-                                        in: geo.size,
-                                        plotOrigin: plotOrigin,
-                                        elapsed: hoverElapsed,
-                                        includesDisc: hoverDiscCluster(at: hoverElapsed) != nil
-                                    )
+                        .simultaneousGesture(brushDragGesture(proxy: proxy, plotRect: plotRect))
+                        .onTapGesture(count: 2) {
+                            resetZoom()
+                        }
+                        .onTapGesture { location in
+                            guard brush == nil, plotRect.contains(location) else { return }
+                            let localX = location.x - plotOrigin
+                            guard let elapsed: Double = proxy.value(atX: localX) else { return }
+                            selectCluster(atElapsed: clampToDomain(elapsed))
+                        }
+                        .focusable()
+                        .focusEffectDisabled()
+                        .onExitCommand {
+                            resetZoom()
+                        }
+
+                    zoomBadge
+                        .padding(.leading, plotRect.minX + 8)
+                        .padding(.top, plotRect.minY + 8)
+
+                    if let hoverElapsed, brush == nil, !hoverDots.isEmpty {
+                        tipView(elapsed: hoverElapsed)
+                            .offset(
+                                tipOffset(
+                                    in: geo.size,
+                                    plotOrigin: plotOrigin,
+                                    elapsed: hoverElapsed,
+                                    includesDisc: hoverDiscCluster(at: hoverElapsed) != nil
                                 )
-                        }
+                            )
                     }
+                }
             }
         }
         .chartLegend(.hidden)
+    }
+
+    // MARK: - Zoom brush / badge
+
+    @ViewBuilder
+    private func brushOverlay(proxy: ChartProxy, plotRect: CGRect) -> some View {
+        if let brush,
+           let xLo = proxy.position(forX: brush.lo),
+           let xHi = proxy.position(forX: brush.hi) {
+            let left = plotRect.minX + min(xLo, xHi)
+            let right = plotRect.minX + max(xLo, xHi)
+            let ok = brush.isValid
+            let fill = ok
+                ? Color(red: 0x34 / 255, green: 0xc7 / 255, blue: 0x59 / 255).opacity(0.22)
+                : Color(red: 0xff / 255, green: 0x3b / 255, blue: 0x30 / 255).opacity(0.18)
+            let stroke = ok
+                ? Color(red: 0x34 / 255, green: 0xc7 / 255, blue: 0x59 / 255).opacity(0.75)
+                : Color(red: 0xff / 255, green: 0x3b / 255, blue: 0x30 / 255).opacity(0.70)
+
+            // Neutral side veils — outside selection only (no red/green).
+            Rectangle()
+                .fill(Color.primary.opacity(0.08))
+                .frame(width: max(0, left - plotRect.minX), height: plotRect.height)
+                .offset(x: plotRect.minX, y: plotRect.minY)
+                .allowsHitTesting(false)
+            Rectangle()
+                .fill(Color.primary.opacity(0.08))
+                .frame(width: max(0, plotRect.maxX - right), height: plotRect.height)
+                .offset(x: right, y: plotRect.minY)
+                .allowsHitTesting(false)
+            Rectangle()
+                .fill(fill)
+                .overlay(Rectangle().strokeBorder(stroke, lineWidth: 1))
+                .frame(width: max(1, right - left), height: plotRect.height)
+                .offset(x: left, y: plotRect.minY)
+                .allowsHitTesting(false)
+        }
+    }
+
+    private func brushDragGesture(proxy: ChartProxy, plotRect: CGRect) -> some Gesture {
+        DragGesture(minimumDistance: 4)
+            .onChanged { value in
+                guard plotRect.contains(value.startLocation) else { return }
+                let startLocal = value.startLocation.x - plotRect.origin.x
+                let curLocal = value.location.x - plotRect.origin.x
+                guard let a: Double = proxy.value(atX: startLocal),
+                      let b: Double = proxy.value(atX: curLocal) else { return }
+                hoverElapsed = nil
+                brush = BrushSelection(a: clampToDomain(a), b: clampToDomain(b))
+            }
+            .onEnded { _ in
+                defer { brush = nil }
+                guard let brush else { return }
+                guard brush.isValid else { return }
+                xDomain = PaceHistoryChartZoom.clamp(brush.lo...brush.hi)
+            }
+    }
+
+    @ViewBuilder
+    private var zoomBadge: some View {
+        let preview = brush
+        let zoomed = PaceHistoryChartZoom.isZoomed(xDomain)
+        if let preview {
+            let factor = PaceHistoryChartZoom.zoomFactor(preview.lo...preview.hi)
+            zoomBadgeLabel(
+                text: String(format: "×%.1f", min(factor, 99.9)),
+                showsReset: false,
+                previewOK: preview.isValid,
+                resetHovered: false
+            )
+        } else if zoomed {
+            Button(action: resetZoom) {
+                zoomBadgeLabel(
+                    text: String(format: "×%.1f", PaceHistoryChartZoom.zoomFactor(xDomain)),
+                    showsReset: true,
+                    previewOK: nil,
+                    resetHovered: zoomBadgeHovered
+                )
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                zoomBadgeHovered = hovering
+                if hovering { hoverElapsed = nil }
+            }
+            .onDisappear { zoomBadgeHovered = false }
+            .help("Reset zoom to full elapsed range")
+            .accessibilityLabel("Reset zoom")
+        }
+    }
+
+    private func zoomBadgeLabel(
+        text: String,
+        showsReset: Bool,
+        previewOK: Bool?,
+        resetHovered: Bool
+    ) -> some View {
+        let ink: Color = {
+            guard let previewOK else { return Color.secondary }
+            if previewOK {
+                return colorScheme == .dark
+                    ? Color(red: 0x30 / 255, green: 0xd1 / 255, blue: 0x58 / 255)
+                    : Color(red: 0x24 / 255, green: 0x8a / 255, blue: 0x3d / 255)
+            }
+            return colorScheme == .dark
+                ? Color(red: 0xff / 255, green: 0x69 / 255, blue: 0x61 / 255)
+                : Color(red: 0xd7 / 255, green: 0x00 / 255, blue: 0x15 / 255)
+        }()
+        let resetInk: Color = resetHovered ? Color.accentColor : ink.opacity(0.55)
+        return HStack(spacing: 6) {
+            Text(text)
+                .monospacedDigit()
+                .foregroundStyle(ink)
+            if showsReset {
+                Text("Reset")
+                    .foregroundStyle(resetInk)
+            }
+        }
+        .font(.system(size: 11))
+        .padding(.horizontal, 9)
+        .frame(height: 22)
+        .background(
+            Capsule()
+                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.92))
+                .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
+        )
+        .overlay(
+            Capsule()
+                .strokeBorder(Color.secondary.opacity(0.25), lineWidth: 0.5)
+        )
+        .contentShape(Capsule())
+    }
+
+    private func resetZoom() {
+        brush = nil
+        zoomBadgeHovered = false
+        xDomain = PaceHistoryChartZoom.fullDomain
+    }
+
+    /// Wash outside the plot box when zoomed — spill stays visible, just muted.
+    /// Side strips run through the axis gutter so under-burn bottom stubs mute too.
+    /// (Full-width bottom wash would dim the elapsed labels.)
+    @ViewBuilder
+    private func zoomSpillMuteVeil(plotRect: CGRect, in size: CGSize) -> some View {
+        if PaceHistoryChartZoom.isZoomed(xDomain) {
+            let veil = Color(nsColor: .windowBackgroundColor).opacity(0.62)
+            let sideH = max(0, size.height - plotRect.minY)
+            if plotRect.minX > 0 {
+                Rectangle()
+                    .fill(veil)
+                    .frame(width: plotRect.minX, height: sideH)
+                    .offset(x: 0, y: plotRect.minY)
+                    .allowsHitTesting(false)
+            }
+            if plotRect.maxX < size.width {
+                Rectangle()
+                    .fill(veil)
+                    .frame(width: size.width - plotRect.maxX, height: sideH)
+                    .offset(x: plotRect.maxX, y: plotRect.minY)
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    private func clampToDomain(_ elapsed: Double) -> Double {
+        min(max(elapsed, xDomain.lowerBound), xDomain.upperBound)
     }
 
     // MARK: - Chart content builders
@@ -226,24 +432,21 @@ struct PaceHistoryChart: View {
     @ChartContentBuilder
     private var overMarks: some ChartContent {
         if visibleLayers.contains(.over) {
-            ForEach(overBoundary, id: \.elapsedPct) { pt in
-                AreaMark(
-                    x: .value("Elapsed", pt.elapsedPct),
-                    yStart: .value("Boundary", pt.usedPct),
-                    yEnd: .value("Top", 100.0),
-                    series: .value("Layer", "OverFill")
+            if showCursorCorridor {
+                overCorridorMarks(
+                    boundary: cursorOverBoundary,
+                    seriesKey: "cursor",
+                    fillOpacity: showGrokCorridor ? 0.10 : 0.16,
+                    dash: [3.5, 2.5]
                 )
-                .foregroundStyle(Self.overFill.opacity(0.16))
-                .interpolationMethod(.monotone)
-
-                LineMark(
-                    x: .value("Elapsed", pt.elapsedPct),
-                    y: .value("Used", pt.usedPct),
-                    series: .value("Layer", "Over")
+            }
+            if showGrokCorridor {
+                overCorridorMarks(
+                    boundary: grokOverBoundary,
+                    seriesKey: "grok",
+                    fillOpacity: showCursorCorridor ? 0.10 : 0.16,
+                    dash: [2, 2.5]
                 )
-                .foregroundStyle(Self.overFill)
-                .lineStyle(StrokeStyle(lineWidth: 0.7, dash: [3.5, 2.5]))
-                .interpolationMethod(.monotone)
             }
         }
     }
@@ -251,25 +454,80 @@ struct PaceHistoryChart: View {
     @ChartContentBuilder
     private var underMarks: some ChartContent {
         if visibleLayers.contains(.under) {
-            ForEach(underBoundary, id: \.elapsedPct) { pt in
-                AreaMark(
-                    x: .value("Elapsed", pt.elapsedPct),
-                    yStart: .value("Bottom", 0.0),
-                    yEnd: .value("Boundary", pt.usedPct),
-                    series: .value("Layer", "UnderFill")
+            if showCursorCorridor {
+                underCorridorMarks(
+                    boundary: cursorUnderBoundary,
+                    seriesKey: "cursor",
+                    fillOpacity: showGrokCorridor ? 0.10 : 0.16,
+                    dash: [3.5, 2.5]
                 )
-                .foregroundStyle(Self.underFill.opacity(0.16))
-                .interpolationMethod(.monotone)
-
-                LineMark(
-                    x: .value("Elapsed", pt.elapsedPct),
-                    y: .value("Used", pt.usedPct),
-                    series: .value("Layer", "Under")
-                )
-                .foregroundStyle(Self.underFill)
-                .lineStyle(StrokeStyle(lineWidth: 0.7, dash: [3.5, 2.5]))
-                .interpolationMethod(.monotone)
             }
+            if showGrokCorridor {
+                underCorridorMarks(
+                    boundary: grokUnderBoundary,
+                    seriesKey: "grok",
+                    fillOpacity: showCursorCorridor ? 0.10 : 0.16,
+                    dash: [2, 2.5]
+                )
+            }
+        }
+    }
+
+    @ChartContentBuilder
+    private func overCorridorMarks(
+        boundary: [PaceHistoryChartPoint],
+        seriesKey: String,
+        fillOpacity: Double,
+        dash: [CGFloat]
+    ) -> some ChartContent {
+        ForEach(boundary, id: \.elapsedPct) { pt in
+            AreaMark(
+                x: .value("Elapsed", pt.elapsedPct),
+                yStart: .value("Boundary", pt.usedPct),
+                yEnd: .value("Top", 100.0),
+                series: .value("Layer", "OverFill-\(seriesKey)")
+            )
+            .foregroundStyle(Self.overFill.opacity(fillOpacity))
+            .interpolationMethod(.monotone)
+        }
+        ForEach(boundary, id: \.elapsedPct) { pt in
+            LineMark(
+                x: .value("Elapsed", pt.elapsedPct),
+                y: .value("Used", pt.usedPct),
+                series: .value("Layer", "Over-\(seriesKey)")
+            )
+            .foregroundStyle(Self.overFill)
+            .lineStyle(StrokeStyle(lineWidth: 0.7, dash: dash))
+            .interpolationMethod(.monotone)
+        }
+    }
+
+    @ChartContentBuilder
+    private func underCorridorMarks(
+        boundary: [PaceHistoryChartPoint],
+        seriesKey: String,
+        fillOpacity: Double,
+        dash: [CGFloat]
+    ) -> some ChartContent {
+        ForEach(boundary, id: \.elapsedPct) { pt in
+            AreaMark(
+                x: .value("Elapsed", pt.elapsedPct),
+                yStart: .value("Bottom", 0.0),
+                yEnd: .value("Boundary", pt.usedPct),
+                series: .value("Layer", "UnderFill-\(seriesKey)")
+            )
+            .foregroundStyle(Self.underFill.opacity(fillOpacity))
+            .interpolationMethod(.monotone)
+        }
+        ForEach(boundary, id: \.elapsedPct) { pt in
+            LineMark(
+                x: .value("Elapsed", pt.elapsedPct),
+                y: .value("Used", pt.usedPct),
+                series: .value("Layer", "Under-\(seriesKey)")
+            )
+            .foregroundStyle(Self.underFill)
+            .lineStyle(StrokeStyle(lineWidth: 0.7, dash: dash))
+            .interpolationMethod(.monotone)
         }
     }
 
@@ -397,6 +655,34 @@ struct PaceHistoryChart: View {
 
     private var corridorGroup: some View {
         chipGroup {
+            familyCorridorChip(
+                title: "Cursor",
+                isOn: showCursorCorridor,
+                showsTitle: false,
+                toggle: { showCursorCorridor.toggle() }
+            ) {
+                Image(nsImage: BarIcon.tintedAvatar(
+                    .cursor,
+                    ink: .secondaryLabelColor,
+                    pointSize: 10
+                ))
+                .frame(width: 10, height: 10)
+            }
+            chipDivider
+            familyCorridorChip(
+                title: "Grok",
+                isOn: showGrokCorridor,
+                showsTitle: false,
+                toggle: { showGrokCorridor.toggle() }
+            ) {
+                Image(nsImage: BarIcon.tintedAvatar(
+                    .grok,
+                    ink: .secondaryLabelColor,
+                    pointSize: 10
+                ))
+                .frame(width: 10, height: 10)
+            }
+            chipDivider
             legendChip(.over, title: "Over burn") {
                 burnSwatch(over: true)
             }
@@ -419,12 +705,16 @@ struct PaceHistoryChart: View {
 
     private var visibilityGroup: some View {
         chipGroup {
-            legendChip(.names, title: "Labels") {
-                EmptyView()
+            legendChip(.names, title: "Labels", showsTitle: false) {
+                Image(systemName: "textformat")
+                    .font(.system(size: 10, weight: .medium))
+                    .frame(width: 12, height: 10)
             }
             chipDivider
-            legendChip(.icons, title: "Icons") {
-                EmptyView()
+            legendChip(.icons, title: "Icons", showsTitle: false) {
+                Image(systemName: "photo")
+                    .font(.system(size: 10, weight: .medium))
+                    .frame(width: 12, height: 10)
             }
         }
     }
@@ -529,26 +819,43 @@ struct PaceHistoryChart: View {
     private func legendChip<Swatch: View>(
         _ layer: PaceHistoryChartLayer,
         title: String,
+        showsTitle: Bool = true,
         @ViewBuilder swatch: () -> Swatch
     ) -> some View {
-        let on = visibleLayers.contains(layer)
-        return Button {
-            toggleLayer(layer)
-        } label: {
+        familyCorridorChip(
+            title: title,
+            isOn: visibleLayers.contains(layer),
+            showsTitle: showsTitle,
+            toggle: { toggleLayer(layer) },
+            swatch: swatch
+        )
+    }
+
+    private func familyCorridorChip<Swatch: View>(
+        title: String,
+        isOn: Bool,
+        showsTitle: Bool = true,
+        toggle: @escaping () -> Void,
+        @ViewBuilder swatch: () -> Swatch
+    ) -> some View {
+        Button(action: toggle) {
             HStack(spacing: 4) {
                 swatch()
-                Text(title)
-                    .strikethrough(!on)
+                if showsTitle {
+                    Text(title)
+                        .strikethrough(!isOn)
+                }
             }
             .padding(.leading, 5)
-            .padding(.trailing, 7)
+            .padding(.trailing, showsTitle ? 7 : 5)
             .padding(.vertical, 2)
-            .opacity(on ? 1 : 0.38)
+            .opacity(isOn ? 1 : 0.38)
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(on ? .isSelected : [])
+        .help(title)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
         .accessibilityLabel(title)
-        .accessibilityValue(on ? "Shown" : "Hidden")
+        .accessibilityValue(isOn ? "Shown" : "Hidden")
     }
 
     // MARK: - Discrepancy strip
@@ -780,16 +1087,39 @@ struct PaceHistoryChart: View {
         return ids.filter { !(series[$0] ?? []).isEmpty && seriesFilter.isVisible($0) }
     }
 
-    private var overBoundary: [PaceHistoryChartPoint] {
-        PaceHistoryChartModel.overBoundary(thresholds: thresholds)
+    private var cursorOverBoundary: [PaceHistoryChartPoint] {
+        PaceHistoryChartModel.overBoundary(thresholds: cursorThresholds)
     }
 
-    private var underBoundary: [PaceHistoryChartPoint] {
-        PaceHistoryChartModel.underBoundary(thresholds: thresholds)
+    private var cursorUnderBoundary: [PaceHistoryChartPoint] {
+        PaceHistoryChartModel.underBoundary(thresholds: cursorThresholds)
+    }
+
+    private var grokOverBoundary: [PaceHistoryChartPoint] {
+        PaceHistoryChartModel.overBoundary(thresholds: grokThresholds)
+    }
+
+    private var grokUnderBoundary: [PaceHistoryChartPoint] {
+        PaceHistoryChartModel.underBoundary(thresholds: grokThresholds)
     }
 
     private var evenDiagonal: [PaceHistoryChartPoint] {
         PaceHistoryChartModel.evenPaceDiagonal()
+    }
+
+    private var visibleCorridorFamilies: [PaceAlertFamily] {
+        var families: [PaceAlertFamily] = []
+        if showCursorCorridor { families.append(.cursor) }
+        if showGrokCorridor { families.append(.grok) }
+        return families
+    }
+
+    private func thresholds(for family: PaceAlertFamily) -> PaceAlertThresholds {
+        family == .grok ? grokThresholds : cursorThresholds
+    }
+
+    private func familyShortName(_ family: PaceAlertFamily) -> String {
+        family == .grok ? "Grok" : "Cursor"
     }
 
     private struct SeriesPoint: Identifiable {
@@ -858,9 +1188,14 @@ struct PaceHistoryChart: View {
 
     // MARK: - Axis / tip chrome
 
-    /// Outer plot edge is the solid axis rect — skip dashed grid on 0 / 100.
+    /// Outer plot edge is the solid axis rect — skip dashed grid on Y 0 / 100.
     private func isPlotPerimeterTick(_ n: Double) -> Bool {
         abs(n) < 0.5 || abs(n - 100) < 0.5
+    }
+
+    /// Skip dashed X grid on the current domain ends.
+    private func isXPerimeterTick(_ n: Double) -> Bool {
+        abs(n - xDomain.lowerBound) < 0.5 || abs(n - xDomain.upperBound) < 0.5
     }
 
     @ViewBuilder
@@ -922,13 +1257,10 @@ struct PaceHistoryChart: View {
     /// Proto tip: Elapsed line → when readings → per-series rows → disc (if any) → over / under.
     private func tipView(elapsed: Double) -> some View {
         let t = elapsed / 100
-        let overU = clampPct(PaceAlertBands.overUsed(atElapsed: t, thresholds: thresholds) * 100)
-        let underReady = t >= thresholds.underAfterPct / 100 - 1e-9
-        let underU = underReady
-            ? clampPct(PaceAlertBands.underUsed(atElapsed: t, thresholds: thresholds) * 100)
-            : nil as Double?
         let readings = tipWhenReadings(atElapsed: elapsed)
         let discCluster = hoverDiscCluster(at: elapsed)
+        let families = visibleCorridorFamilies
+        let showBands = visibleLayers.contains(.over) || visibleLayers.contains(.under)
 
         return VStack(alignment: .leading, spacing: 0) {
             // Elapsed leads the tip on its own first line.
@@ -966,18 +1298,15 @@ struct PaceHistoryChart: View {
                 tipDiscSection(discCluster, atElapsed: elapsed)
             }
 
-            // Divider between the used list and the corridor bands.
-            Rectangle()
-                .fill(Color.secondary.opacity(0.35))
-                .frame(height: 1)
-                .padding(.top, 6)
-                .padding(.bottom, 4)
+            if showBands, !families.isEmpty {
+                // Divider between the used list and the corridor bands.
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.35))
+                    .frame(height: 1)
+                    .padding(.top, 6)
+                    .padding(.bottom, 4)
 
-            tipBandRow(label: "Over ≥", value: String(format: "%.0f%% used", overU))
-            if let underU {
-                tipBandRow(label: "Under ≤", value: String(format: "%.0f%% used", underU))
-            } else {
-                tipBandRow(label: "Under", value: "n/a yet")
+                tipCorridorBandRows(elapsedFraction: t, families: families)
             }
         }
         .font(.system(size: 10))
@@ -1080,6 +1409,51 @@ struct PaceHistoryChart: View {
         return "\(kind) · \(meter) \(models) \(time)"
     }
 
+    @ViewBuilder
+    private func tipCorridorBandRows(
+        elapsedFraction t: Double,
+        families: [PaceAlertFamily]
+    ) -> some View {
+        ForEach(families, id: \.self) { family in
+            tipCorridorBandRows(
+                elapsedFraction: t,
+                family: family,
+                labelPrefix: families.count > 1 ? "\(familyShortName(family)) " : ""
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func tipCorridorBandRows(
+        elapsedFraction t: Double,
+        family: PaceAlertFamily,
+        labelPrefix: String
+    ) -> some View {
+        let th = thresholds(for: family)
+        if visibleLayers.contains(.over) {
+            tipBandRow(
+                label: "\(labelPrefix)Over ≥",
+                value: String(
+                    format: "%.0f%% used",
+                    clampPct(PaceAlertBands.overUsed(atElapsed: t, thresholds: th) * 100)
+                )
+            )
+        }
+        if visibleLayers.contains(.under) {
+            if t >= th.underAfterPct / 100 - 1e-9 {
+                tipBandRow(
+                    label: "\(labelPrefix)Under ≤",
+                    value: String(
+                        format: "%.0f%% used",
+                        clampPct(PaceAlertBands.underUsed(atElapsed: t, thresholds: th) * 100)
+                    )
+                )
+            } else {
+                tipBandRow(label: "\(labelPrefix)Under", value: "n/a yet")
+            }
+        }
+    }
+
     private func tipBandRow(label: String, value: String) -> some View {
         HStack(spacing: 6) {
             Text(label)
@@ -1180,14 +1554,13 @@ struct PaceHistoryChart: View {
         includesDisc: Bool
     ) -> CGSize {
         let tipW: CGFloat = includesDisc ? 210 : 168
-        let x = plotOrigin + CGFloat(
-            PaceHistoryTipPresentation.tipLeadingX(
-                elapsedPct: elapsed,
-                plotWidth: Double(plotW),
-                tipWidth: Double(tipW)
-            )
-        )
-        let clampedX = min(max(x, 4), size.width - tipW - 4)
+        let gap: CGFloat = 8
+        let span = max(xDomain.upperBound - xDomain.lowerBound, 1e-9)
+        let frac = (elapsed - xDomain.lowerBound) / span
+        let guide = plotOrigin + CGFloat(frac) * plotW
+        let mid = (xDomain.lowerBound + xDomain.upperBound) / 2
+        let rawX = elapsed >= mid ? guide - tipW - gap : guide + gap
+        let clampedX = min(max(rawX, 4), size.width - tipW - 4)
         return CGSize(width: clampedX, height: 8)
     }
 }
@@ -1228,9 +1601,11 @@ struct PaceHistoryChart: View {
         )
     }
     PaceHistoryChart(
-        thresholds: .default,
+        cursorThresholds: .default,
+        grokThresholds: .grokDefault,
         series: [.cursor: cursor, .other: other, .grok: grok],
-        showOtherModels: true
+        showOtherModels: true,
+        xDomain: .constant(PaceHistoryChartZoom.fullDomain)
     )
     .padding()
     .frame(width: 470)

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuotAI — diagonal-aligned Grok-on-Cursor (prototype)</title>
+  <style>
+    /*
+      Question: How should a diagonal-aligned Grok frame read on the Cursor
+      pace chart? All three variants use the same geometry (Grok unit square
+      → ~3.1d × ~10% box on Cursor’s even-pace diagonal). Only zoom / layout
+      differs. Throwaway — open this file in a browser.
+    */
+    :root {
+      --bg: #ececec;
+      --card: #ffffff;
+      --text: #1d1d1f;
+      --secondary: #6e6e73;
+      --tertiary: #8e8e93;
+      --box: rgba(60, 60, 67, 0.22);
+      --grid: rgba(60, 60, 67, 0.18);
+      --cursor: #8b5cf6;
+      --other: #d946ef;
+      --grok: #c084fc;
+      --even: #86868b;
+      --over: #ff9f0a;
+      --under: #0a84ff;
+      --grok-zone: rgba(192, 132, 252, 0.18);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e;
+        --card: #2c2c2e;
+        --text: #f5f5f7;
+        --secondary: #98989d;
+        --tertiary: #8e8e93;
+        --box: rgba(84, 84, 88, 0.9);
+        --grid: rgba(235, 235, 245, 0.12);
+        --grok-zone: rgba(192, 132, 252, 0.22);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 24px 96px;
+    }
+    h1 { font-size: 18px; font-weight: 650; margin: 0 0 6px; }
+    .lede {
+      color: var(--secondary); font-size: 13px; line-height: 1.45;
+      max-width: 780px; margin: 0 0 14px;
+    }
+    .callout {
+      font-size: 12px; color: var(--secondary); border-left: 3px solid var(--grok);
+      padding: 8px 12px; margin: 0 0 16px; background: var(--grok-zone);
+      border-radius: 0 8px 8px 0; max-width: 780px; line-height: 1.45;
+    }
+    .callout code { font-size: 11px; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px 16px 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    .card h2 { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
+    .card .hint { font-size: 12px; color: var(--secondary); margin: 0 0 12px; line-height: 1.4; }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+    .plot-wrap { overflow-x: auto; }
+    svg.chart { display: block; }
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 10px 16px;
+      font-size: 11px; color: var(--secondary); margin-top: 10px;
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 14px; height: 3px; border-radius: 1px; display: inline-block; }
+    .swatch.dash {
+      background: repeating-linear-gradient(90deg, var(--even) 0 3px, transparent 3px 6px);
+      height: 2px;
+    }
+    #state {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px; color: var(--secondary);
+      white-space: pre-wrap; margin-top: 8px;
+    }
+    .switcher {
+      position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+      display: flex; gap: 6px; padding: 8px; background: rgba(28,28,30,0.88);
+      border-radius: 999px; backdrop-filter: blur(8px); z-index: 20;
+    }
+    .switcher button {
+      border: 0; border-radius: 999px; padding: 8px 14px;
+      font: 600 12px/1 var(--font); color: #eee; background: transparent; cursor: pointer;
+    }
+    .switcher button.active { background: #fff; color: #111; }
+  </style>
+</head>
+<body>
+  <h1>Diagonal-aligned Grok on Cursor</h1>
+  <p class="lede">
+    All variants share one geometry: Grok’s chart is a small box on the Cursor plot
+    (~3.1d × ~10% used) whose SW→NE diagonal lies on Cursor’s even-pace line.
+    Variants only change how we <strong>present / zoom</strong> that frame.
+  </p>
+  <div class="callout" id="math-callout"></div>
+  <div id="root"></div>
+  <pre id="state"></pre>
+
+  <div class="switcher" role="tablist" aria-label="Variants">
+    <button type="button" data-v="A">A · Context + loupe</button>
+    <button type="button" data-v="B">B · Wide embed</button>
+    <button type="button" data-v="C">C · Split zoom</button>
+  </div>
+
+  <script>
+    const VARIANTS = [
+      { id: "A", name: "Panel context + loupe zoom" },
+      { id: "B", name: "Wide embed, frame only" },
+      { id: "C", name: "Split: context | Grok zoom" },
+    ];
+
+    const DATA = {
+      cursorDays: 31.0,
+      grokDays: 3.099,
+      cursor: [[43.71,50.78],[44.36,53.46],[45.26,56.46],[47.73,58.28],[48.61,58.28],[49.26,58.28],[50.17,58.91],[51.44,59.54],[52.39,60.17],[53.34,60.8],[54.61,61.74],[55.56,62.68],[56.51,63.31],[57.46,63.94],[58.41,64.57],[59.36,65.2],[60.31,65.83],[61.26,66.46],[62.21,67.09],[63.16,67.72],[64.11,68.35],[65.06,68.98],[65.7,69.17],[66.22,69.17],[66.69,70.94]],
+      other: [[43.71,42.38],[44.36,42.38],[45.26,42.38],[47.73,42.69],[48.61,44.56],[49.26,46.44],[50.17,50.19],[51.44,54.25],[52.39,57.06],[53.34,59.88],[54.61,63.31],[55.56,66.12],[56.51,68.94],[57.46,71.75],[58.41,73.62],[59.36,75.19],[60.31,76.44],[61.26,77.38],[62.21,78.0],[63.16,78.62],[64.11,79.0],[65.06,79.31],[65.7,79.62],[66.22,79.62],[66.69,80.51]],
+      grok: [[0.46,1.06],[1.13,10.64],[1.8,10.75],[1.95,12.38],[2.23,15.54],[2.67,17.98],[3.12,19.79],[3.56,21.06],[4.01,22.33],[4.45,23.28],[4.9,24.23],[5.5,25.19],[6.18,25.28]],
+    };
+
+    const CURSOR_TH = { a: 0.30, b: 0.98, c: 0.30, d: 0.98, pOver: 1.27, pUnder: 1.27 };
+    const GROK_TH = { a: 0.35, b: 0.85, c: 0.40, d: 0.90, pOver: 1.20, pUnder: 1.20 };
+
+    const COLORS = {
+      cursor: "#8b5cf6",
+      other: "#d946ef",
+      grok: "#c084fc",
+      even: "#86868b",
+      over: "#ff9f0a",
+      under: "#0a84ff",
+    };
+
+    let variant = new URLSearchParams(location.search).get("variant") || "A";
+    if (!VARIANTS.some((v) => v.id === variant)) variant = "A";
+
+    function grokFrame() {
+      const d0 = DATA.cursorDays - DATA.grokDays;
+      const u0 = (d0 / DATA.cursorDays) * 100;
+      const dSpan = DATA.grokDays;
+      const uSpan = (DATA.grokDays / DATA.cursorDays) * 100;
+      return { d0, u0, d1: d0 + dSpan, u1: u0 + uSpan, dSpan, uSpan };
+    }
+
+    function overUsed(t, th) {
+      const p = th.pOver;
+      const curve = th.a + (1 - th.a) * Math.pow(Math.min(Math.max(t / th.b, 0), 1), p);
+      return Math.max(curve, t + (1 - th.b));
+    }
+    function underUsed(t, th) {
+      if (t < th.c) return null;
+      const p = th.pUnder;
+      return Math.min(Math.max(th.d * Math.pow((t - th.c) / Math.max(1 - th.c, 1e-9), p), 0), 1);
+    }
+    function seriesPath(pts, mapXY) {
+      return pts.map((p, i) => {
+        const [x, y] = mapXY(p[0], p[1]);
+        return `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`;
+      }).join(" ");
+    }
+    function corridorPath(mapTU, th, kind, steps = 80) {
+      const pts = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const u = kind === "over" ? overUsed(t, th) : underUsed(t, th);
+        if (u == null) continue;
+        pts.push(mapTU(t, u));
+      }
+      if (!pts.length) return "";
+      return pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ");
+    }
+
+    function legendHTML(extra = "") {
+      return `<div class="legend">
+        <span><i class="swatch" style="background:${COLORS.cursor}"></i>Cursor</span>
+        <span><i class="swatch" style="background:${COLORS.other}"></i>Other</span>
+        <span><i class="swatch" style="background:${COLORS.grok}"></i>Grok</span>
+        <span><i class="swatch dash"></i>Even pace</span>
+        <span><i class="swatch" style="background:${COLORS.over}"></i>Over</span>
+        <span><i class="swatch" style="background:${COLORS.under}"></i>Under</span>
+        ${extra}
+      </div>`;
+    }
+
+    /** Draw Cursor context chart with diagonal-aligned Grok frame inside. */
+    function drawContextChart(opts) {
+      const {
+        width, height, title, hint,
+        showGrokCurves = true,
+        loupe = null, // { size, offsetX, offsetY } floating zoom of the frame
+        connector = false,
+        dimOutside = false,
+      } = opts;
+      const pad = { l: 42, r: 18, t: 14, b: 30 };
+      const pw = width - pad.l - pad.r;
+      const ph = height - pad.t - pad.b;
+      const xDay = (d) => pad.l + (d / DATA.cursorDays) * pw;
+      const yUsed = (u) => pad.t + ph - (u / 100) * ph;
+      const f = grokFrame();
+      const fx0 = xDay(f.d0), fx1 = xDay(f.d1);
+      const fyTop = yUsed(f.u1), fyBot = yUsed(f.u0);
+
+      let body = "";
+
+      for (const tick of [0, 25, 50, 75, 100]) {
+        body += `<line x1="${pad.l}" y1="${yUsed(tick)}" x2="${pad.l + pw}" y2="${yUsed(tick)}" stroke="var(--grid)" stroke-dasharray="2 3" />`;
+        body += `<text x="${pad.l - 6}" y="${yUsed(tick) + 3}" text-anchor="end" font-size="10" fill="var(--tertiary)">${tick}</text>`;
+      }
+      for (const tick of [0, 5, 10, 15, 20, 25, Number(f.d0.toFixed(1)), 31]) {
+        const xx = xDay(tick);
+        if (tick !== 0 && tick !== DATA.cursorDays) {
+          body += `<line x1="${xx}" y1="${pad.t}" x2="${xx}" y2="${pad.t + ph}" stroke="var(--grid)" stroke-dasharray="2 3" />`;
+        }
+        body += `<text x="${xx}" y="${pad.t + ph + 16}" text-anchor="middle" font-size="10" fill="var(--tertiary)">${tick}d</text>`;
+      }
+
+      // Cursor layers
+      body += `<path d="M${xDay(0)},${yUsed(0)} L${xDay(DATA.cursorDays)},${yUsed(100)}" fill="none" stroke="${COLORS.even}" stroke-width="1.25" stroke-dasharray="4 3" />`;
+      const mapCursorTU = (t, u) => [xDay(t * DATA.cursorDays), yUsed(u * 100)];
+      body += `<path d="${corridorPath(mapCursorTU, CURSOR_TH, "over")}" fill="none" stroke="${COLORS.over}" stroke-width="1.5" opacity="0.65" />`;
+      body += `<path d="${corridorPath(mapCursorTU, CURSOR_TH, "under")}" fill="none" stroke="${COLORS.under}" stroke-width="1.5" opacity="0.65" />`;
+
+      const mapCursorSample = (elapsed, used) => [
+        xDay((elapsed / 100) * DATA.cursorDays),
+        yUsed(used),
+      ];
+      body += `<path d="${seriesPath(DATA.cursor, mapCursorSample)}" fill="none" stroke="${COLORS.cursor}" stroke-width="2.25" />`;
+      body += `<path d="${seriesPath(DATA.other, mapCursorSample)}" fill="none" stroke="${COLORS.other}" stroke-width="2" opacity="0.85" />`;
+      for (const [pts, col] of [[DATA.cursor, COLORS.cursor], [DATA.other, COLORS.other]]) {
+        const last = pts[pts.length - 1];
+        const [cx, cy] = mapCursorSample(last[0], last[1]);
+        body += `<circle cx="${cx}" cy="${cy}" r="3" fill="${col}" />`;
+      }
+
+      if (dimOutside) {
+        // Dim everything outside the Grok frame (four rects)
+        const dim = "rgba(0,0,0,0.08)";
+        body += `<rect x="${pad.l}" y="${pad.t}" width="${pw}" height="${Math.max(0, fyTop - pad.t)}" fill="${dim}" />`;
+        body += `<rect x="${pad.l}" y="${fyBot}" width="${pw}" height="${Math.max(0, pad.t + ph - fyBot)}" fill="${dim}" />`;
+        body += `<rect x="${pad.l}" y="${fyTop}" width="${Math.max(0, fx0 - pad.l)}" height="${fyBot - fyTop}" fill="${dim}" />`;
+        body += `<rect x="${fx1}" y="${fyTop}" width="${Math.max(0, pad.l + pw - fx1)}" height="${fyBot - fyTop}" fill="${dim}" />`;
+      }
+
+      // Grok frame
+      body += `<rect x="${fx0}" y="${fyTop}" width="${fx1 - fx0}" height="${fyBot - fyTop}" fill="var(--grok-zone)" stroke="${COLORS.grok}" stroke-width="1.4" />`;
+      body += `<path d="M${fx0},${fyBot} L${fx1},${fyTop}" fill="none" stroke="${COLORS.even}" stroke-width="1.75" stroke-dasharray="4 3" />`;
+
+      const mapAligned = (t, u) => [
+        xDay(f.d0 + t * f.dSpan),
+        yUsed(f.u0 + u * f.uSpan),
+      ];
+      if (showGrokCurves) {
+        body += `<path d="${corridorPath(mapAligned, GROK_TH, "over")}" fill="none" stroke="${COLORS.over}" stroke-width="1.6" stroke-dasharray="3 2" />`;
+        body += `<path d="${corridorPath(mapAligned, GROK_TH, "under")}" fill="none" stroke="${COLORS.under}" stroke-width="1.6" stroke-dasharray="3 2" />`;
+        body += `<path d="${seriesPath(DATA.grok, (e, u) => mapAligned(e / 100, u / 100))}" fill="none" stroke="${COLORS.grok}" stroke-width="2.4" />`;
+        const gLast = DATA.grok[DATA.grok.length - 1];
+        const [gx, gy] = mapAligned(gLast[0] / 100, gLast[1] / 100);
+        body += `<circle cx="${gx}" cy="${gy}" r="3" fill="${COLORS.grok}" />`;
+      }
+
+      body += `<rect x="${pad.l}" y="${pad.t}" width="${pw}" height="${ph}" fill="none" stroke="var(--box)" />`;
+      body += `<text x="${pad.l + pw / 2}" y="${height - 2}" text-anchor="middle" font-size="11" fill="var(--secondary)">Days on Cursor period</text>`;
+      body += `<text transform="translate(12 ${pad.t + ph / 2}) rotate(-90)" text-anchor="middle" font-size="11" fill="var(--secondary)">Used %</text>`;
+
+      // Floating loupe (variant A)
+      if (loupe) {
+        const L = loupe.size;
+        const lx = loupe.offsetX;
+        const ly = loupe.offsetY;
+        const lpad = 28;
+        const lpw = L - lpad * 2;
+        const lph = L - lpad * 2;
+        const lxPct = (e) => lx + lpad + (e / 100) * lpw;
+        const lyPct = (u) => ly + lpad + (1 - u / 100) * lph;
+
+        if (connector) {
+          // Lines from frame corners to loupe
+          body += `<path d="M${fx0},${fyTop} L${lx + lpad},${ly + lpad}" fill="none" stroke="${COLORS.grok}" stroke-width="1" opacity="0.45" />`;
+          body += `<path d="M${fx1},${fyBot} L${lx + L - lpad},${ly + L - lpad}" fill="none" stroke="${COLORS.grok}" stroke-width="1" opacity="0.45" />`;
+        }
+
+        body += `<rect x="${lx}" y="${ly}" width="${L}" height="${L}" rx="10" fill="var(--card)" stroke="${COLORS.grok}" stroke-width="1.5" filter="url(#soft)" />`;
+        body += `<rect x="${lx + lpad}" y="${ly + lpad}" width="${lpw}" height="${lph}" fill="var(--grok-zone)" />`;
+        for (const tick of [0, 50, 100]) {
+          body += `<line x1="${lx + lpad}" y1="${lyPct(tick)}" x2="${lx + lpad + lpw}" y2="${lyPct(tick)}" stroke="var(--grid)" stroke-dasharray="2 3" />`;
+          body += `<line x1="${lxPct(tick)}" y1="${ly + lpad}" x2="${lxPct(tick)}" y2="${ly + lpad + lph}" stroke="var(--grid)" stroke-dasharray="2 3" />`;
+        }
+        body += `<path d="M${lxPct(0)},${lyPct(0)} L${lxPct(100)},${lyPct(100)}" fill="none" stroke="${COLORS.even}" stroke-width="1.5" stroke-dasharray="4 3" />`;
+        const mapLoupe = (t, u) => [lxPct(t * 100), lyPct(u * 100)];
+        body += `<path d="${corridorPath(mapLoupe, GROK_TH, "over")}" fill="none" stroke="${COLORS.over}" stroke-width="2" />`;
+        body += `<path d="${corridorPath(mapLoupe, GROK_TH, "under")}" fill="none" stroke="${COLORS.under}" stroke-width="2" />`;
+        body += `<path d="${seriesPath(DATA.grok, (e, u) => [lxPct(e), lyPct(u)])}" fill="none" stroke="${COLORS.grok}" stroke-width="2.5" />`;
+        const gLast = DATA.grok[DATA.grok.length - 1];
+        body += `<circle cx="${lxPct(gLast[0])}" cy="${lyPct(gLast[1])}" r="3.5" fill="${COLORS.grok}" />`;
+        body += `<rect x="${lx + lpad}" y="${ly + lpad}" width="${lpw}" height="${lph}" fill="none" stroke="var(--box)" />`;
+        body += `<text x="${lx + L / 2}" y="${ly + 16}" text-anchor="middle" font-size="11" font-weight="600" fill="${COLORS.grok}">Grok zoom</text>`;
+        body += `<text x="${lx + L / 2}" y="${ly + L - 8}" text-anchor="middle" font-size="9" fill="var(--secondary)">same diagonal · readable scale</text>`;
+
+        // Soft shadow def
+        body = `<defs><filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.18"/>
+        </filter></defs>` + body;
+      }
+
+      const svgH = loupe ? Math.max(height, loupe.offsetY + loupe.size + 8) : height;
+      const svgW = loupe ? Math.max(width, loupe.offsetX + loupe.size + 8) : width;
+
+      return `<div class="card">
+        <h2>${title}</h2>
+        <p class="hint">${hint}</p>
+        <div class="plot-wrap">
+          <svg class="chart" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">${body}</svg>
+        </div>
+        ${legendHTML(loupe ? `<span style="color:${COLORS.grok}">Loupe = Grok frame expanded</span>` : "")}
+      </div>`;
+    }
+
+    /** Standalone expanded Grok square (local % axes = the frame). */
+    function drawGrokZoomCard({ size = 340, title, hint, subtitleDays = true }) {
+      const f = grokFrame();
+      const pad = { l: 46, r: 14, t: 18, b: 40 };
+      const pw = size - pad.l - pad.r;
+      const ph = size - pad.t - pad.b;
+      const x = (e) => pad.l + (e / 100) * pw;
+      const y = (u) => pad.t + ph - (u / 100) * ph;
+
+      let body = "";
+      body += `<rect x="${pad.l}" y="${pad.t}" width="${pw}" height="${ph}" fill="var(--grok-zone)" />`;
+      for (const tick of [0, 25, 50, 75, 100]) {
+        body += `<line x1="${pad.l}" y1="${y(tick)}" x2="${pad.l + pw}" y2="${y(tick)}" stroke="var(--grid)" stroke-dasharray="2 3" />`;
+        body += `<line x1="${x(tick)}" y1="${pad.t}" x2="${x(tick)}" y2="${pad.t + ph}" stroke="var(--grid)" stroke-dasharray="2 3" />`;
+        body += `<text x="${pad.l - 6}" y="${y(tick) + 3}" text-anchor="end" font-size="10" fill="var(--tertiary)">${tick}</text>`;
+        body += `<text x="${x(tick)}" y="${pad.t + ph + 14}" text-anchor="middle" font-size="10" fill="var(--tertiary)">${tick}</text>`;
+      }
+      body += `<path d="M${x(0)},${y(0)} L${x(100)},${y(100)}" fill="none" stroke="${COLORS.even}" stroke-width="1.5" stroke-dasharray="4 3" />`;
+      const mapTU = (t, u) => [x(t * 100), y(u * 100)];
+      body += `<path d="${corridorPath(mapTU, GROK_TH, "over")}" fill="none" stroke="${COLORS.over}" stroke-width="2" />`;
+      body += `<path d="${corridorPath(mapTU, GROK_TH, "under")}" fill="none" stroke="${COLORS.under}" stroke-width="2" />`;
+      body += `<path d="${seriesPath(DATA.grok, (e, u) => [x(e), y(u)])}" fill="none" stroke="${COLORS.grok}" stroke-width="2.5" />`;
+      const gLast = DATA.grok[DATA.grok.length - 1];
+      body += `<circle cx="${x(gLast[0])}" cy="${y(gLast[1])}" r="3.5" fill="${COLORS.grok}" />`;
+      body += `<text x="${x(gLast[0]) + 6}" y="${y(gLast[1]) - 6}" font-size="11" fill="${COLORS.grok}">now</text>`;
+      body += `<rect x="${pad.l}" y="${pad.t}" width="${pw}" height="${ph}" fill="none" stroke="var(--box)" />`;
+      if (subtitleDays) {
+        body += `<text x="${pad.l + pw / 2}" y="${size - 6}" text-anchor="middle" font-size="10" fill="var(--secondary)">Grok elapsed %  ·  Cursor days ${f.d0.toFixed(1)}→${f.d1.toFixed(1)}</text>`;
+      } else {
+        body += `<text x="${pad.l + pw / 2}" y="${size - 6}" text-anchor="middle" font-size="10" fill="var(--secondary)">Grok elapsed %</text>`;
+      }
+      body += `<text transform="translate(13 ${pad.t + ph / 2}) rotate(-90)" text-anchor="middle" font-size="10" fill="var(--secondary)">Grok used %  ·  Cursor ${f.u0.toFixed(0)}→${f.u1.toFixed(0)}%</text>`;
+
+      return `<div class="card">
+        <h2>${title}</h2>
+        <p class="hint">${hint}</p>
+        <div class="plot-wrap">
+          <svg class="chart" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${body}</svg>
+        </div>
+        ${legendHTML()}
+      </div>`;
+    }
+
+    function render() {
+      const panelW = 414;
+      const wideW = panelW * 2;
+      const h = panelW / 2 + 30;
+      const f = grokFrame();
+
+      document.getElementById("math-callout").innerHTML =
+        `Shared mapping on every variant: Grok <code>(t,u)</code> → ` +
+        `<code>(${f.d0.toFixed(1)} + t·${f.dSpan.toFixed(1)}d, ${f.u0.toFixed(1)} + u·${f.uSpan.toFixed(1)}%)</code>. ` +
+        `Even-pace diagonals coincide. Box ≈ <strong>${f.dSpan.toFixed(1)}d × ${f.uSpan.toFixed(1)}%</strong> (top-right).`;
+
+      let html = "";
+      if (variant === "A") {
+        // Panel-width context + floating loupe that zooms the Grok frame
+        html += drawContextChart({
+          width: panelW,
+          height: h,
+          title: "A — Context + loupe",
+          hint: "Live panel width. Tiny diagonal-aligned frame on the Cursor chart; loupe expands that same frame so Grok corridors are readable without leaving context.",
+          showGrokCurves: true,
+          connector: true,
+          loupe: {
+            size: 220,
+            offsetX: panelW - 210,
+            offsetY: 28,
+          },
+        });
+      } else if (variant === "B") {
+        // Wide chart only — embed is the whole idea, no separate zoom card
+        html += drawContextChart({
+          width: wideW,
+          height: h,
+          title: "B — Wide embed (no separate zoom)",
+          hint: "2× panel width. Grok lives only inside the diagonal-aligned box. Good for “see the scale relationship”; weak for reading Grok curves.",
+          showGrokCurves: true,
+        });
+      } else {
+        // Split: dimmed context on the left, full Grok zoom as primary on the right
+        html += `<div class="row">`;
+        html += drawContextChart({
+          width: panelW,
+          height: h,
+          title: "C1 — Cursor context",
+          hint: "Outside the frame is dimmed. Frame marks where the zoom lives on the month chart.",
+          showGrokCurves: true,
+          dimOutside: true,
+        });
+        html += drawGrokZoomCard({
+          size: 320,
+          title: "C2 — Grok zoom (primary)",
+          hint: "The frame, expanded to a normal square. Same geometry as the box on the left — just readable.",
+        });
+        html += `</div>`;
+      }
+
+      document.getElementById("root").innerHTML = html;
+      document.querySelectorAll(".switcher button").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.v === variant);
+      });
+
+      document.getElementById("state").textContent = JSON.stringify({
+        variant,
+        geometry: "diagonal-aligned on all variants",
+        grokFrame: {
+          days: [Number(f.d0.toFixed(2)), Number(f.d1.toFixed(2))],
+          usedPct: [Number(f.u0.toFixed(2)), Number(f.u1.toFixed(2))],
+          size: `${f.dSpan.toFixed(2)}d × ${f.uSpan.toFixed(2)}%`,
+        },
+        presentation: {
+          A: "panel context + floating loupe",
+          B: "wide embed only",
+          C: "split context | Grok zoom card",
+        }[variant],
+      }, null, 2);
+
+      const url = new URL(location.href);
+      url.searchParams.set("variant", variant);
+      history.replaceState(null, "", url);
+    }
+
+    document.querySelector(".switcher").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-v]");
+      if (!btn) return;
+      variant = btn.dataset.v;
+      render();
+    });
+    window.addEventListener("keydown", (e) => {
+      const ids = VARIANTS.map((v) => v.id);
+      const i = ids.indexOf(variant);
+      if (e.key === "ArrowRight") { variant = ids[(i + 1) % ids.length]; render(); }
+      if (e.key === "ArrowLeft") { variant = ids[(i - 1 + ids.length) % ids.length]; render(); }
+    });
+
+    render();
+  </script>
+</body>
+</html>

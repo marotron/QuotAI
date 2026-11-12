@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuotAI — pace history chart zoom (prototype)</title>
+  <style>
+    :root {
+      --bg: #ececec;
+      --panel: #f6f6f6;
+      --text: #1d1d1f;
+      --secondary: #6e6e73;
+      --tertiary: #8e8e93;
+      --divider: #d2d2d7;
+      --accent: #007aff;
+      --menu-bg: rgba(246, 246, 246, 0.92);
+      --menu-hover: #0a82ff;
+      --menu-hover-text: #fff;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      --warn: #f59e0b;
+      --cursor: #8b5cf6;
+      --other: #d946ef;
+      --grok: #c084fc;
+      --even: #86868b;
+      --desktop: #c5c9d0;
+      --brush: color-mix(in srgb, var(--accent) 22%, transparent);
+      --brush-edge: color-mix(in srgb, var(--accent) 70%, transparent);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --panel: #2a2a2a;
+        --text: #f5f5f7;
+        --secondary: #a1a1a6;
+        --tertiary: #8e8e93;
+        --divider: #3a3a3c;
+        --menu-bg: rgba(42, 42, 42, 0.94);
+        --desktop: #2c2e32;
+        --even: #98989d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      padding: 28px 20px 120px;
+    }
+    .proto-banner {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--warn);
+      border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .question {
+      margin: 0 0 8px;
+      max-width: 46rem;
+      color: var(--secondary);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .open {
+      margin: 0 0 18px;
+      font-size: 13px;
+      color: var(--tertiary);
+    }
+    .open code { font-size: 12px; color: var(--secondary); }
+    .stage-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--tertiary);
+      margin: 0 0 10px;
+    }
+    .desktop {
+      position: relative;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--desktop) 70%, #fff) 0%, var(--desktop) 100%);
+      border-radius: 12px;
+      min-height: 620px;
+      padding: 0 0 28px;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      max-width: 900px;
+    }
+    .menubar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 14px;
+      background: color-mix(in srgb, var(--panel) 55%, transparent);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid color-mix(in srgb, var(--divider) 70%, transparent);
+      font-size: 12px;
+      color: var(--text);
+    }
+    .menubar .slot {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--accent) 32%, transparent);
+    }
+    .menubar .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .surface {
+      position: relative;
+      margin: 12px 18px 0;
+      min-height: 520px;
+    }
+    .variant { display: none; }
+    .variant.active { display: block; }
+
+    .panel-window {
+      width: 470px;
+      background: var(--menu-bg);
+      backdrop-filter: blur(22px);
+      border-radius: 10px;
+      box-shadow:
+        0 0 0 0.5px rgba(0, 0, 0, 0.14),
+        0 14px 44px rgba(0, 0, 0, 0.24);
+      padding: 5px 0;
+      font-size: 13px;
+      position: absolute;
+      top: 0;
+      right: 8px;
+      z-index: 3;
+    }
+    .panel-window .row {
+      display: flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 2px 14px;
+      margin: 0 5px;
+      border-radius: 4px;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .panel-window .row.secondary {
+      color: var(--secondary);
+      font-size: 12px;
+      justify-content: space-between;
+    }
+    .panel-window .row.action {
+      cursor: pointer;
+      justify-content: space-between;
+    }
+    .panel-window .row.action:hover {
+      background: var(--menu-hover);
+      color: var(--menu-hover-text);
+    }
+    .panel-window .sep {
+      height: 1px;
+      background: var(--divider);
+      margin: 5px 14px;
+    }
+    .panel-window .meters {
+      display: grid;
+      gap: 2px;
+      padding: 2px 0 4px;
+    }
+    .panel-window .meters .meter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 14px;
+      margin: 0 5px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+    .panel-window .meters .m-avatar {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .panel-window .meters .m-avatar.dim { opacity: 0.55; }
+    .panel-window .meters .m-name { min-width: 7.2em; }
+    .panel-window .meters .fact { color: var(--secondary); }
+    .panel-window .meters .op { color: var(--tertiary); opacity: 0.7; }
+    .panel-window .meters .note {
+      padding: 0 14px 4px 34px;
+      margin: 0 5px;
+      font-size: 12px;
+      color: var(--secondary);
+    }
+
+    .chart-well {
+      margin: 4px 14px 6px;
+      padding: 14px;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--text) 4.5%, var(--panel));
+      box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--divider) 80%, transparent);
+      position: relative;
+    }
+    .chart-host {
+      position: relative;
+      width: 100%;
+      user-select: none;
+      touch-action: none;
+    }
+    .chart-host svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+    .chart-host .axis {
+      stroke: var(--divider);
+      stroke-width: 1;
+      fill: none;
+    }
+    .chart-host .grid {
+      stroke: color-mix(in srgb, var(--divider) 70%, transparent);
+      stroke-width: 1;
+      stroke-dasharray: 2 3;
+    }
+    .chart-host .tick {
+      fill: var(--tertiary);
+      font-size: 9px;
+      font-family: var(--font);
+    }
+    .chart-host .tick.inset,
+    .chart-host .axis-label.inset {
+      paint-order: stroke fill;
+      stroke: color-mix(in srgb, color-mix(in srgb, var(--text) 4.5%, var(--panel)) 55%, transparent);
+      stroke-width: 3px;
+      stroke-linejoin: round;
+    }
+    .chart-host .even-line {
+      fill: none;
+      stroke: var(--even);
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+      opacity: 0.85;
+    }
+    .chart-host .over-fill {
+      fill: color-mix(in srgb, #ff9f0a 16%, transparent);
+      stroke: none;
+    }
+    .chart-host .under-fill {
+      fill: color-mix(in srgb, #0a84ff 16%, transparent);
+      stroke: none;
+    }
+    .chart-host .over-line {
+      fill: none;
+      stroke: #ff9f0a;
+      stroke-width: 0.7;
+      stroke-dasharray: 3.5 2.5;
+    }
+    .chart-host .under-line {
+      fill: none;
+      stroke: #0a84ff;
+      stroke-width: 0.7;
+      stroke-dasharray: 3.5 2.5;
+    }
+    .chart-host .series {
+      fill: none;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .chart-host .series.cursor { stroke: var(--cursor); }
+    .chart-host .series.other { stroke: var(--other); }
+    .chart-host .series.grok { stroke: var(--grok); }
+    .chart-host .dot { stroke: var(--panel); stroke-width: 1.5; }
+    .chart-host .dot.cursor { fill: var(--cursor); }
+    .chart-host .dot.other { fill: var(--other); }
+    .chart-host .dot.grok { fill: var(--grok); }
+    .chart-host .anno {
+      font-size: 8px;
+      font-family: var(--font);
+      paint-order: stroke fill;
+      stroke: color-mix(in srgb, var(--panel) 68%, transparent);
+      stroke-width: 3px;
+      stroke-linejoin: round;
+    }
+    .chart-host .anno.cursor { fill: var(--cursor); }
+    .chart-host .anno.other { fill: var(--other); }
+    .chart-host .anno.grok { fill: var(--grok); }
+    .chart-host .hit { fill: transparent; }
+    .chart-host .brush-rect {
+      stroke-width: 1;
+      pointer-events: none;
+    }
+    .chart-host .brush-rect.ok {
+      fill: color-mix(in srgb, #34c759 22%, transparent);
+      stroke: color-mix(in srgb, #34c759 75%, transparent);
+    }
+    .chart-host .brush-rect.bad {
+      fill: color-mix(in srgb, #ff3b30 18%, transparent);
+      stroke: color-mix(in srgb, #ff3b30 70%, transparent);
+    }
+    .chart-host .brush-veil {
+      fill: color-mix(in srgb, var(--text) 8%, transparent);
+      pointer-events: none;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 8px;
+      margin: 10px 0 0;
+      font-size: 11px;
+      color: var(--secondary);
+      width: 100%;
+      align-items: center;
+    }
+    .legend .filter {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      margin: 0;
+      padding: 2px 7px 2px 5px;
+      border: 0.5px solid color-mix(in srgb, var(--divider) 90%, transparent);
+      border-radius: 5px;
+      background: color-mix(in srgb, var(--text) 3.5%, transparent);
+      color: inherit;
+      font: inherit;
+      line-height: 1.2;
+      cursor: default;
+      user-select: none;
+    }
+    .legend i.line {
+      display: inline-block;
+      width: 10px;
+      height: 3px;
+      border-radius: 1px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .legend .over i { background: #ff9f0a; }
+    .legend .under i { background: #0a84ff; }
+    .legend .even i {
+      display: inline-block;
+      background: transparent;
+      border-top: 1.5px dashed var(--even);
+      height: 0;
+      width: 12px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .legend .hint-chip {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--tertiary);
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
+
+    /* Zoom badge (A + B): ×N · Reset — top-left of plot, inset from well pad */
+    .zoom-badge {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 4;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      height: 22px;
+      padding: 0 9px;
+      border-radius: 999px;
+      border: 0.5px solid color-mix(in srgb, var(--divider) 90%, transparent);
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      color: var(--secondary);
+      font: 11px/1 var(--font);
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+    }
+    .zoom-badge.visible { display: inline-flex; }
+    .zoom-badge:hover {
+      color: var(--menu-hover-text);
+      background: var(--menu-hover);
+      border-color: transparent;
+    }
+    .zoom-badge:hover .x { opacity: 0.85; }
+    .zoom-badge .x { opacity: 0.55; }
+    .zoom-badge.preview .x { display: none; }
+    .zoom-badge.preview-ok { color: #248a3d; }
+    .zoom-badge.preview-bad { color: #d70015; }
+    @media (prefers-color-scheme: dark) {
+      .zoom-badge.preview-ok { color: #30d158; }
+      .zoom-badge.preview-bad { color: #ff6961; }
+    }
+
+    /* C: context rail */
+    .context-rail {
+      display: none;
+      margin-top: 8px;
+      height: 28px;
+      border-radius: 5px;
+      background: color-mix(in srgb, var(--text) 3.5%, transparent);
+      box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--divider) 80%, transparent);
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .context-rail.visible { display: block; }
+    .context-rail svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .context-rail .rail-series {
+      fill: none;
+      stroke-width: 1.1;
+      opacity: 0.7;
+    }
+    .context-rail .rail-series.cursor { stroke: var(--cursor); }
+    .context-rail .rail-series.other { stroke: var(--other); }
+    .context-rail .rail-series.grok { stroke: var(--grok); }
+    .context-rail .window {
+      fill: color-mix(in srgb, var(--accent) 18%, transparent);
+      stroke: color-mix(in srgb, var(--accent) 65%, transparent);
+      stroke-width: 1;
+    }
+    .context-rail .veil {
+      fill: color-mix(in srgb, var(--text) 12%, transparent);
+    }
+    .context-rail .rail-label {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      color: var(--tertiary);
+      pointer-events: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      z-index: 5;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 160ms ease;
+      padding: 4px 8px;
+      border-radius: 5px;
+      background: color-mix(in srgb, var(--panel) 92%, #000);
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 6px 16px rgba(0,0,0,0.16);
+      font-size: 11px;
+      color: var(--secondary);
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    .howto {
+      margin: 14px 0 0;
+      max-width: 46rem;
+      font-size: 13px;
+      color: var(--secondary);
+      line-height: 1.45;
+    }
+    .howto strong { color: var(--text); font-weight: 600; }
+    .howto ul { margin: 6px 0 0; padding-left: 1.2em; }
+    .howto li + li { margin-top: 4px; }
+
+    pre.state {
+      margin: 18px 0 0;
+      max-width: 900px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--text) 4%, var(--panel));
+      color: var(--secondary);
+      font-size: 11px;
+      line-height: 1.4;
+      overflow: auto;
+    }
+
+    .switcher {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: #111;
+      color: #f5f5f7;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      font-size: 12px;
+      user-select: none;
+    }
+    .switcher button {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 50%;
+      background: #2c2c2e;
+      color: inherit;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .switcher button:hover { background: #3a3a3c; }
+    .switcher .label {
+      min-width: 240px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <span class="proto-banner">Prototype — throwaway</span>
+  <h1>Pace history · chart zoom</h1>
+  <p class="question">
+    Question: how should zooming the menu-bar pace chart feel with almost no chrome?
+    Three interaction models on the approved panel shell. Max zoom ~10× on elapsed %.
+  </p>
+  <p class="open">
+    Open: <code>open .scratch/quotai/pace-history-zoom-prototype/index.html</code>
+    · ← → variants · try each gesture on the chart
+  </p>
+
+  <div class="stage-label">Menu bar stage</div>
+  <div class="desktop">
+    <div class="menubar">
+      <span class="slot active"><span class="dot"></span> 54%</span>
+      <span class="clock">11:20</span>
+    </div>
+    <div class="surface">
+
+      <!-- A — Brush select + Reset pill -->
+      <div class="variant active" data-variant="A" id="variant-A">
+        <div class="panel-window" aria-label="QuotAI panel">
+          <div class="row secondary">
+            <span>Last refresh: Cursor 09:57 · Grok 09:41</span>
+            <span>v0.18.x</span>
+          </div>
+          <div class="sep"></div>
+          <div class="meters">
+            <div class="meter">
+              <img class="m-avatar" src="../pace-history-menu-prototype/avatars/cursor.png" alt="" />
+              <span class="m-name">Models</span>
+              <span class="fact">46%</span><span class="op">÷</span><span class="fact">48%</span><span class="op">=</span><span class="fact">96%</span>
+            </div>
+            <div class="note">11d 4h left</div>
+            <div class="meter">
+              <img class="m-avatar dim" src="../pace-history-menu-prototype/avatars/cursor.png" alt="" />
+              <span class="m-name">Other Models</span>
+              <span class="fact">18%</span><span class="op">÷</span><span class="fact">48%</span><span class="op">=</span><span class="fact">38%</span>
+            </div>
+            <div class="note">11d 4h left</div>
+            <div class="meter">
+              <img class="m-avatar" src="../pace-history-menu-prototype/avatars/grok.png" alt="" />
+              <span class="m-name">Grok Bot</span>
+              <span class="fact">85%</span><span class="op">÷</span><span class="fact">71%</span><span class="op">=</span><span class="fact">120%</span>
+            </div>
+            <div class="note">3d 2h left</div>
+          </div>
+          <div class="sep"></div>
+          <div class="chart-well" data-mode="brush-reset">
+            <button type="button" class="zoom-badge" data-reset aria-label="Reset zoom to 100%">
+              <span data-zoom-label>×1.0</span>
+              <span class="x">Reset</span>
+            </button>
+            <div class="chart-host" data-chart></div>
+            <div class="toast" data-toast></div>
+            <div class="legend">
+              <span class="filter over"><i class="line"></i>Over corridor</span>
+              <span class="filter under"><i class="line"></i>Under corridor</span>
+              <span class="filter even"><i></i>Exact pace</span>
+              <span class="hint-chip">Drag across chart to zoom</span>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="row action">Refresh all</div>
+          <div class="sep"></div>
+          <div class="row action">Settings…</div>
+          <div class="row action">Quit QuotAI</div>
+        </div>
+      </div>
+
+      <!-- B — Scroll zoom + pan + badge -->
+      <div class="variant" data-variant="B" id="variant-B">
+        <div class="panel-window" aria-label="QuotAI panel">
+          <div class="row secondary">
+            <span>Last refresh: Cursor 09:57 · Grok 09:41</span>
+            <span>v0.18.x</span>
+          </div>
+          <div class="sep"></div>
+          <div class="meters">
+            <div class="meter">
+              <img class="m-avatar" src="../pace-history-menu-prototype/avatars/cursor.png" alt="" />
+              <span class="m-name">Models</span>
+              <span class="fact">46%</span><span class="op">÷</span><span class="fact">48%</span><span class="op">=</span><span class="fact">96%</span>
+            </div>
+            <div class="note">11d 4h left</div>
+            <div class="meter">
+              <img class="m-avatar dim" src="../pace-history-menu-prototype/avatars/cursor.png" alt="" />
+              <span class="m-name">Other Models</span>
+              <span class="fact">18%</span><span class="op">÷</span><span class="fact">48%</span><span class="op">=</span><span class="fact">38%</span>
+            </div>
+            <div class="note">11d 4h left</div>
+            <div class="meter">
+              <img class="m-avatar" src="../pace-history-menu-prototype/avatars/grok.png" alt="" />
+              <span class="m-name">Grok Bot</span>
+              <span class="fact">85%</span><span class="op">÷</span><span class="fact">71%</span><span class="op">=</span><span class="fact">120%</span>
+            </div>
+            <div class="note">3d 2h left</div>
+          </div>
+          <div class="sep"></div>
+          <div class="chart-well" data-mode="scroll-pan">
+            <button type="button" class="zoom-badge" data-reset aria-label="Reset zoom to 100%">
+              <span data-zoom-label>×1.0</span>
+              <span class="x">Reset</span>
+            </button>
+            <div class="chart-host" data-chart></div>
+            <div class="toast" data-toast></div>
+            <div class="legend">
+              <span class="filter over"><i class="line"></i>Over corridor</span>
+              <span class="filter under"><i class="line"></i>Under corridor</span>
+              <span class="filter even"><i></i>Exact pace</span>
+              <span class="hint-chip">Scroll to zoom · drag to pan</span>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="row action">Refresh all</div>
+          <div class="sep"></div>
+          <div class="row action">Settings…</div>
+          <div class="row action">Quit QuotAI</div>
+        </div>
+      </div>
+
+      <!-- C — Brush + context rail -->
+      <div class="variant" data-variant="C" id="variant-C">
+        <div class="panel-window" aria-label="QuotAI panel">
+          <div class="row secondary">
+            <span>Last refresh: Cursor 09:57 · Grok 09:41</span>
+            <span>v0.18.x</span>
+          </div>
+          <div class="sep"></div>
+          <div class="meters">
+            <div class="meter">
+              <img class="m-avatar" src="../pace-history-menu-prototype/avatars/cursor.png" alt="" />
+              <span class="m-name">Models</span>
+              <span class="fact">46%</span><span class="op">÷</span><span class="fact">48%</span><span class="op">=</span><span class="fact">96%</span>
+            </div>
+            <div class="note">11d 4h left</div>
+            <div class="meter">
+              <img class="m-avatar dim" src="../pace-history-menu-prototype/avatars/cursor.png" alt="" />
+              <span class="m-name">Other Models</span>
+              <span class="fact">18%</span><span class="op">÷</span><span class="fact">48%</span><span class="op">=</span><span class="fact">38%</span>
+            </div>
+            <div class="note">11d 4h left</div>
+            <div class="meter">
+              <img class="m-avatar" src="../pace-history-menu-prototype/avatars/grok.png" alt="" />
+              <span class="m-name">Grok Bot</span>
+              <span class="fact">85%</span><span class="op">÷</span><span class="fact">71%</span><span class="op">=</span><span class="fact">120%</span>
+            </div>
+            <div class="note">3d 2h left</div>
+          </div>
+          <div class="sep"></div>
+          <div class="chart-well" data-mode="brush-rail">
+            <div class="chart-host" data-chart></div>
+            <div class="context-rail" data-rail aria-label="Zoom context">
+              <svg viewBox="0 0 414 28" preserveAspectRatio="none"></svg>
+              <span class="rail-label" data-rail-label></span>
+            </div>
+            <div class="toast" data-toast></div>
+            <div class="legend">
+              <span class="filter over"><i class="line"></i>Over corridor</span>
+              <span class="filter under"><i class="line"></i>Under corridor</span>
+              <span class="filter even"><i></i>Exact pace</span>
+              <span class="hint-chip">Drag to zoom · rail to pan / reset</span>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="row action">Refresh all</div>
+          <div class="sep"></div>
+          <div class="row action">Settings…</div>
+          <div class="row action">Quit QuotAI</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="howto" id="howto"></div>
+  <pre class="state" id="state"></pre>
+
+  <div class="switcher" role="navigation" aria-label="Prototype variants">
+    <button type="button" id="prev" aria-label="Previous variant">←</button>
+    <span class="label" id="switch-label">A — Brush + ×N badge</span>
+    <button type="button" id="next" aria-label="Next variant">→</button>
+  </div>
+
+  <script>
+    /*
+      Three variants of chart zoom on the approved MenuBarExtra panel chrome.
+      Zoom is X-only (elapsed %). Cap = 10×. Y stays 0…100.
+      Throwaway — open .scratch/quotai/pace-history-zoom-prototype/index.html
+    */
+
+    const MAX_ZOOM = 10;
+    const MIN_SPAN = 100 / MAX_ZOOM; // 10 elapsed-% points
+
+    // Denser fake series so zooming has something to look at.
+    const SERIES = {
+      cursor: [
+        [0, 0], [4, 3], [8, 7], [12, 11], [16, 15], [20, 19],
+        [24, 23], [28, 27], [32, 31], [36, 35], [40, 39],
+        [44, 42], [48, 46],
+      ],
+      other: [
+        [0, 0], [4, 1], [8, 2], [12, 3], [16, 5], [20, 6],
+        [24, 8], [28, 9], [32, 11], [36, 13], [40, 15],
+        [44, 16], [48, 18],
+      ],
+      grok: [
+        [0, 0], [5, 6], [10, 12], [15, 19], [20, 26], [25, 33],
+        [30, 40], [35, 46], [40, 52], [45, 58], [50, 64],
+        [55, 69], [60, 74], [65, 80], [71, 85],
+      ],
+    };
+    const LABELS = { cursor: "Models", other: "Other", grok: "Grok" };
+
+    const THRESHOLDS = {
+      overMaxStartPct: 25,
+      overEmptyBeforePct: 95,
+      underAfterPct: 25,
+      underMinEndPct: 95,
+      overCurvePct: 40,
+      underCurvePct: 40,
+    };
+
+    function curvePower(curvePct) {
+      return 1 + Math.min(Math.max(curvePct / 100, 0), 1);
+    }
+    function overUsed(t) {
+      const a = THRESHOLDS.overMaxStartPct / 100;
+      const b = Math.max(THRESHOLDS.overEmptyBeforePct / 100, 1e-6);
+      const p = curvePower(THRESHOLDS.overCurvePct);
+      const s = Math.max(t / b, 0);
+      const raw = a + (1 - a) * Math.pow(s, p);
+      return Math.max(raw, t + (1 - b));
+    }
+    function underUsed(t) {
+      const c = THRESHOLDS.underAfterPct / 100;
+      const d = THRESHOLDS.underMinEndPct / 100;
+      const denom = Math.max(1 - c, 1e-6);
+      const p = curvePower(THRESHOLDS.underCurvePct);
+      const s = Math.max((t - c) / denom, 0);
+      const raw = d * Math.pow(s, 1 / p);
+      return Math.min(raw, t + (d - 1));
+    }
+
+    const VARIANTS = [
+      {
+        id: "A",
+        name: "Brush + ×N badge",
+        blurb:
+          "<strong>A — Brush + ×N badge.</strong> Drag left↔right on the plot to select an elapsed band; release expands that band to full width (nested zooms up to 10×). When zoomed, a top-left <em>×N Reset</em> badge appears (click = full view) — double-click the chart or Esc also resets. No permanent controls at 100%.",
+      },
+      {
+        id: "B",
+        name: "Scroll zoom + pan",
+        blurb:
+          "<strong>B — Scroll zoom + pan.</strong> Trackpad / wheel zooms toward the pointer; drag pans when zoomed. Only chrome is a tiny ×N badge (click = reset). Feels like Maps — no selection rectangle.",
+      },
+      {
+        id: "C",
+        name: "Brush + context rail",
+        blurb:
+          "<strong>C — Brush + context rail.</strong> Same drag-to-select zoom as A, but instead of a Reset button a thin overview strip appears under the chart when zoomed. Drag the window to pan; click outside the window (or double-click) to reset. Keeps orientation without a toolbar.",
+      },
+    ];
+
+    const zoomByVariant = {
+      A: { x0: 0, x1: 100 },
+      B: { x0: 0, x1: 100 },
+      C: { x0: 0, x1: 100 },
+    };
+
+    let current = "A";
+
+    function zoomFactor(z) {
+      return 100 / Math.max(z.x1 - z.x0, 1e-6);
+    }
+    function isZoomed(z) {
+      return z.x0 > 0.05 || z.x1 < 99.95;
+    }
+    function clampDomain(x0, x1) {
+      let span = x1 - x0;
+      if (span < MIN_SPAN) {
+        const mid = (x0 + x1) / 2;
+        x0 = mid - MIN_SPAN / 2;
+        x1 = mid + MIN_SPAN / 2;
+        span = MIN_SPAN;
+      }
+      if (x0 < 0) {
+        x1 -= x0;
+        x0 = 0;
+      }
+      if (x1 > 100) {
+        x0 -= x1 - 100;
+        x1 = 100;
+      }
+      x0 = Math.max(0, x0);
+      x1 = Math.min(100, x1);
+      if (x1 - x0 < MIN_SPAN) {
+        if (x0 <= 0) {
+          x0 = 0;
+          x1 = MIN_SPAN;
+        } else {
+          x1 = 100;
+          x0 = 100 - MIN_SPAN;
+        }
+      }
+      return { x0, x1 };
+    }
+
+    function niceTicks(x0, x1) {
+      const span = x1 - x0;
+      const step = span <= 12 ? 2 : span <= 25 ? 5 : span <= 50 ? 10 : 25;
+      const start = Math.ceil(x0 / step) * step;
+      const ticks = [];
+      for (let t = start; t <= x1 + 1e-9; t += step) ticks.push(Number(t.toFixed(4)));
+      if (!ticks.includes(x0) && Math.abs(x0 - Math.round(x0)) < 1e-6) {
+        /* keep ends via labels below */
+      }
+      return { ticks, step };
+    }
+
+    function chartSvg(domain) {
+      const plotH = 207; // 414/2 — matches approved 2:1
+      const plotW = 414;
+      const padL = 0;
+      const padR = 0;
+      const padT = 0;
+      const padB = 22;
+      const w = padL + plotW + padR;
+      const h = padT + plotH + padB;
+      const x0 = domain.x0;
+      const x1 = domain.x1;
+      const span = x1 - x0;
+
+      const x = (e) => padL + ((e - x0) / span) * plotW;
+      const y = (u) => padT + plotH - (u / 100) * plotH;
+      const inX = (e) => e >= x0 - 1e-6 && e <= x1 + 1e-6;
+
+      const { ticks: xTickVals } = niceTicks(x0, x1);
+      const yTicksVals = [0, 25, 50, 75, 100];
+
+      let grid = "";
+      let xTicks = "";
+      let yTicks = "";
+
+      for (const t of xTickVals) {
+        if (t > x0 + 0.2 && t < x1 - 0.2) {
+          grid += `<line class="grid" x1="${x(t)}" y1="${padT}" x2="${x(t)}" y2="${padT + plotH}" />`;
+        }
+      }
+      for (const t of yTicksVals) {
+        if (t !== 0 && t !== 100) {
+          grid += `<line class="grid" x1="${padL}" y1="${y(t)}" x2="${padL + plotW}" y2="${y(t)}" />`;
+        }
+      }
+
+      // X labels: domain ends + interior ticks
+      const labelSet = new Set([
+        Number(x0.toFixed(1)),
+        Number(x1.toFixed(1)),
+        ...xTickVals.map((t) => Number(t.toFixed(1))),
+      ]);
+      const xLabels = [...labelSet].sort((a, b) => a - b);
+      for (const t of xLabels) {
+        if (t < x0 - 1e-6 || t > x1 + 1e-6) continue;
+        let tx = x(t);
+        let anchor = "middle";
+        if (Math.abs(t - x0) < 1e-6) {
+          tx += 5;
+          anchor = "start";
+        }
+        if (Math.abs(t - x1) < 1e-6) {
+          tx -= 5;
+          anchor = "end";
+        }
+        // Mid label becomes axis title when near full range mid
+        const mid = (x0 + x1) / 2;
+        if (span > 40 && Math.abs(t - mid) < span * 0.08 && Math.abs(t - 50) < 8) {
+          xTicks += `<text class="tick" x="${x(mid)}" y="${padT + plotH + 12}" text-anchor="middle">Elapsed %</text>`;
+        } else {
+          const label = Number.isInteger(t) ? String(t) : t.toFixed(1);
+          xTicks += `<text class="tick" x="${tx}" y="${padT + plotH + 12}" text-anchor="${anchor}">${label}</text>`;
+        }
+      }
+
+      for (const t of yTicksVals) {
+        if (t === 50) {
+          const lx = padL + plotW - 13;
+          const ly = y(t);
+          yTicks += `<text class="tick inset" x="${lx}" y="${ly}" text-anchor="middle" transform="rotate(90 ${lx} ${ly})">Used %</text>`;
+        } else {
+          let ty = y(t) + 3;
+          if (t === 0) ty -= 8;
+          if (t === 100) ty += 8;
+          yTicks += `<text class="tick inset" x="${padL + plotW - 5}" y="${ty}" text-anchor="end">${t}</text>`;
+        }
+      }
+
+      function pathFor(points) {
+        const clipped = [];
+        for (let i = 0; i < points.length; i++) {
+          const [e, u] = points[i];
+          if (e < x0) {
+            if (i + 1 < points.length && points[i + 1][0] >= x0) {
+              const [e1, u1] = points[i + 1];
+              const t = (x0 - e) / (e1 - e);
+              clipped.push([x0, u + t * (u1 - u)]);
+            }
+            continue;
+          }
+          if (e > x1) {
+            if (i > 0 && points[i - 1][0] <= x1) {
+              const [e0, u0] = points[i - 1];
+              const t = (x1 - e0) / (e - e0);
+              clipped.push([x1, u0 + t * (u - u0)]);
+            }
+            break;
+          }
+          clipped.push([e, u]);
+        }
+        if (clipped.length < 2) return "";
+        return clipped
+          .map((p, i) => `${i === 0 ? "M" : "L"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`)
+          .join(" ");
+      }
+
+      const samples = [];
+      for (let t = 0; t <= 1.0001; t += 0.02) samples.push(Math.min(t, 1));
+      const underStart = THRESHOLDS.underAfterPct / 100;
+      if (!samples.some((t) => Math.abs(t - underStart) < 1e-9)) {
+        samples.push(underStart);
+        samples.sort((a, b) => a - b);
+      }
+      const overEnd = THRESHOLDS.overEmptyBeforePct / 100;
+      const overPts = samples
+        .filter((t) => t <= overEnd + 1e-9)
+        .map((t) => [t * 100, Math.min(Math.max(overUsed(t) * 100, 0), 100)]);
+      if (overEnd < 1) overPts.push([overEnd * 100, 100], [100, 100]);
+      const underPts = samples
+        .filter((t) => t >= underStart - 1e-9)
+        .map((t) => [t * 100, Math.min(Math.max(underUsed(t) * 100, 0), 100)]);
+
+      const overFill =
+        pathFor(overPts) +
+        (pathFor(overPts)
+          ? ` L${x(Math.min(100, x1)).toFixed(1)},${y(100).toFixed(1)} L${x(Math.max(0, x0)).toFixed(1)},${y(100).toFixed(1)} Z`
+          : "");
+      let underFill = "";
+      if (underPts.length && pathFor(underPts)) {
+        const u0 = Math.max(underStart * 100, x0);
+        underFill =
+          pathFor(underPts) +
+          ` L${x(Math.min(100, x1)).toFixed(1)},${y(0).toFixed(1)}` +
+          ` L${x(u0).toFixed(1)},${y(0).toFixed(1)} Z`;
+      }
+
+      const evenPts = [
+        [Math.max(0, x0), Math.max(0, x0)],
+        [Math.min(100, x1), Math.min(100, x1)],
+      ];
+
+      let series = "";
+      let annos = "";
+      for (const key of ["cursor", "other", "grok"]) {
+        const pts = SERIES[key];
+        const d = pathFor(pts);
+        if (d) series += `<path class="series ${key}" d="${d}" />`;
+        const last = pts[pts.length - 1];
+        if (inX(last[0])) {
+          const lx = Math.min(x(last[0]) + 6, padL + plotW - 2);
+          const ly = y(last[1]) + (key === "other" ? 11 : -3);
+          annos += `<text class="anno ${key}" x="${lx}" y="${ly}">${LABELS[key]}</text>`;
+          series += `<circle class="dot ${key}" cx="${x(last[0])}" cy="${y(last[1])}" r="2.6" />`;
+        }
+      }
+
+      return {
+        html: `
+<svg viewBox="0 0 ${w} ${h}" aria-label="Pace history chart">
+  <defs>
+    <clipPath id="plot-clip"><rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" /></clipPath>
+  </defs>
+  <g class="axis-chrome">${grid}</g>
+  <g clip-path="url(#plot-clip)">
+    <path class="over-fill" d="${overFill}" />
+    <path class="under-fill" d="${underFill}" />
+    <path class="over-line" d="${pathFor(overPts.filter((p) => p[0] <= overEnd * 100 + 1e-6))}" />
+    <path class="under-line" d="${pathFor(underPts)}" />
+    <path class="even-line" d="${pathFor(evenPts)}" />
+    ${series}
+    ${annos}
+  </g>
+  <rect class="axis" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" />
+  <g class="axis-chrome">${xTicks}${yTicks}</g>
+  <rect class="hit" data-hit x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" />
+  <g class="brush-layer" data-brush></g>
+</svg>`,
+        plot: { padL, padT, plotW, plotH, w, h, x0, x1, span },
+      };
+    }
+
+    function railSvg(domain) {
+      const w = 414;
+      const h = 28;
+      const padY = 4;
+      const plotH = h - padY * 2;
+      const x = (e) => (e / 100) * w;
+      const y = (u) => padY + plotH - (u / 100) * plotH;
+      function pathFor(points) {
+        return points
+          .map((p, i) => `${i === 0 ? "M" : "L"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`)
+          .join(" ");
+      }
+      let series = "";
+      for (const key of ["cursor", "other", "grok"]) {
+        series += `<path class="rail-series ${key}" d="${pathFor(SERIES[key])}" />`;
+      }
+      const wx0 = x(domain.x0);
+      const wx1 = x(domain.x1);
+      return `
+        <rect class="veil" x="0" y="0" width="${wx0}" height="${h}" />
+        <rect class="veil" x="${wx1}" y="0" width="${Math.max(0, w - wx1)}" height="${h}" />
+        ${series}
+        <rect class="window" x="${wx0}" y="1" width="${Math.max(2, wx1 - wx0)}" height="${h - 2}" rx="3" />
+      `;
+    }
+
+    function paintCharts() {
+      document.querySelectorAll(".variant").forEach((root) => {
+        const id = root.dataset.variant;
+        const z = zoomByVariant[id];
+        const host = root.querySelector("[data-chart]");
+        if (!host) return;
+        const drawn = chartSvg(z);
+        host.innerHTML = drawn.html;
+        host._plot = drawn.plot;
+        host._variant = id;
+
+        const well = root.querySelector(".chart-well");
+        const mode = well?.dataset.mode;
+        const factor = zoomFactor(z);
+        const zoomed = isZoomed(z);
+
+        if (mode === "brush-reset" || mode === "scroll-pan") {
+          const badge = well.querySelector(".zoom-badge");
+          if (badge) {
+            badge.classList.toggle("visible", zoomed);
+            const lab = badge.querySelector("[data-zoom-label]");
+            if (lab) lab.textContent = `×${factor.toFixed(1)}`;
+          }
+        }
+        if (mode === "brush-rail") {
+          const rail = well.querySelector("[data-rail]");
+          if (rail) {
+            rail.classList.toggle("visible", zoomed);
+            const svg = rail.querySelector("svg");
+            if (svg) svg.innerHTML = railSvg(z);
+            const lab = rail.querySelector("[data-rail-label]");
+            if (lab) {
+              lab.textContent = zoomed
+                ? `${z.x0.toFixed(0)}–${z.x1.toFixed(0)}% · ×${factor.toFixed(1)}`
+                : "";
+            }
+          }
+        }
+
+        wireHost(host, mode);
+        if (mode === "brush-rail") wireRail(well.querySelector("[data-rail]"), id);
+        const reset = well.querySelector("[data-reset]");
+        if (reset) {
+          reset.onclick = () => {
+            zoomByVariant[id] = { x0: 0, x1: 100 };
+            paintCharts();
+            paintState();
+            flash(well, "Reset to 100%");
+          };
+        }
+      });
+    }
+
+    function clientToElapsed(host, clientX) {
+      const plot = host._plot;
+      const svg = host.querySelector("svg");
+      const rect = svg.getBoundingClientRect();
+      const scale = plot.w / rect.width;
+      const localX = (clientX - rect.left) * scale;
+      const frac = (localX - plot.padL) / plot.plotW;
+      return plot.x0 + Math.min(1, Math.max(0, frac)) * plot.span;
+    }
+
+    function flash(well, text) {
+      const toast = well.querySelector("[data-toast]");
+      if (!toast) return;
+      toast.textContent = text;
+      toast.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => toast.classList.remove("show"), 900);
+    }
+
+    function brushPreviewZoom(a, b) {
+      const span = Math.max(Math.abs(b - a), 1e-6);
+      return 100 / span;
+    }
+    function brushSelectionOk(a, b) {
+      return Math.abs(b - a) >= MIN_SPAN - 1e-6;
+    }
+    function setBrushPreviewBadge(well, a, b, active) {
+      const badge = well?.querySelector(".zoom-badge");
+      if (!badge) return;
+      const lab = badge.querySelector("[data-zoom-label]");
+      if (!active) {
+        badge.classList.remove("preview", "preview-ok", "preview-bad");
+        return;
+      }
+      const ok = brushSelectionOk(a, b);
+      const z = brushPreviewZoom(a, b);
+      badge.classList.add("visible", "preview");
+      badge.classList.toggle("preview-ok", ok);
+      badge.classList.toggle("preview-bad", !ok);
+      if (lab) lab.textContent = `×${Math.min(z, 99.9).toFixed(1)}`;
+    }
+    function setBrushVisual(host, a, b) {
+      const plot = host._plot;
+      const layer = host.querySelector("[data-brush]");
+      if (!layer) return;
+      const x0 = Math.min(a, b);
+      const x1 = Math.max(a, b);
+      const px0 = plot.padL + ((x0 - plot.x0) / plot.span) * plot.plotW;
+      const px1 = plot.padL + ((x1 - plot.x0) / plot.span) * plot.plotW;
+      const left = Math.max(plot.padL, Math.min(px0, px1));
+      const right = Math.min(plot.padL + plot.plotW, Math.max(px0, px1));
+      const ok = brushSelectionOk(a, b);
+      const tone = ok ? "ok" : "bad";
+      layer.innerHTML = `
+        <rect class="brush-veil" x="${plot.padL}" y="${plot.padT}" width="${Math.max(0, left - plot.padL)}" height="${plot.plotH}" />
+        <rect class="brush-veil" x="${right}" y="${plot.padT}" width="${Math.max(0, plot.padL + plot.plotW - right)}" height="${plot.plotH}" />
+        <rect class="brush-rect ${tone}" x="${left}" y="${plot.padT}" width="${Math.max(1, right - left)}" height="${plot.plotH}" />
+      `;
+      const well = host.closest(".chart-well");
+      setBrushPreviewBadge(well, a, b, true);
+    }
+    function clearBrushVisual(host) {
+      const layer = host.querySelector("[data-brush]");
+      if (layer) layer.innerHTML = "";
+      const well = host.closest(".chart-well");
+      setBrushPreviewBadge(well, 0, 0, false);
+    }
+
+    const gestures = new WeakMap();
+
+    function wireHost(host, mode) {
+      const id = host._variant;
+      const well = host.closest(".chart-well");
+
+      host.onpointerdown = (e) => {
+        if (e.button !== 0) return;
+        const hit = e.target.closest("[data-hit], .brush-rect, svg");
+        if (!hit) return;
+        host.setPointerCapture(e.pointerId);
+        const elapsed = clientToElapsed(host, e.clientX);
+
+        if (mode === "scroll-pan") {
+          if (!isZoomed(zoomByVariant[id])) {
+            flash(well, "Scroll to zoom first");
+            return;
+          }
+          gestures.set(host, {
+            kind: "pan",
+            startX: e.clientX,
+            origin: { ...zoomByVariant[id] },
+          });
+          host.style.cursor = "grabbing";
+          return;
+        }
+
+        // brush modes
+        gestures.set(host, {
+          kind: "brush",
+          a: elapsed,
+          b: elapsed,
+          moved: false,
+        });
+        setBrushVisual(host, elapsed, elapsed);
+      };
+
+      host.onpointermove = (e) => {
+        const g = gestures.get(host);
+        if (!g) return;
+        if (g.kind === "brush") {
+          g.b = clientToElapsed(host, e.clientX);
+          g.moved = true;
+          setBrushVisual(host, g.a, g.b);
+        } else if (g.kind === "pan") {
+          const plot = host._plot;
+          const svg = host.querySelector("svg");
+          const rect = svg.getBoundingClientRect();
+          const dxPx = e.clientX - g.startX;
+          const dxElapsed = -(dxPx / rect.width) * plot.span;
+          zoomByVariant[id] = clampDomain(
+            g.origin.x0 + dxElapsed,
+            g.origin.x1 + dxElapsed
+          );
+          // Live pan without full rebuild of listeners: soft paint
+          softPaint(id);
+        }
+      };
+
+      host.onpointerup = (e) => {
+        const g = gestures.get(host);
+        gestures.delete(host);
+        host.style.cursor = "";
+        if (!g) return;
+
+        if (g.kind === "brush") {
+          clearBrushVisual(host);
+          const lo = Math.min(g.a, g.b);
+          const hi = Math.max(g.a, g.b);
+          const selSpan = hi - lo;
+          // Tiny drag / click = ignore (or treat as double-click path separately)
+          if (!g.moved || selSpan < Math.max(1.2, zoomByVariant[id].x1 - zoomByVariant[id].x0) * 0.03) {
+            paintCharts();
+            paintState();
+            return;
+          }
+          if (!brushSelectionOk(lo, hi)) {
+            flash(well, `Too tight — max ×${MAX_ZOOM}`);
+            paintCharts();
+            paintState();
+            return;
+          }
+          zoomByVariant[id] = clampDomain(lo, hi);
+          paintCharts();
+          paintState();
+          flash(well, `Zoom ×${zoomFactor(zoomByVariant[id]).toFixed(1)}`);
+        } else if (g.kind === "pan") {
+          paintCharts();
+          paintState();
+        }
+      };
+
+      host.ondblclick = () => {
+        if (!isZoomed(zoomByVariant[id])) return;
+        zoomByVariant[id] = { x0: 0, x1: 100 };
+        paintCharts();
+        paintState();
+        flash(well, "Reset to 100%");
+      };
+
+      host.onwheel = (e) => {
+        if (mode !== "scroll-pan") return;
+        e.preventDefault();
+        const z = zoomByVariant[id];
+        const pivot = clientToElapsed(host, e.clientX);
+        const factor = e.deltaY < 0 ? 1.18 : 1 / 1.18;
+        let span = (z.x1 - z.x0) / factor;
+        span = Math.min(100, Math.max(MIN_SPAN, span));
+        const leftRatio = (pivot - z.x0) / (z.x1 - z.x0 || 1);
+        let x0 = pivot - span * leftRatio;
+        let x1 = x0 + span;
+        zoomByVariant[id] = clampDomain(x0, x1);
+        paintCharts();
+        paintState();
+      };
+    }
+
+    function softPaint(id) {
+      // Cheaper path during pan: only rewrite svg + rail/badge
+      const root = document.querySelector(`#variant-${id}`);
+      if (!root) return;
+      const z = zoomByVariant[id];
+      const host = root.querySelector("[data-chart]");
+      const drawn = chartSvg(z);
+      const mode = root.querySelector(".chart-well")?.dataset.mode;
+      host.innerHTML = drawn.html;
+      host._plot = drawn.plot;
+      host._variant = id;
+      wireHost(host, mode);
+      if (mode === "brush-reset" || mode === "scroll-pan") {
+        const badge = root.querySelector(".zoom-badge");
+        badge?.classList.toggle("visible", isZoomed(z));
+        const lab = badge?.querySelector("[data-zoom-label]");
+        if (lab) lab.textContent = `×${zoomFactor(z).toFixed(1)}`;
+      }
+      if (mode === "brush-rail") {
+        const rail = root.querySelector("[data-rail]");
+        rail?.classList.toggle("visible", isZoomed(z));
+        const svg = rail?.querySelector("svg");
+        if (svg) svg.innerHTML = railSvg(z);
+        const lab = rail?.querySelector("[data-rail-label]");
+        if (lab) {
+          lab.textContent = isZoomed(z)
+            ? `${z.x0.toFixed(0)}–${z.x1.toFixed(0)}% · ×${zoomFactor(z).toFixed(1)}`
+            : "";
+        }
+        wireRail(rail, id);
+      }
+    }
+
+    function wireRail(rail, id) {
+      if (!rail) return;
+      rail.onpointerdown = (e) => {
+        const z = zoomByVariant[id];
+        if (!isZoomed(z)) return;
+        const rect = rail.getBoundingClientRect();
+        const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+        const elapsed = frac * 100;
+        const span = z.x1 - z.x0;
+        // Click outside window → reset; inside → start drag pan
+        if (elapsed < z.x0 || elapsed > z.x1) {
+          zoomByVariant[id] = { x0: 0, x1: 100 };
+          paintCharts();
+          paintState();
+          flash(rail.closest(".chart-well"), "Reset to 100%");
+          return;
+        }
+        rail.setPointerCapture(e.pointerId);
+        const offset = elapsed - z.x0;
+        const onMove = (ev) => {
+          const f = Math.min(1, Math.max(0, (ev.clientX - rect.left) / rect.width));
+          const centerLeft = f * 100 - offset;
+          zoomByVariant[id] = clampDomain(centerLeft, centerLeft + span);
+          softPaint(id);
+          paintState();
+        };
+        const onUp = () => {
+          rail.removeEventListener("pointermove", onMove);
+          rail.removeEventListener("pointerup", onUp);
+          paintCharts();
+        };
+        rail.addEventListener("pointermove", onMove);
+        rail.addEventListener("pointerup", onUp);
+      };
+      rail.ondblclick = () => {
+        zoomByVariant[id] = { x0: 0, x1: 100 };
+        paintCharts();
+        paintState();
+        flash(rail.closest(".chart-well"), "Reset to 100%");
+      };
+    }
+
+    function paintState() {
+      const z = zoomByVariant[current];
+      document.getElementById("state").textContent = JSON.stringify(
+        {
+          variant: current,
+          domain: { x0: +z.x0.toFixed(2), x1: +z.x1.toFixed(2) },
+          zoom: +zoomFactor(z).toFixed(2),
+          maxZoom: MAX_ZOOM,
+          yDomain: [0, 100],
+        },
+        null,
+        2
+      );
+    }
+
+    function setVariant(id) {
+      current = id;
+      document.querySelectorAll(".variant").forEach((el) => {
+        el.classList.toggle("active", el.dataset.variant === id);
+      });
+      const meta = VARIANTS.find((v) => v.id === id);
+      document.getElementById("switch-label").textContent = `${id} — ${meta.name}`;
+      document.getElementById("howto").innerHTML = meta.blurb;
+      const url = new URL(location.href);
+      url.searchParams.set("variant", id);
+      history.replaceState(null, "", url);
+      paintCharts();
+      paintState();
+    }
+
+    function cycle(dir) {
+      const idx = VARIANTS.findIndex((v) => v.id === current);
+      const next = VARIANTS[(idx + dir + VARIANTS.length) % VARIANTS.length];
+      setVariant(next.id);
+    }
+
+    document.getElementById("prev").onclick = () => cycle(-1);
+    document.getElementById("next").onclick = () => cycle(1);
+    window.addEventListener("keydown", (e) => {
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+      if (e.key === "ArrowLeft") cycle(-1);
+      if (e.key === "ArrowRight") cycle(1);
+      if (e.key === "Escape") {
+        if (!isZoomed(zoomByVariant[current])) return;
+        zoomByVariant[current] = { x0: 0, x1: 100 };
+        paintCharts();
+        paintState();
+        const well = document.querySelector(`#variant-${current} .chart-well`);
+        flash(well, "Reset to 100%");
+      }
+    });
+
+    const initial = new URL(location.href).searchParams.get("variant") || "A";
+    setVariant(VARIANTS.some((v) => v.id === initial) ? initial : "A");
+  </script>
+</body>
+</html>

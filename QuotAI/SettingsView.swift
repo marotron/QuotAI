@@ -23,6 +23,12 @@ struct SettingsView: View {
     @AppStorage("underMinEndPct") private var underMinEndPct = 95
     @AppStorage("overCurvePct") private var overCurvePct = 0
     @AppStorage("underCurvePct") private var underCurvePct = 0
+    @AppStorage("grokOverMaxStartPct") private var grokOverMaxStartPct = 35
+    @AppStorage("grokOverEmptyBeforePct") private var grokOverEmptyBeforePct = 85
+    @AppStorage("grokUnderAfterPct") private var grokUnderAfterPct = 40
+    @AppStorage("grokUnderMinEndPct") private var grokUnderMinEndPct = 90
+    @AppStorage("grokOverCurvePct") private var grokOverCurvePct = 20
+    @AppStorage("grokUnderCurvePct") private var grokUnderCurvePct = 20
     @AppStorage("notifySignificantPace") private var notifySignificantPace = false
     @AppStorage("emailSignificantPace") private var emailSignificantPace = false
 
@@ -54,6 +60,8 @@ struct SettingsView: View {
     @State private var emailStatus: String?
     @State private var notifyStatus = ""
     @State private var dialAlertTask: Task<Void, Never>?
+    /// Ephemeral Settings focus — Cursor | Grok Bot corridor profile.
+    @State private var alertFamilyFocus: PaceAlertFamily = .cursor
 
     /// Shared width for menu pickers so every dropdown control aligns on the right.
     private static let menuControlWidth: CGFloat = 180
@@ -64,24 +72,63 @@ struct SettingsView: View {
         "Tint needs Color mode set to By pace. Blink works in any color mode."
     ]
 
-    private var thresholds: PaceAlertThresholds {
+    private var focusedThresholds: PaceAlertThresholds {
         PaceAlertThresholds(
-            overMaxStartPct: Double(overMaxStartPct),
-            overEmptyBeforePct: Double(overEmptyBeforePct),
-            underAfterPct: Double(underAfterPct),
-            underMinEndPct: Double(underMinEndPct),
-            overCurvePct: Double(overCurvePct),
-            underCurvePct: Double(underCurvePct)
+            overMaxStartPct: Double(focusedOverMaxStartPct.wrappedValue),
+            overEmptyBeforePct: Double(focusedOverEmptyBeforePct.wrappedValue),
+            underAfterPct: Double(focusedUnderAfterPct.wrappedValue),
+            underMinEndPct: Double(focusedUnderMinEndPct.wrappedValue),
+            overCurvePct: Double(focusedOverCurvePct.wrappedValue),
+            underCurvePct: Double(focusedUnderCurvePct.wrappedValue)
         )
     }
 
-    private var chartMeters: [(name: String, usedPct: Double, elapsedPct: Double)] {
-        var rows: [(String, Double, Double)] = []
-        appendChartMeter(name: "Cursor", meter: store.cursorModels, into: &rows)
+    private var focusedOverMaxStartPct: Binding<Int> {
+        alertFamilyFocus == .grok ? $grokOverMaxStartPct : $overMaxStartPct
+    }
+
+    private var focusedOverEmptyBeforePct: Binding<Int> {
+        alertFamilyFocus == .grok ? $grokOverEmptyBeforePct : $overEmptyBeforePct
+    }
+
+    private var focusedUnderAfterPct: Binding<Int> {
+        alertFamilyFocus == .grok ? $grokUnderAfterPct : $underAfterPct
+    }
+
+    private var focusedUnderMinEndPct: Binding<Int> {
+        alertFamilyFocus == .grok ? $grokUnderMinEndPct : $underMinEndPct
+    }
+
+    private var focusedOverCurvePct: Binding<Int> {
+        alertFamilyFocus == .grok ? $grokOverCurvePct : $overCurvePct
+    }
+
+    private var focusedUnderCurvePct: Binding<Int> {
+        alertFamilyFocus == .grok ? $grokUnderCurvePct : $underCurvePct
+    }
+
+    private var focusedMeter: QuotaMeter {
+        alertFamilyFocus == .grok ? store.grokBot : store.cursorModels
+    }
+
+    private var focusedPeriodLength: TimeInterval? {
+        PeriodDuration.length(
+            periodStart: focusedMeter.periodStart,
+            periodEnd: focusedMeter.periodEnd
+        )
+    }
+
+    private var focusedPeriodBadge: String? {
+        focusedPeriodLength.map(PeriodDuration.badgeLabel(seconds:))
+    }
+
+    private var chartMeters: [PaceAlertBandChartMeter] {
+        var rows: [PaceAlertBandChartMeter] = []
+        appendChartMeter(name: "Cursor", meter: store.cursorModels, family: .cursor, into: &rows)
         if showOtherModels {
-            appendChartMeter(name: "Other", meter: store.otherModels, into: &rows)
+            appendChartMeter(name: "Other", meter: store.otherModels, family: .cursor, into: &rows)
         }
-        appendChartMeter(name: "Grok", meter: store.grokBot, into: &rows)
+        appendChartMeter(name: "Grok Bot", meter: store.grokBot, family: .grok, into: &rows)
         return rows
     }
 
@@ -342,6 +389,8 @@ struct SettingsView: View {
                 Toggle("Use corridor alerts", isOn: $useSmartPaceAlerts)
 
                 if useSmartPaceAlerts {
+                    corridorFamilyChrome
+
                     HStack(alignment: .top, spacing: 8) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Over-pace")
@@ -350,24 +399,28 @@ struct SettingsView: View {
                             HStack(alignment: .top, spacing: 2) {
                                 PercentDial(
                                     title: "Max usage at period start",
-                                    value: $overMaxStartPct,
+                                    value: focusedOverMaxStartPct,
                                     range: 0...50,
                                     tint: .orange,
-                                    size: 32
+                                    size: 32,
+                                    periodLength: focusedPeriodLength
                                 )
                                 PercentDial(
                                     title: "Full quota before",
-                                    value: $overEmptyBeforePct,
+                                    value: focusedOverEmptyBeforePct,
                                     range: 50...100,
                                     tint: .orange,
-                                    size: 32
+                                    size: 32,
+                                    periodLength: focusedPeriodLength,
+                                    showsTimelineTip: true
                                 )
                                 PercentDial(
                                     title: "Curve (linear→parabolic)",
-                                    value: $overCurvePct,
+                                    value: focusedOverCurvePct,
                                     range: 0...100,
                                     tint: .orange,
-                                    size: 32
+                                    size: 32,
+                                    periodLength: focusedPeriodLength
                                 )
                             }
 
@@ -378,24 +431,28 @@ struct SettingsView: View {
                             HStack(alignment: .top, spacing: 2) {
                                 PercentDial(
                                     title: "Under alerts after",
-                                    value: $underAfterPct,
+                                    value: focusedUnderAfterPct,
                                     range: 0...50,
                                     tint: .blue,
-                                    size: 32
+                                    size: 32,
+                                    periodLength: focusedPeriodLength,
+                                    showsTimelineTip: true
                                 )
                                 PercentDial(
                                     title: "Min usage by period end",
-                                    value: $underMinEndPct,
+                                    value: focusedUnderMinEndPct,
                                     range: 50...100,
                                     tint: .blue,
-                                    size: 32
+                                    size: 32,
+                                    periodLength: focusedPeriodLength
                                 )
                                 PercentDial(
                                     title: "Curve (linear→parabolic)",
-                                    value: $underCurvePct,
+                                    value: focusedUnderCurvePct,
                                     range: 0...100,
                                     tint: .blue,
-                                    size: 32
+                                    size: 32,
+                                    periodLength: focusedPeriodLength
                                 )
                             }
                         }
@@ -403,8 +460,13 @@ struct SettingsView: View {
 
                         Spacer(minLength: 0)
 
-                        PaceAlertBandChart(thresholds: thresholds, meters: chartMeters)
-                            .padding(.top, 7)
+                        PaceAlertBandChart(
+                            thresholds: focusedThresholds,
+                            meters: chartMeters,
+                            focusPeriodLength: focusedPeriodLength,
+                            focusFamily: alertFamilyFocus
+                        )
+                        .padding(.top, 7)
                     }
                     .frame(maxWidth: .infinity, alignment: .top)
                     .onChange(of: overMaxStartPct) { _, _ in scheduleCorridorAlertRecheck() }
@@ -413,13 +475,25 @@ struct SettingsView: View {
                     .onChange(of: underAfterPct) { _, _ in scheduleCorridorAlertRecheck() }
                     .onChange(of: underMinEndPct) { _, _ in scheduleCorridorAlertRecheck() }
                     .onChange(of: underCurvePct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: grokOverMaxStartPct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: grokOverEmptyBeforePct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: grokOverCurvePct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: grokUnderAfterPct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: grokUnderMinEndPct) { _, _ in scheduleCorridorAlertRecheck() }
+                    .onChange(of: grokUnderCurvePct) { _, _ in scheduleCorridorAlertRecheck() }
 
                     SettingsNotes(lines: [
                         "Over alert when usage is above the over line. The line starts at “Max usage at period start” and reaches 100% at “Full quota before”.",
                         "Exhausted when usage reaches 100%, at any point in the period.",
                         "Wait until “Under alerts after” share of the period has elapsed before considering an under alert.",
                         "Under alert if usage would finish the period below “Min usage by period end”.",
-                        "Curve dials bend each corridor (0% linear → 100% parabolic). Under mirrors over across even pace; curves stay on the near side of parallels through Full quota before / Min usage by period end."
+                        "Curve dials bend each corridor (0% linear → 100% parabolic). Under mirrors over across even pace; curves stay on the near side of parallels through Full quota before / Min usage by period end.",
+                        alertFamilyFocus == .cursor
+                            ? "Editing Cursor profile (Models + Other). Switch to Grok Bot for the short window."
+                            : "Editing Grok Bot profile. Cursor dials are unchanged.",
+                        "Period length (the days badge) comes from each family’s live usage API window — Cursor billing cycle start→end, Grok Bot period start→reset. Cursor months can be 28–31 days; do not assume a fixed 31. Dial and chart day/hour tips use that same duration.",
+                        "Drag any dial: tooltip shows the %. “Full quota before” / “Under alerts after” also show elapsed + time left to reset (days, or hours on short periods).",
+                        "Hover the preview chart: Used % stays; elapsed becomes time left to reset (days, or hours when under a day) for the focused family."
                     ] + Self.tintAndBlinkNotes)
                 } else {
                     SettingsNotes(lines: [
@@ -611,10 +685,74 @@ struct SettingsView: View {
         )
     }
 
+    private var corridorFamilyChrome: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Picker("Corridor family", selection: $alertFamilyFocus) {
+                Label {
+                    Text("Cursor")
+                } icon: {
+                    Image(nsImage: BarIcon.tintedAvatar(
+                        .cursor,
+                        ink: NSColor.labelColor,
+                        pointSize: 12
+                    ))
+                }
+                .tag(PaceAlertFamily.cursor)
+
+                Label {
+                    Text("Grok Bot")
+                } icon: {
+                    Image(nsImage: BarIcon.tintedAvatar(
+                        .grok,
+                        ink: NSColor.labelColor,
+                        pointSize: 12
+                    ))
+                }
+                .tag(PaceAlertFamily.grok)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityLabel("Corridor family")
+
+            HStack(spacing: 6) {
+                Text("Period")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let focusedPeriodBadge {
+                    Text(focusedPeriodBadge)
+                        .font(.caption2.weight(.medium).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 1)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(Color.secondary.opacity(0.12))
+                        )
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .strokeBorder(Color.secondary.opacity(0.18), lineWidth: 0.5)
+                        )
+                } else {
+                    Text("—")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                if alertFamilyFocus == .cursor {
+                    Text("· Models + Other share this profile")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .padding(.top, 2)
+    }
+
     private func appendChartMeter(
         name: String,
         meter: QuotaMeter,
-        into rows: inout [(String, Double, Double)]
+        family: PaceAlertFamily,
+        into rows: inout [PaceAlertBandChartMeter]
     ) {
         guard !meter.isUnavailable,
               let used = meter.percentUsed,
@@ -622,7 +760,12 @@ struct SettingsView: View {
               let end = meter.periodEnd,
               let t = PaceCalculator.elapsedFraction(periodStart: start, periodEnd: end)
         else { return }
-        rows.append((name, used, t * 100))
+        rows.append(PaceAlertBandChartMeter(
+            name: name,
+            usedPct: used,
+            elapsedPct: t * 100,
+            family: family
+        ))
     }
 
     private func enableNotificationsAndDeliverIfNeeded() async {

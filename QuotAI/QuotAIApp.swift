@@ -27,12 +27,19 @@ struct QuotAIApp: App {
     @AppStorage("underMinEndPct") private var underMinEndPct = 95
     @AppStorage("overCurvePct") private var overCurvePct = 0
     @AppStorage("underCurvePct") private var underCurvePct = 0
+    @AppStorage("grokOverMaxStartPct") private var grokOverMaxStartPct = 35
+    @AppStorage("grokOverEmptyBeforePct") private var grokOverEmptyBeforePct = 85
+    @AppStorage("grokUnderAfterPct") private var grokUnderAfterPct = 40
+    @AppStorage("grokUnderMinEndPct") private var grokUnderMinEndPct = 90
+    @AppStorage("grokOverCurvePct") private var grokOverCurvePct = 20
+    @AppStorage("grokUnderCurvePct") private var grokUnderCurvePct = 20
 
     /// Fixed pale-arc math for ring dial only — not a user Settings band anymore.
     private var onPaceLo: Double { PaceCalculator.greenLo }
     private var onPaceHi: Double { PaceCalculator.greenHi }
 
-    private var smartThresholds: PaceAlertThresholds {
+    /// Cursor Models + Other share this corridor (menu pace history paints Cursor only).
+    private var cursorThresholds: PaceAlertThresholds {
         PaceAlertThresholds(
             overMaxStartPct: Double(overMaxStartPct),
             overEmptyBeforePct: Double(overEmptyBeforePct),
@@ -40,6 +47,17 @@ struct QuotAIApp: App {
             underMinEndPct: Double(underMinEndPct),
             overCurvePct: Double(overCurvePct),
             underCurvePct: Double(underCurvePct)
+        )
+    }
+
+    private var grokThresholds: PaceAlertThresholds {
+        PaceAlertThresholds(
+            overMaxStartPct: Double(grokOverMaxStartPct),
+            overEmptyBeforePct: Double(grokOverEmptyBeforePct),
+            underAfterPct: Double(grokUnderAfterPct),
+            underMinEndPct: Double(grokUnderMinEndPct),
+            overCurvePct: Double(grokOverCurvePct),
+            underCurvePct: Double(grokUnderCurvePct)
         )
     }
 
@@ -55,7 +73,8 @@ struct QuotAIApp: App {
                 store: store,
                 showOtherModels: showOtherModels,
                 corridorAlertsEnabled: useSmartPaceAlerts,
-                smartThresholds: smartThresholds
+                cursorThresholds: cursorThresholds,
+                grokThresholds: grokThresholds
             )
         } label: {
             // Own view + state so icon animation ticks do not rebuild the panel.
@@ -74,7 +93,8 @@ struct QuotAIApp: App {
                 blinkUnderPercent: blinkUnderPercent,
                 blinkOverPercent: blinkOverPercent,
                 useSmartPaceAlerts: useSmartPaceAlerts,
-                smartThresholds: smartThresholds,
+                cursorThresholds: cursorThresholds,
+                grokThresholds: grokThresholds,
                 onPaceLo: onPaceLo,
                 onPaceHi: onPaceHi
             )
@@ -350,7 +370,8 @@ private struct MenuBarIconLabel: View {
     let blinkUnderPercent: Int
     let blinkOverPercent: Int
     let useSmartPaceAlerts: Bool
-    let smartThresholds: PaceAlertThresholds
+    let cursorThresholds: PaceAlertThresholds
+    let grokThresholds: PaceAlertThresholds
     let onPaceLo: Double
     let onPaceHi: Double
 
@@ -742,10 +763,13 @@ private struct MenuBarIconLabel: View {
            let start = meter.periodStart,
            let end = meter.periodEnd,
            let t = PaceCalculator.elapsedFraction(periodStart: start, periodEnd: end) {
+            let thresholds = PaceAlertFamily.resolve(meterName: meter.name) == .grok
+                ? grokThresholds
+                : cursorThresholds
             return PaceAlertBands.evaluate(
                 percentUsed: pct,
                 elapsedFraction: t,
-                thresholds: smartThresholds,
+                thresholds: thresholds,
                 smart: true
             )
         }

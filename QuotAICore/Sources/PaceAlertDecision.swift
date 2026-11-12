@@ -63,6 +63,7 @@ public struct PaceAlertMeterAlert: Equatable, Sendable {
 
 /// Combines band evaluation across meters with delivery channel flags.
 public enum PaceAlertDecision {
+    /// Single shared corridor profile (tests / callers that do not split families).
     public static func evaluate(
         meters: [PaceAlertMeterInput],
         thresholds: PaceAlertThresholds = .default,
@@ -71,7 +72,33 @@ public enum PaceAlertDecision {
         legacyOver: Double = PaceCalculator.significantHi,
         channels: PaceAlertChannels
     ) -> PaceAlertDecisionResult {
+        evaluate(
+            meters: meters,
+            cursorThresholds: thresholds,
+            grokThresholds: thresholds,
+            smart: smart,
+            legacyUnder: legacyUnder,
+            legacyOver: legacyOver,
+            channels: channels
+        )
+    }
+
+    /// Per-family corridors: `cursor` / `other` → Cursor profile; `grok` → Grok profile.
+    public static func evaluate(
+        meters: [PaceAlertMeterInput],
+        cursorThresholds: PaceAlertThresholds,
+        grokThresholds: PaceAlertThresholds,
+        smart: Bool,
+        legacyUnder: Double = PaceCalculator.significantLo,
+        legacyOver: Double = PaceCalculator.significantHi,
+        channels: PaceAlertChannels
+    ) -> PaceAlertDecisionResult {
         let alerts: [PaceAlertMeterAlert] = meters.compactMap { meter in
+            let thresholds = PaceAlertFamily.thresholds(
+                forMeterId: meter.id,
+                cursor: cursorThresholds,
+                grok: grokThresholds
+            )
             let kind = PaceAlertBands.evaluate(
                 percentUsed: meter.percentUsed,
                 elapsedFraction: meter.elapsedFraction,
