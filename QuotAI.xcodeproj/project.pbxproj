@@ -13,6 +13,7 @@
 		08BA30F747B787595A93DAA4 /* CursorLogActivityReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90ECA3EB3FB1C69788FC4FE /* CursorLogActivityReader.swift */; };
 		0E66D145B86BE8C6A6ADB4F1 /* CursorSafeStorageKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C63BBC52053CDA4BE6AEBD /* CursorSafeStorageKey.swift */; };
 		0E7FFAD2282D5608EF41F69A /* CursorAuthActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42221A63599893EAE95BCF0C /* CursorAuthActions.swift */; };
+		10F40A01C619D3725F202EB4 /* PaceHistoryChartDownsample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 960B3E9ED195EEAA918969F4 /* PaceHistoryChartDownsample.swift */; };
 		14F8A41E7E0F4214973DBC75 /* PreviewApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DD824683EB5A25350088F4 /* PreviewApp.swift */; };
 		158342EFCE61917EEA75EBAD /* BarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A474AF98F62D2275255057D5 /* BarIcon.swift */; };
 		1662147F4652E067D89B275A /* QuotAIAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E364CC587B574EDA89401BE2 /* QuotAIAboutView.swift */; };
@@ -85,6 +86,7 @@
 		A4C0B1482CC682B10F1055CA /* RingIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F68F209DE9B284DFAE003A /* RingIcon.swift */; };
 		A5C3EA299F363921CA9FBB23 /* CursorDiscrepancyReconcilerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92BAB2EBC5DBED0F7BF3C2B2 /* CursorDiscrepancyReconcilerTests.swift */; };
 		A84BDA50449824D9F4EB2445 /* PaceMeterPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AF376352ED7DAC78952FF8E /* PaceMeterPresentation.swift */; };
+		A9088611056BC0F2DBAAD7BD /* PaceHistoryChartDownsampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E61D2DB2B198A5D64C4B934B /* PaceHistoryChartDownsampleTests.swift */; };
 		AB2BB7A3F81DE014F8DB300C /* PaceAlertCooldownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C32FF53DBE2300A57A24E9C /* PaceAlertCooldownTests.swift */; };
 		AD18FB2510286FE5965DBA74 /* LastRefreshStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384DBDA8A5819994DC483BDC /* LastRefreshStatus.swift */; };
 		BA912E4145A0BB2BBF628AB8 /* MenuPinLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE79ED45E16F062344B5FD08 /* MenuPinLayoutTests.swift */; };
@@ -233,6 +235,7 @@
 		8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = QuotAICore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CECF6449BA30923428C5B11 /* RefreshPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshPlannerTests.swift; sourceTree = "<group>"; };
 		92BAB2EBC5DBED0F7BF3C2B2 /* CursorDiscrepancyReconcilerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorDiscrepancyReconcilerTests.swift; sourceTree = "<group>"; };
+		960B3E9ED195EEAA918969F4 /* PaceHistoryChartDownsample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartDownsample.swift; sourceTree = "<group>"; };
 		99C63BBC52053CDA4BE6AEBD /* CursorSafeStorageKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSafeStorageKey.swift; sourceTree = "<group>"; };
 		9A0248EF36AED12752B7A8D9 /* MenuPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPresentation.swift; sourceTree = "<group>"; };
 		A17414D5B95FCA174737FB00 /* PaceChromeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceChromeTests.swift; sourceTree = "<group>"; };
@@ -263,6 +266,7 @@
 		E03348913E147E1A98D87B3E /* CursorSealedToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSealedToken.swift; sourceTree = "<group>"; };
 		E364CC587B574EDA89401BE2 /* QuotAIAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotAIAboutView.swift; sourceTree = "<group>"; };
 		E479756FEDB5131AA3048CDB /* ChangelogParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangelogParserTests.swift; sourceTree = "<group>"; };
+		E61D2DB2B198A5D64C4B934B /* PaceHistoryChartDownsampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartDownsampleTests.swift; sourceTree = "<group>"; };
 		E6C2D8CD2677696268DAD617 /* QuotAICoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuotAICoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceCalculator.swift; sourceTree = "<group>"; };
 		F0372F0AA05AB178D5EA1251 /* PaceAlertCooldown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertCooldown.swift; sourceTree = "<group>"; };
@@ -341,6 +345,7 @@
 				D42C45002964F1D37AEF7A57 /* PaceAlertDecisionTests.swift */,
 				4AAFD417E417B50DE713398C /* PaceCalculatorTests.swift */,
 				A17414D5B95FCA174737FB00 /* PaceChromeTests.swift */,
+				E61D2DB2B198A5D64C4B934B /* PaceHistoryChartDownsampleTests.swift */,
 				4C4F4D22979B55C7E8491E85 /* PaceHistoryChartModelTests.swift */,
 				27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */,
 				59AAAE5EDF7EA2DA84B33E25 /* PaceHistorySeriesFilterTests.swift */,
@@ -412,6 +417,7 @@
 				C656D72D3DC80308EE35332A /* PaceAlertDecision.swift */,
 				E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */,
 				BB305BE65819B58250DECEB2 /* PaceChrome.swift */,
+				960B3E9ED195EEAA918969F4 /* PaceHistoryChartDownsample.swift */,
 				442F33986FCB2D359079BCF4 /* PaceHistoryChartModel.swift */,
 				143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */,
 				81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */,
@@ -646,6 +652,7 @@
 				29F5287C1AF7B0766A79F8AC /* PaceAlertDecision.swift in Sources */,
 				0892FE50EFCD8B19A5562708 /* PaceCalculator.swift in Sources */,
 				F1310C7DC5CE0CE3576CD98D /* PaceChrome.swift in Sources */,
+				10F40A01C619D3725F202EB4 /* PaceHistoryChartDownsample.swift in Sources */,
 				2984654BBD4D766F7C6150E5 /* PaceHistoryChartModel.swift in Sources */,
 				743C92E109E1CC3BE7E83E12 /* PaceHistorySampleStore.swift in Sources */,
 				CE2DE693EF9F9710A517D305 /* PaceHistorySeriesFilter.swift in Sources */,
@@ -714,6 +721,7 @@
 				9317637690F297E552B2924E /* PaceAlertDecisionTests.swift in Sources */,
 				F6B16EE2F78F625179F0AD15 /* PaceCalculatorTests.swift in Sources */,
 				9068D6720D88199A9B6C838E /* PaceChromeTests.swift in Sources */,
+				A9088611056BC0F2DBAAD7BD /* PaceHistoryChartDownsampleTests.swift in Sources */,
 				EBE0E039627341EE7BC52CD5 /* PaceHistoryChartModelTests.swift in Sources */,
 				D3170FE07F5DD7F1B5FD9E03 /* PaceHistorySampleStoreTests.swift in Sources */,
 				3C54887A5448A2E1E20B2112 /* PaceHistorySeriesFilterTests.swift in Sources */,
@@ -927,7 +935,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -938,7 +946,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.18.2;
+				MARKETING_VERSION = 0.18.3;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};
@@ -966,7 +974,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -977,7 +985,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.18.2;
+				MARKETING_VERSION = 0.18.3;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};

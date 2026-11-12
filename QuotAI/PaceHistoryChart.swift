@@ -234,8 +234,8 @@ struct PaceHistoryChart: View {
                     series: .value("Layer", "OverFill")
                 )
                 .foregroundStyle(Self.overFill.opacity(0.16))
-            }
-            ForEach(overBoundary, id: \.elapsedPct) { pt in
+                .interpolationMethod(.monotone)
+
                 LineMark(
                     x: .value("Elapsed", pt.elapsedPct),
                     y: .value("Used", pt.usedPct),
@@ -243,6 +243,7 @@ struct PaceHistoryChart: View {
                 )
                 .foregroundStyle(Self.overFill)
                 .lineStyle(StrokeStyle(lineWidth: 0.7, dash: [3.5, 2.5]))
+                .interpolationMethod(.monotone)
             }
         }
     }
@@ -258,8 +259,8 @@ struct PaceHistoryChart: View {
                     series: .value("Layer", "UnderFill")
                 )
                 .foregroundStyle(Self.underFill.opacity(0.16))
-            }
-            ForEach(underBoundary, id: \.elapsedPct) { pt in
+                .interpolationMethod(.monotone)
+
                 LineMark(
                     x: .value("Elapsed", pt.elapsedPct),
                     y: .value("Used", pt.usedPct),
@@ -267,6 +268,7 @@ struct PaceHistoryChart: View {
                 )
                 .foregroundStyle(Self.underFill)
                 .lineStyle(StrokeStyle(lineWidth: 0.7, dash: [3.5, 2.5]))
+                .interpolationMethod(.monotone)
             }
         }
     }
@@ -282,16 +284,17 @@ struct PaceHistoryChart: View {
                 )
                 .foregroundStyle(Self.evenColor.opacity(0.85))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                .interpolationMethod(.monotone)
             }
         }
     }
 
     @ChartContentBuilder
     private var seriesMarks: some ChartContent {
-        // One LineMark stream per meter (series tag). Short elapsed spans still
-        // get a visible path via sample PointMarks + stroked end caps.
+        // One downsampled LineMark stream per meter (series tag). Hover/tip still
+        // use the full-resolution series so accuracy is unchanged.
         ForEach(plottedMeterIds, id: \.rawValue) { meterId in
-            ForEach(seriesPoints(for: meterId)) { row in
+            ForEach(downsampledSeriesPoints(for: meterId)) { row in
                 LineMark(
                     x: .value("Elapsed", row.elapsedPct),
                     y: .value("Used", row.usedPct),
@@ -300,20 +303,12 @@ struct PaceHistoryChart: View {
                 .foregroundStyle(color(for: meterId))
                 .opacity(0.75)
                 .lineStyle(StrokeStyle(lineWidth: 1.75, lineCap: .round, lineJoin: .round))
-            }
-            // Reading dots only — leave the latest sample to the end-cap marks below.
-            ForEach(seriesReadingPoints(for: meterId)) { row in
-                PointMark(
-                    x: .value("Elapsed", row.elapsedPct),
-                    y: .value("Used", row.usedPct)
-                )
-                .symbolSize(4)
-                .foregroundStyle(color(for: meterId))
+                .interpolationMethod(.monotone)
             }
         }
 
         ForEach(seriesEndPoints) { end in
-            // Current tip: halo + core, only slightly larger than reading dots.
+            // Current tip: halo + core.
             PointMark(
                 x: .value("Elapsed", end.elapsedPct),
                 y: .value("Used", end.usedPct)
@@ -805,22 +800,17 @@ struct PaceHistoryChart: View {
         var usedPct: Double
     }
 
-    private func seriesPoints(for meterId: PaceHistoryMeterId) -> [SeriesPoint] {
-        (series[meterId] ?? []).enumerated().map { idx, sample in
-            SeriesPoint(
-                index: idx,
-                meterId: meterId,
-                elapsedPct: sample.elapsedPct,
-                usedPct: sample.usedPct
-            )
-        }
-    }
-
-    /// All samples except the latest (drawn as the smaller current end-cap).
-    private func seriesReadingPoints(for meterId: PaceHistoryMeterId) -> [SeriesPoint] {
-        let pts = seriesPoints(for: meterId)
-        guard pts.count > 1 else { return [] }
-        return Array(pts.dropLast())
+    private func downsampledSeriesPoints(for meterId: PaceHistoryMeterId) -> [SeriesPoint] {
+        PaceHistoryChartDownsample.downsample(samples: series[meterId] ?? [])
+            .enumerated()
+            .map { idx, sample in
+                SeriesPoint(
+                    index: idx,
+                    meterId: meterId,
+                    elapsedPct: sample.elapsedPct,
+                    usedPct: sample.usedPct
+                )
+            }
     }
 
     private var seriesEndPoints: [SeriesPoint] {
