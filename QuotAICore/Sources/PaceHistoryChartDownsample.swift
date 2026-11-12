@@ -11,6 +11,37 @@ public enum PaceHistoryChartDownsample {
     /// Vertical resolution for chart marks, in percent (1 % steps).
     public static let yResolution = 1.0
 
+    /// Downsamples the samples needed to draw `domain`.
+    ///
+    /// Includes one source sample on each side where available. That lets a
+    /// chart clip the line cleanly at the visible domain edges while assigning
+    /// the full point budget to the zoomed portion of the history.
+    public static func downsample(
+        samples: [PaceHistorySample],
+        domain: ClosedRange<Double>,
+        maxPoints: Int = Self.maxPoints,
+        yResolution: Double = Self.yResolution
+    ) -> [PaceHistorySample] {
+        guard !samples.isEmpty else { return [] }
+
+        let firstAtOrAfterLower = samples.firstIndex {
+            $0.elapsedPct >= domain.lowerBound
+        } ?? samples.endIndex
+        let lastAtOrBeforeUpper = samples.lastIndex {
+            $0.elapsedPct <= domain.upperBound
+        } ?? samples.startIndex - 1
+
+        let lowerIndex = max(samples.startIndex, firstAtOrAfterLower - 1)
+        let upperIndex = min(samples.index(before: samples.endIndex), lastAtOrBeforeUpper + 1)
+        guard lowerIndex <= upperIndex else { return [] }
+
+        return downsample(
+            samples: Array(samples[lowerIndex...upperIndex]),
+            maxPoints: maxPoints,
+            yResolution: yResolution
+        )
+    }
+
     /// Largest Triangle Three Buckets (LTTB) downsample.
     ///
     /// - Keeps the first and last sample.

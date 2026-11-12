@@ -84,4 +84,27 @@ final class PaceHistoryChartDownsampleTests: XCTestCase {
 
         XCTAssertTrue(out.contains { $0.elapsedPct == 50 && $0.usedPct == 90 })
     }
+
+    func testDomainDownsampleUsesVisibleSamplesWithEdgeContext() {
+        let samples = (0...10_000).map { index in
+            let elapsed = Double(index) / 100
+            return sample(elapsedPct: elapsed, usedPct: elapsed + 0.37)
+        }
+
+        let out = PaceHistoryChartDownsample.downsample(
+            samples: samples,
+            domain: 61...71,
+            maxPoints: 200,
+            yResolution: 0
+        )
+
+        XCTAssertLessThanOrEqual(out.count, 200)
+        guard let first = out.first, let last = out.last else {
+            return XCTFail("Expected contextual samples")
+        }
+        XCTAssertEqual(first.elapsedPct, 60.99, accuracy: 0.000_001)
+        XCTAssertEqual(last.elapsedPct, 71.01, accuracy: 0.000_001)
+        XCTAssertEqual(first.usedPct, 61.36, accuracy: 0.000_001)
+        XCTAssertEqual(last.usedPct, 71.38, accuracy: 0.000_001)
+    }
 }
