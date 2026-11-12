@@ -1567,20 +1567,29 @@ private struct HoverTipSurface: ViewModifier {
     private static let shape = RoundedRectangle(cornerRadius: 6, style: .continuous)
 
     func body(content: Content) -> some View {
+        // `glassEffect` only exists in the macOS 26 SDK (Swift 6.2+); CI builds with Xcode 16.4.
+        #if compiler(>=6.2)
         if #available(macOS 26.0, *) {
             content.glassEffect(.clear, in: Self.shape)
         } else {
-            content
-                .background(
-                    Self.shape
-                        .fill(.regularMaterial.opacity(0.75))
-                        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-                )
-                .overlay(
-                    Self.shape
-                        .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
-                )
+            tinted(content)
         }
+        #else
+        tinted(content)
+        #endif
+    }
+
+    private func tinted(_ content: Content) -> some View {
+        content
+            .background(
+                Self.shape
+                    .fill(.regularMaterial.opacity(0.75))
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+            )
+            .overlay(
+                Self.shape
+                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
+            )
     }
 }
 
