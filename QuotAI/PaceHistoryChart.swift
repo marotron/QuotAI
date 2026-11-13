@@ -229,15 +229,7 @@ struct PaceHistoryChart: View {
                         .padding(.top, plotRect.minY + 8)
 
                     if let hoverElapsed, brush == nil, !hoverDots.isEmpty {
-                        tipView(elapsed: hoverElapsed)
-                            .offset(
-                                tipOffset(
-                                    in: geo.size,
-                                    plotOrigin: plotOrigin,
-                                    elapsed: hoverElapsed,
-                                    includesDisc: hoverDiscCluster(at: hoverElapsed) != nil
-                                )
-                            )
+                        placedTipView(in: geo.size, plotOrigin: plotOrigin, elapsed: hoverElapsed)
                     }
                 }
             }
@@ -1323,15 +1315,7 @@ struct PaceHistoryChart: View {
         .padding(.vertical, 6)
         .frame(minWidth: 148, alignment: .leading)
         .fixedSize(horizontal: true, vertical: true)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.92))
-                .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
-        )
+        .modifier(HoverTipSurface())
         .allowsHitTesting(false)
     }
 
@@ -1556,21 +1540,56 @@ struct PaceHistoryChart: View {
         }
     }
 
-    private func tipOffset(
-        in size: CGSize,
-        plotOrigin: CGFloat,
-        elapsed: Double,
-        includesDisc: Bool
-    ) -> CGSize {
-        let tipW: CGFloat = includesDisc ? 210 : 168
-        let gap: CGFloat = 8
+    /// Pins the tip's near edge `gap` pt from the hover guide. Anchored by padding from
+    /// the chart edge instead of a hard-coded width, so the gap is the same on both halves
+    /// whatever the tip's real width (with or without the discrepancy section).
+    private func placedTipView(in size: CGSize, plotOrigin: CGFloat, elapsed: Double) -> some View {
+        let gap: CGFloat = 38
         let span = max(xDomain.upperBound - xDomain.lowerBound, 1e-9)
         let frac = (elapsed - xDomain.lowerBound) / span
         let guide = plotOrigin + CGFloat(frac) * plotW
         let mid = (xDomain.lowerBound + xDomain.upperBound) / 2
-        let rawX = elapsed >= mid ? guide - tipW - gap : guide + gap
-        let clampedX = min(max(rawX, 4), size.width - tipW - 4)
-        return CGSize(width: clampedX, height: 8)
+        let tipOnLeft = elapsed >= mid
+        return tipView(elapsed: elapsed)
+            .padding(.leading, tipOnLeft ? 0 : guide + gap)
+            .padding(.trailing, tipOnLeft ? size.width - guide + gap : 0)
+            .padding(.top, 8)
+            .frame(
+                width: size.width,
+                height: size.height,
+                alignment: tipOnLeft ? .topTrailing : .topLeading
+            )
+    }
+}
+
+/// Hover tip chrome: clear Liquid Glass on macOS 26+, window-colour tint before that (deployment target is 14).
+private struct HoverTipSurface: ViewModifier {
+    private static let shape = RoundedRectangle(cornerRadius: 6, style: .continuous)
+
+    func body(content: Content) -> some View {
+        // `glassEffect` only exists in the macOS 26 SDK (Swift 6.2+); CI builds with Xcode 16.4.
+        #if compiler(>=6.2)
+        if #available(macOS 26.0, *) {
+            content.glassEffect(.clear, in: Self.shape)
+        } else {
+            tinted(content)
+        }
+        #else
+        tinted(content)
+        #endif
+    }
+
+    private func tinted(_ content: Content) -> some View {
+        content
+            .background(
+                Self.shape
+                    .fill(.regularMaterial.opacity(0.75))
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+            )
+            .overlay(
+                Self.shape
+                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
+            )
     }
 }
 
