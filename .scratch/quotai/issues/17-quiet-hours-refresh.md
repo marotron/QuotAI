@@ -3,7 +3,7 @@
 Type: task
 Status: open
 Blocked by:
-Target: next version
+Target: verification of 0.20.0
 GitHub: https://github.com/marotron/QuotAI/issues/31
 
 ## Question
@@ -19,7 +19,7 @@ Add a **daily quiet-hours window** so automatic quota polling skips overnight (o
 
 ## Placement
 
-Settings → **Account**, near **Refresh rate** / **Dynamic refresh**:
+Settings → **Refresh**, near **Refresh rate** / **Dynamic refresh**:
 
 - Toggle **Quiet hours** + start / end time (local clock; window may cross midnight).
 - Toggle **Refresh on wake** (default on).
@@ -50,3 +50,7 @@ Mirrored to GitHub [#31](https://github.com/marotron/QuotAI/issues/31).
 ### 2026-11-14 — candidate implementation
 
 Candidate work for 0.20.0 is in progress. Decisions, scope and outstanding verification are recorded in [the automatic refresh contract](../../../docs/automatic-refresh.md). The issue remains open until acceptance is verified.
+
+### 2026-11-14 — released, verification open
+
+The 0.20.0 release includes this feature under Settings → Refresh. The issue remains open for the outstanding checks in the [automatic refresh contract](../../../docs/automatic-refresh.md).
