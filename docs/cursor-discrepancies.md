@@ -91,11 +91,11 @@ Discrepancy delivery is separate from corridor blink/notify/email. Respect detec
 - [x] Billing evidence persists per period, invalidates when activity extends, and clears at period rollover. Conversation IDs survive parsing/normalization/reload.
 - [x] Network tests verify at most two pages per window and no automatic retry on authentication failure. Real-data selective probe and live app remove both Free warnings and preserve all 120 genuine 6 November warnings.
 
-- [x] Same model with explicit own-key routing versus other/missing reasons produces distinct evidence; `connect` alone is not classified as external. Automated regression added; working tree only.
-- [x] Routing metadata persists across refresh/reload and backfills by UUID from old state without shortening activity; failed scans/saves keep migration retryable. Automated reader/store regression added; working tree only. Missing retained records leave unknown metadata.
+- [x] Same model with explicit own-key routing versus other/missing reasons produces distinct evidence; `connect` alone is not classified as external. Automated regression included in 0.19.3.
+- [x] Routing metadata persists across refresh/reload and backfills by UUID from old state without shortening activity; failed scans/saves keep migration retryable. Automated reader/store regression included in 0.19.3. Missing retained records leave unknown metadata.
 - [ ] A long turn overlapping a later same-meter increase is matched; later increases during that interval do not create contradictory unbilled status. Wrong-meter increases remain isolated.
 - [x] Missing/nil/wrong-meter post-turn readings remain pending even after wall-clock grace passes; a later valid observation can resolve the status. Implemented with RC2 regression tests; not released.
-- [x] Exact BYOK turns neither create missing-debit warnings nor explain Cursor quota increases; otherwise identical Gemini turns remain in normal matching. Automated regression added; working tree only.
+- [x] Exact BYOK turns neither create missing-debit warnings nor explain Cursor quota increases; otherwise identical Gemini turns remain in normal matching. Automated regression included in 0.19.3.
 - [ ] Resolve automatic warning eligibility for adequately observed no-increase activity using confirmed genuine 6 November cases and later false-positive examples. Do not simply suppress this entire detection direction. Main notice, chart bands/strip, counts and notifications must share the resulting policy.
 - [ ] Eligible unexplained quota increases remain visible; identical warning results do not repeatedly notify. Recomputing removes obsolete warnings without notifying about them.
 - [ ] Reader tests cover relaunch, incomplete records/split UTF-8, truncation, monotonic intervals and safe persistence ordering where practical.
