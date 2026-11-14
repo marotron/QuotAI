@@ -44,6 +44,9 @@ public enum ChangelogParser {
         let lines = block.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         guard let header = lines.first else { return nil }
 
+        if header == "[Unreleased]" || header == "Unreleased" {
+            return ChangelogRelease(version: "Unreleased", date: "", sections: parseSections(from: lines.dropFirst().joined(separator: "\n")))
+        }
         let parts = header.components(separatedBy: " — ")
         guard parts.count == 2 else { return nil }
         let version = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)

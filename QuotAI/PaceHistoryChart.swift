@@ -541,8 +541,8 @@ struct PaceHistoryChart: View {
 
     @ChartContentBuilder
     private var seriesMarks: some ChartContent {
-        // One downsampled LineMark stream per meter (series tag). Hover/tip still
-        // use the full-resolution series so accuracy is unchanged.
+        // Zoomed marks preserve the raw piecewise-linear geometry used by hover.
+        // The overview retains its reduced, smoothed presentation.
         ForEach(plottedMeterIds, id: \.rawValue) { meterId in
             ForEach(downsampledSeriesPoints(for: meterId)) { row in
                 LineMark(
@@ -553,7 +553,7 @@ struct PaceHistoryChart: View {
                 .foregroundStyle(color(for: meterId))
                 .opacity(0.75)
                 .lineStyle(StrokeStyle(lineWidth: 1.75, lineCap: .round, lineJoin: .round))
-                .interpolationMethod(.monotone)
+                .interpolationMethod(PaceHistoryChartZoom.isZoomed(xDomain) ? .linear : .monotone)
             }
         }
 
@@ -608,7 +608,7 @@ struct PaceHistoryChart: View {
                     y: .value("Used", dot.used)
                 )
                 .symbolSize(50)
-                .foregroundStyle(dot.color)
+                .foregroundStyle(dot.color.opacity(0.5))
             }
         }
     }
@@ -1123,16 +1123,11 @@ struct PaceHistoryChart: View {
     }
 
     private func downsampledSeriesPoints(for meterId: PaceHistoryMeterId) -> [SeriesPoint] {
-        // Use the whole mark budget inside the visible range. A global 200-point
-        // reduction made a ×10 zoom only draw about 20 points, while the hover
-        // dot correctly interpolated from the full history. Keep full-range
-        // quantisation, but retain source Y precision when inspecting a zoom.
-        let zoomed = PaceHistoryChartZoom.isZoomed(xDomain)
-        return PaceHistoryChartDownsample.downsample(
-            samples: series[meterId] ?? [],
-            domain: xDomain,
-            yResolution: zoomed ? 0 : PaceHistoryChartDownsample.yResolution
-        )
+        let samples = series[meterId] ?? []
+        let plotted = PaceHistoryChartZoom.isZoomed(xDomain)
+            ? PaceHistoryChartDownsample.zoomSamples(samples: samples, domain: xDomain)
+            : PaceHistoryChartDownsample.downsample(samples: samples, domain: xDomain)
+        return plotted
             .enumerated()
             .map { idx, sample in
                 SeriesPoint(
@@ -1286,7 +1281,7 @@ struct PaceHistoryChart: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(String(format: "%.0f%% used", dot.used))
+                    Text(String(format: "%.2f%% used", dot.used))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                         .lineLimit(1)
@@ -1427,7 +1422,7 @@ struct PaceHistoryChart: View {
             tipBandRow(
                 label: "\(labelPrefix)Over ≥",
                 value: String(
-                    format: "%.0f%% used",
+                    format: "%.2f%% used",
                     clampPct(PaceAlertBands.overUsed(atElapsed: t, thresholds: th) * 100)
                 )
             )
@@ -1437,7 +1432,7 @@ struct PaceHistoryChart: View {
                 tipBandRow(
                     label: "\(labelPrefix)Under ≤",
                     value: String(
-                        format: "%.0f%% used",
+                        format: "%.2f%% used",
                         clampPct(PaceAlertBands.underUsed(atElapsed: t, thresholds: th) * 100)
                     )
                 )
@@ -1451,10 +1446,13 @@ struct PaceHistoryChart: View {
         HStack(spacing: 6) {
             Text(label)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text(value)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: true)
         }
         .padding(.top, 2)
     }

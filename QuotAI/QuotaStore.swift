@@ -61,7 +61,7 @@ final class QuotaStore: ObservableObject {
 
     private var detectorHasRecentTurn: Bool {
         guard discrepancyDetectionEnabled,
-              let latest = cursorActivityStore.state.turns.last?.timestamp
+              let latest = cursorActivityStore.state.turns.last(where: { !$0.isOutsideCursorBilling })?.timestamp
         else {
             return false
         }
@@ -556,7 +556,7 @@ final class QuotaStore: ObservableObject {
         }
         if scope == .all || scope == .cursor {
             // Do not await: Agent Host log scan must not stall meters / Keychain return.
-            scheduleCursorDiscrepancyDetector(at: stamp)
+            scheduleCursorDiscrepancyDetector(at: stamp, accessToken: result.credentials.accessToken)
         }
         authError = nil
         refreshError = nil
@@ -592,20 +592,23 @@ final class QuotaStore: ObservableObject {
     }
 
     private var discrepancyDetectorTask: Task<Void, Never>?
+    private var isDetectingCursorActivity = false
 
-    private func scheduleCursorDiscrepancyDetector(at timestamp: Date) {
+    private func scheduleCursorDiscrepancyDetector(at timestamp: Date, accessToken: String) {
         discrepancyDetectorTask = Task { [weak self] in
-            await self?.updateCursorDiscrepancyDetector(at: timestamp)
+            await self?.updateCursorDiscrepancyDetector(at: timestamp, accessToken: accessToken)
         }
     }
 
     /// Keeps filesystem access in the app target and matching rules in QuotAICore.
-    private func updateCursorDiscrepancyDetector(at timestamp: Date) async {
-        guard discrepancyDetectionEnabled,
+    private func updateCursorDiscrepancyDetector(at timestamp: Date, accessToken: String) async {
+        guard discrepancyDetectionEnabled, !isDetectingCursorActivity,
               let periodStart = cursorModels.periodStart ?? otherModels.periodStart
         else {
             return
         }
+        isDetectingCursorActivity = true
+        defer { isDetectingCursorActivity = false }
         do {
             try cursorActivityStore.replacePeriodIfNeeded(periodStart: periodStart)
             var priorOffsets = cursorActivityStore.state.logByteOffsets
@@ -618,23 +621,24 @@ final class QuotaStore: ObservableObject {
                 }.value
                 try cursorActivityStore.replaceLogByteOffsets(priorOffsets)
             }
-            // One-shot: retained turns lack `endedAt` but offsets already past history →
-            // re-read from 0 so active-turn intervals can suppress false unattributed bumps.
-            let needsEndedAtBackfill = !cursorActivityStore.state.didBackfillTurnEndedAt
-                && !priorOffsets.isEmpty
-                && cursorActivityStore.state.turns.contains(where: { $0.endedAt == nil })
-            if needsEndedAtBackfill {
+            // Rescan once for stale activity ends and for routing reasons omitted by
+            // older caches, even if an earlier format backfill already ran.
+            if cursorActivityStore.state.needsTurnActivityBackfill || cursorActivityStore.state.needsBillingRoutingBackfill {
                 priorOffsets = [:]
             }
+            let knownTurns = cursorActivityStore.state.turns
             let reader = cursorLogActivityReader
             let read = await Task.detached {
-                reader.readNewTurns(priorOffsets: priorOffsets)
+                reader.readNewTurns(priorOffsets: priorOffsets, knownTurns: knownTurns)
             }.value
-            try cursorActivityStore.replaceLogByteOffsets(read.offsets)
             let turns = read.turns.filter { $0.timestamp >= periodStart }
             try cursorActivityStore.append(turns: turns)
-            if needsEndedAtBackfill {
-                try cursorActivityStore.markTurnEndedAtBackfilled()
+            // Persist the activity before advancing cursors so an interrupted save can
+            // safely replay records rather than permanently skipping them.
+            try cursorActivityStore.replaceLogByteOffsets(read.offsets)
+            try cursorActivityStore.markTurnEndedAtBackfilled()
+            if read.isComplete {
+                try cursorActivityStore.markBillingRoutingBackfilled()
             }
             let paceSamples =
                 paceHistoryStore.series(for: .cursor) + paceHistoryStore.series(for: .other)
@@ -653,11 +657,45 @@ final class QuotaStore: ObservableObject {
                 ]
             )
 
-            let state = cursorActivityStore.state
-            let events = CursorDiscrepancyReconciler.reconcile(
+            var state = cursorActivityStore.state
+            let candidates = CursorDiscrepancyReconciler.reconcile(
                 turns: state.turns,
                 snapshots: state.snapshots,
+                billingChecks: state.billingChecks,
                 now: timestamp
+            )
+            let windows = CursorUsageBilling.windows(
+                events: candidates, turns: state.turns, checks: state.billingChecks,
+                lastLookup: state.lastBillingLookupAt, now: timestamp
+            )
+            if !windows.isEmpty {
+                try cursorActivityStore.recordBillingLookup(at: timestamp)
+                let lookupTurns = state.turns
+                for window in windows {
+                    guard discrepancyDetectionEnabled,
+                          (cursorModels.periodStart ?? otherModels.periodStart) == periodStart else { return }
+                    do {
+                        let checks = try await Task.detached {
+                            let result = try await CursorUsageBillingClient.fetch(window: window, accessToken: accessToken)
+                            return CursorUsageBilling.checks(
+                                for: window, records: result.records, complete: result.complete,
+                                turns: lookupTurns, now: timestamp
+                            )
+                        }.value
+                        guard discrepancyDetectionEnabled,
+                              (self.cursorModels.periodStart ?? self.otherModels.periodStart) == periodStart else { return }
+                        try cursorActivityStore.merge(billingChecks: checks)
+                    } catch {
+                        // Optional billing enrichment never fails quota refresh or invents Free status.
+                        break
+                    }
+                }
+            }
+            guard discrepancyDetectionEnabled,
+                  (cursorModels.periodStart ?? otherModels.periodStart) == periodStart else { return }
+            state = cursorActivityStore.state
+            let events = CursorDiscrepancyReconciler.reconcile(
+                turns: state.turns, snapshots: state.snapshots, billingChecks: state.billingChecks, now: timestamp
             )
             let known = Set(state.events.map(\.notificationSignature))
             let newEvents = events.filter { !known.contains($0.notificationSignature) }

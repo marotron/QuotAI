@@ -43,6 +43,15 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 if [[ -n "${RELEASE_TAG:-}" ]]; then
+  CANDIDATE="$(sed -n 's/^[[:space:]]*INFOPLIST_KEY_QuotAIReleaseCandidate:[[:space:]]*\([0-9][0-9]*\).*/\1/p' project.yml | head -1)"
+  if [[ "$CANDIDATE" != "0" ]]; then
+    echo "error: cannot ship while release candidate is ${CANDIDATE:-missing}; clear it to 0 first" >&2
+    exit 1
+  fi
+  if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "error: ship tag must be plain vX.Y.Z" >&2
+    exit 1
+  fi
   EXPECTED="${RELEASE_TAG#v}"
   if [[ "$EXPECTED" != "$VERSION" ]]; then
     echo "error: tag ${RELEASE_TAG} (v${EXPECTED}) != MARKETING_VERSION ${VERSION} in project.yml" >&2

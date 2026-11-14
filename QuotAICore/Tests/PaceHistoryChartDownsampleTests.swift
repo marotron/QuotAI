@@ -85,6 +85,36 @@ final class PaceHistoryChartDownsampleTests: XCTestCase {
         XCTAssertTrue(out.contains { $0.elapsedPct == 50 && $0.usedPct == 90 })
     }
 
+    func testZoomGeometryMatchesRawReadingsAndInterpolationBeyondPointBudget() throws {
+        let samples = (0...10_000).map { index in
+            let elapsed = Double(index) / 100
+            return sample(elapsedPct: elapsed, usedPct: floor(elapsed * 6) / 6 + 0.12345)
+        }
+        let domain = 63.015...73.015
+        let plotted = PaceHistoryChartDownsample.zoomSamples(samples: samples, domain: domain)
+        func points(_ samples: [PaceHistorySample]) -> [PaceHistoryChartPoint] {
+            samples.map { PaceHistoryChartPoint(elapsedPct: $0.elapsedPct, usedPct: $0.usedPct) }
+        }
+        let original = points(samples)
+        let rendered = points(plotted)
+        let probes = samples.filter { domain.contains($0.elapsedPct) }.map(\.elapsedPct) + [domain.lowerBound, domain.upperBound, 67.94758]
+        for elapsed in probes {
+            let expected = try XCTUnwrap(PaceHistoryInterpolation.usedPct(samples: original, atElapsed: elapsed))
+            let actual = try XCTUnwrap(PaceHistoryInterpolation.usedPct(samples: rendered, atElapsed: elapsed))
+            XCTAssertEqual(actual, expected, accuracy: 1e-12)
+        }
+        XCTAssertLessThan(plotted.count, probes.count, "Plateaus should not require thousands of identical marks")
+    }
+
+    func testZoomKeepsEveryNonCollinearReadingEvenBeyondOverviewBudget() {
+        let samples = (0...500).map { index in
+            sample(elapsedPct: Double(index) / 50, usedPct: Double(index * index) / 100_000 + 76.12345)
+        }
+        let plotted = PaceHistoryChartDownsample.zoomSamples(samples: samples, domain: 0...10)
+        XCTAssertEqual(plotted, samples, "A point budget must not discard non-collinear readings in a zoom")
+        XCTAssertEqual(PaceHistoryChartDownsample.zoomSamples(samples: [], domain: 0...10), [])
+    }
+
     func testDomainDownsampleUsesVisibleSamplesWithEdgeContext() {
         let samples = (0...10_000).map { index in
             let elapsed = Double(index) / 100

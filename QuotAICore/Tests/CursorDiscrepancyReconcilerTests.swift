@@ -37,7 +37,10 @@ final class CursorDiscrepancyReconcilerTests: XCTestCase {
 
         let events = CursorDiscrepancyReconciler.reconcile(
             turns: [expected],
-            snapshots: [snapshot(offset: 0, cursor: 10, other: 10)],
+            snapshots: [
+                snapshot(offset: 0, cursor: 10, other: 10),
+                snapshot(offset: 5 * 60 + 10, cursor: 10, other: 10),
+            ],
             now: now.addingTimeInterval(5 * 60 + 11)
         )
 
@@ -45,6 +48,38 @@ final class CursorDiscrepancyReconcilerTests: XCTestCase {
         XCTAssertEqual(events[0].kind, .unbilledActivity)
         XCTAssertEqual(events[0].meter, .cursorModels)
         XCTAssertEqual(events[0].generationUUIDs, [expected.generationUUID])
+    }
+
+    func testLongTurnMatchesIncreaseDuringActivity() {
+        var active = turn(offset: 10, id: "long", meter: .cursorModels)
+        active.endedAt = now.addingTimeInterval(100 * 60)
+        let events = CursorDiscrepancyReconciler.reconcile(
+            turns: [active],
+            snapshots: [
+                snapshot(offset: 0, cursor: 10, other: 10),
+                snapshot(offset: 80 * 60, cursor: 10, other: 10),
+                snapshot(offset: 90 * 60, cursor: 11, other: 10),
+                snapshot(offset: 110 * 60, cursor: 11, other: 10),
+            ], now: now.addingTimeInterval(120 * 60)
+        )
+        XCTAssertTrue(events.isEmpty)
+    }
+
+    func testUnbilledRequiresSameMeterCoverageAfterLatestActivityAndGrace() {
+        var active = turn(offset: 10, id: "active", meter: .cursorModels)
+        active.endedAt = now.addingTimeInterval(20 * 60)
+        let baseline = snapshot(offset: 0, cursor: 10, other: 10)
+        let later = now.addingTimeInterval(60 * 60)
+        for observations in [
+            [baseline],
+            [baseline, snapshot(offset: 24 * 60, cursor: 10, other: 10)],
+            [baseline, snapshot(offset: 30 * 60, cursor: nil, other: 10)],
+            [snapshot(offset: 0, cursor: nil, other: 10), snapshot(offset: 30 * 60, cursor: 10, other: 10)],
+        ] {
+            XCTAssertTrue(CursorDiscrepancyReconciler.reconcile(turns: [active], snapshots: observations, now: later).isEmpty)
+        }
+        let covered = [baseline, snapshot(offset: 25 * 60, cursor: 10, other: 10)]
+        XCTAssertEqual(CursorDiscrepancyReconciler.reconcile(turns: [active], snapshots: covered, now: later).map(\.kind), [.unbilledActivity])
     }
 
     func testReportsMeterIncreaseWithoutObservedTurn() {
@@ -250,6 +285,47 @@ final class CursorDiscrepancyReconcilerTests: XCTestCase {
         XCTAssertFalse(events.contains { $0.kind == .unattributedQuotaChange })
     }
 
+    func testLaterChunkRemovesFalseBumpsInsideExtendedTurnAndMeterLagWindow() throws {
+        let uuid = "a83679db-f9e5-4e72-8b56-c60449e43f3f"
+        let initial = CursorActivityParser.parse(log: """
+        2026-11-04 13:00:00.000 [info] Selected Agent Host turn runtime {"generationUUID":"\(uuid)","modelId":"claude-haiku-5-5"}
+        2026-11-04 13:00:12.000 [info] toolCall requestId=\(uuid)
+        """)
+        let start = try XCTUnwrap(initial.first).timestamp
+        func sample(_ minutes: Double, _ other: Double) -> CursorMeterSnapshot {
+            CursorMeterSnapshot(
+                timestamp: start.addingTimeInterval(minutes * 60),
+                cursorModelsPercentUsed: 10,
+                otherModelsPercentUsed: other
+            )
+        }
+        let samples = [
+            sample(-1, 98.4), sample(15, 98.8), sample(40, 98.8),
+            sample(46, 98.9), sample(57, 99.1), sample(73, 99.2),
+        ]
+        let now = start.addingTimeInterval(90 * 60)
+        let before = CursorDiscrepancyReconciler.reconcile(turns: initial, snapshots: samples, now: now)
+        XCTAssertEqual(before.filter { $0.kind == .unattributedQuotaChange }.count, 3)
+
+        let updated = CursorActivityParser.parse(log: """
+        2026-11-04 14:00:00.000 [info] shellApproval requestId=\(uuid)
+        """, knownTurns: initial)
+        let after = CursorDiscrepancyReconciler.reconcile(turns: updated, snapshots: samples, now: now)
+        XCTAssertTrue(after.isEmpty)
+
+        let cursorBump = sample(74, 99.2)
+        let otherMeterSample = CursorMeterSnapshot(
+            timestamp: cursorBump.timestamp,
+            cursorModelsPercentUsed: 11,
+            otherModelsPercentUsed: 99.2
+        )
+        let withWrongMeter = CursorDiscrepancyReconciler.reconcile(
+            turns: updated, snapshots: samples + [otherMeterSample], now: now
+        )
+        XCTAssertEqual(withWrongMeter.map(\.kind), [.unattributedQuotaChange])
+        XCTAssertEqual(withWrongMeter.map(\.meter), [.cursorModels])
+    }
+
     /// After a short turn ends, bumps past lookback from that end remain unattributed.
     func testUnattributedStillReportedWhenBumpBeyondLookbackAfterTurnEnded() {
         let turns = [
@@ -333,7 +409,7 @@ final class CursorDiscrepancyReconcilerTests: XCTestCase {
         )
     }
 
-    private func snapshot(offset: TimeInterval, cursor: Double, other: Double) -> CursorMeterSnapshot {
+    private func snapshot(offset: TimeInterval, cursor: Double?, other: Double?) -> CursorMeterSnapshot {
         CursorMeterSnapshot(
             timestamp: now.addingTimeInterval(offset),
             cursorModelsPercentUsed: cursor,

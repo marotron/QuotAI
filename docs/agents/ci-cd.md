@@ -52,7 +52,7 @@ A GitHub Release is created **only** by the Release workflow after a matching ta
 
 ### Human steps (before Actions)
 
-1. On a `feat/…` / `fix/…` / `hotfix/…` branch: bump `MARKETING_VERSION` + `CURRENT_PROJECT_VERSION` in `project.yml`, regenerate the Xcode project, add a `CHANGELOG.md` section, update README download links. Commit only after confirm (see `.cursor/rules/versioning.mdc`).
+1. Open the next numeric marketing version as RC 1 on a feature/fix/hotfix branch, increment build and regenerate. Candidate product/test/Unreleased updates increment RC and build together; notes stay under Unreleased and README downloads on the shipped version. For authorized ship, clear `INFOPLIST_KEY_QuotAIReleaseCandidate` to 0, increment build, promote dated notes and update the full relevant README. Commit only after confirmation (see `.cursor/rules/versioning.mdc`).
 2. Merge to `main`.
 3. On the ship commit, create a **signed** annotated tag matching `MARKETING_VERSION`, verify, push:
 
@@ -62,7 +62,7 @@ git verify-tag v0.11.0
 git push origin v0.11.0
 ```
 
-Tag must be `v` + semver equal to `MARKETING_VERSION`. `Scripts/release/dmg.sh` fails if `RELEASE_TAG` and `project.yml` disagree. Unsigned / lightweight tags are not ship tags (GitHub Verified needs a signed tag).
+Tag must be plain `vX.Y.Z` equal to `MARKETING_VERSION`, with candidate 0. `Scripts/release/dmg.sh` rejects candidate identity or mismatching tags before building. Release CI skips tags containing a prerelease suffix. Unsigned / lightweight tags are not ship tags (GitHub Verified needs a signed tag).
 
 ### Runner steps (after tag push)
 

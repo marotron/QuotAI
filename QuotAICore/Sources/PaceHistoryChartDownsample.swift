@@ -22,6 +22,41 @@ public enum PaceHistoryChartDownsample {
         maxPoints: Int = Self.maxPoints,
         yResolution: Double = Self.yResolution
     ) -> [PaceHistorySample] {
+        downsample(
+            samples: visibleSamples(samples, domain: domain),
+            maxPoints: maxPoints,
+            yResolution: yResolution
+        )
+    }
+
+    /// Lossless geometry for inspection: retain every visible change in slope,
+    /// removing only exactly collinear intermediate samples (usually plateaus).
+    /// No point budget or Y rounding is applied, so linear marks match raw hover values.
+    public static func zoomSamples(
+        samples: [PaceHistorySample],
+        domain: ClosedRange<Double>
+    ) -> [PaceHistorySample] {
+        var result: [PaceHistorySample] = []
+        for sample in visibleSamples(samples, domain: domain) {
+            while result.count >= 2 {
+                let a = result[result.count - 2]
+                let b = result[result.count - 1]
+                let dx1 = b.elapsedPct - a.elapsedPct
+                let dx2 = sample.elapsedPct - b.elapsedPct
+                guard dx1 > 0, dx2 > 0,
+                      dx1 * (sample.usedPct - b.usedPct) == dx2 * (b.usedPct - a.usedPct)
+                else { break }
+                result.removeLast()
+            }
+            result.append(sample)
+        }
+        return result
+    }
+
+    private static func visibleSamples(
+        _ samples: [PaceHistorySample],
+        domain: ClosedRange<Double>
+    ) -> [PaceHistorySample] {
         guard !samples.isEmpty else { return [] }
 
         let firstAtOrAfterLower = samples.firstIndex {
@@ -35,11 +70,7 @@ public enum PaceHistoryChartDownsample {
         let upperIndex = min(samples.index(before: samples.endIndex), lastAtOrBeforeUpper + 1)
         guard lowerIndex <= upperIndex else { return [] }
 
-        return downsample(
-            samples: Array(samples[lowerIndex...upperIndex]),
-            maxPoints: maxPoints,
-            yResolution: yResolution
-        )
+        return Array(samples[lowerIndex...upperIndex])
     }
 
     /// Largest Triangle Three Buckets (LTTB) downsample.

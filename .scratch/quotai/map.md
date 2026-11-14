@@ -23,6 +23,12 @@ A written product spec plus a working macOS menu-bar app that shows remaining **
 
 ## Decisions so far
 
+- **Selective billing evidence — 2026-11-14:** user approved bounded background `GetFilteredUsageEvents` lookups for unmatched activity. RC5 caches verified chargeability, removes the two confirmed Free Auto warnings, and preserves the 120 genuine 6 November warnings in live validation. This supersedes the earlier local-only runtime limit while retaining no CSV import. See [the contract](../../docs/cursor-discrepancies.md) for exact limits and conservative correlation; implementation is local/unreleased.
+
+**Historical context:** the early v1 decisions below preserve their original answers. Current application contracts are [product requirements](../../docs/pr.md) and [tech specs](../../docs/tech-specs.md); they supersede outdated two-meter, daily-sampling, and polling descriptions in this history.
+
+- **Cursor discrepancy reliability — 2026-11-14:** routing/interval/observation target locked, implementation pending. Preserve explicit own-key routing separately from quota-pool guesses; backfill/recompute retained results. Follow-up: user confirms 6 November / cluster 1 genuine. Preserve it as a positive validation case; the blanket no-increase suppression policy is withdrawn and automatic eligibility remains unresolved. See [the detailed contract](../../docs/cursor-discrepancies.md) and [investigation](research/cursor-discrepancy-investigation-2026-11-14.md). Do not mark shipped until its acceptance checks pass.
+
 - **Name the meters QuotAI surfaces** → v1 = Cursor Models + Grok Bot (`%` + days left) + per-meter pace; Other Models/on-demand out. Bar: Used+days (default) or Pace dial (worse meter; 0↔100%↔∞ log; green/red/blue). Missing Grok = error row. Dropdown always full + dials. See [issues/01-name-the-meters.md](issues/01-name-the-meters.md).
 - **How Cursor Spending data is fetched today** → Connect `GetCurrentPeriodUsage` (`autoPercentUsed` + `billingCycleEnd`) and `GetSandUsageStatus` / REST sand twin for Grok Bot weekly `%`; IDE Bearer (+ cookie fallbacks). See [issues/02-research-cursor-spending-fetch.md](issues/02-research-cursor-spending-fetch.md).
 - **Auth and secret storage** → Hybrid capture (vscdb then paste); Keychain SoT (`dev.marotron.QuotAI` / `default` / JSON tokens / device-only); fail → one DB re-import then quiet menu recovery; always **Open Cursor Spending** (`https://cursor.com/dashboard/spending`). See [issues/03-auth-and-secret-storage.md](issues/03-auth-and-secret-storage.md).

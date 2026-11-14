@@ -75,6 +75,61 @@ final class CursorActivityStoreTests: XCTestCase {
         XCTAssertEqual(store.state.turns[0].endedAt, laterEnd)
     }
 
+    func testExtendsStoredTurnFromLaterLogChunkAfterReload() throws {
+        let uuid = "a83679db-f9e5-4e72-8b56-c60449e43f3f"
+        let store = CursorActivityStore(fileURL: fileURL)
+        let initial = CursorActivityParser.parse(log: """
+        2026-11-04 13:00:00.000 [info] Selected Agent Host turn runtime {"generationUUID":"\(uuid)","modelId":"claude-haiku-5-5"}
+        2026-11-04 13:00:12.000 [info] toolCall requestId=\(uuid)
+        """)
+        try store.append(turns: initial)
+
+        let reloaded = CursorActivityStore(fileURL: fileURL)
+        let update = CursorActivityParser.parse(log: """
+        2026-11-04 13:50:00.000 [info] shellApproval requestId=\(uuid)
+        """, knownTurns: reloaded.state.turns)
+        try reloaded.append(turns: update)
+
+        let persisted = CursorActivityStore(fileURL: fileURL).state.turns
+        XCTAssertEqual(persisted.count, 1)
+        XCTAssertEqual(persisted[0].timestamp, initial[0].timestamp)
+        XCTAssertEqual(persisted[0].modelID, "claude-haiku-5-5")
+        XCTAssertEqual(persisted[0].endedAt, initial[0].timestamp.addingTimeInterval(50 * 60))
+    }
+
+    func testLegacyCompletedBackfillStillRepairsStaleNonNilEndOnce() throws {
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let legacy = CursorActivityStore.State(
+            periodStart: start,
+            turns: [CursorAgentTurn(
+                timestamp: start,
+                generationUUID: "a83679db-f9e5-4e72-8b56-c60449e43f3f",
+                meter: .otherModels,
+                modelID: "claude-haiku-5-5",
+                endedAt: start.addingTimeInterval(12)
+            )],
+            logByteOffsets: ["/tmp/Cursor Agent Host.log": 4_096],
+            didBackfillTurnEndedAt: true
+        )
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
+        object.removeValue(forKey: "didBackfillIncrementalTurnActivity")
+        try JSONSerialization.data(withJSONObject: object).write(to: fileURL)
+
+        let store = CursorActivityStore(fileURL: fileURL)
+        XCTAssertTrue(store.state.didBackfillTurnEndedAt)
+        XCTAssertTrue(store.state.needsTurnActivityBackfill)
+        XCTAssertEqual(store.state.turns, legacy.turns)
+        XCTAssertEqual(store.state.logByteOffsets, legacy.logByteOffsets)
+
+        try store.markTurnEndedAtBackfilled()
+        let reloaded = CursorActivityStore(fileURL: fileURL)
+        XCTAssertTrue(reloaded.state.didBackfillIncrementalTurnActivity)
+        XCTAssertFalse(reloaded.state.needsTurnActivityBackfill)
+        try reloaded.replacePeriodIfNeeded(periodStart: start.addingTimeInterval(30 * 86_400))
+        XCTAssertTrue(reloaded.state.didBackfillIncrementalTurnActivity)
+        XCTAssertFalse(reloaded.state.needsTurnActivityBackfill)
+    }
+
     func testNormalizePreservesEndedAt() throws {
         let period = Date(timeIntervalSince1970: 1_700_000_000)
         let ended = period.addingTimeInterval(30 * 60)
