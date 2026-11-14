@@ -10,11 +10,17 @@ public enum CursorMeterClassification: String, Codable, CaseIterable, Equatable,
 public struct CursorAgentTurn: Codable, Equatable, Sendable, Identifiable {
     public var timestamp: Date
     public var generationUUID: String
+    /// Model-derived pool guess; excluded from matching when outside Cursor billing.
     public var meter: CursorMeterClassification
     /// Real model IDs for composer/grok/third-party; Cursor's `default`/`auto` runtime stores `"auto"`.
     public var modelID: String?
     /// Latest Agent Host activity timestamp for this UUID; nil means unknown (point-in-time at `timestamp`).
     public var endedAt: Date?
+    /// Explicit per-turn routing evidence; absent in older caches/log formats.
+    public var routingReason: String?
+    public var conversationID: String?
+
+    public var isOutsideCursorBilling: Bool { routingReason == "byok-connect-routed" }
 
     public var id: String { generationUUID }
 
@@ -23,13 +29,17 @@ public struct CursorAgentTurn: Codable, Equatable, Sendable, Identifiable {
         generationUUID: String,
         meter: CursorMeterClassification,
         modelID: String?,
-        endedAt: Date? = nil
+        endedAt: Date? = nil,
+        routingReason: String? = nil,
+        conversationID: String? = nil
     ) {
         self.timestamp = timestamp
         self.generationUUID = generationUUID
         self.meter = meter
         self.modelID = modelID
         self.endedAt = endedAt
+        self.routingReason = routingReason
+        self.conversationID = conversationID
     }
 }
 
@@ -67,7 +77,11 @@ public enum CursorActivityParser {
         for line in lines {
             guard let turn = parse(line: line) else { continue }
             let key = turn.generationUUID.lowercased()
-            if turnsByUUID[key] == nil {
+            if var existing = turnsByUUID[key] {
+                if let reason = turn.routingReason { existing.routingReason = reason }
+                if let conversation = turn.conversationID { existing.conversationID = conversation }
+                turnsByUUID[key] = existing
+            } else {
                 turnsByUUID[key] = turn
             }
             if mentioned.insert(key).inserted { order.append(key) }
@@ -125,7 +139,9 @@ public enum CursorActivityParser {
             timestamp: timestamp,
             generationUUID: generationUUID,
             meter: classified.meter,
-            modelID: classified.storedModelID
+            modelID: classified.storedModelID,
+            routingReason: payload["reason"] as? String,
+            conversationID: payload["conversationId"] as? String
         )
     }
 
@@ -349,12 +365,18 @@ public enum CursorDiscrepancyReconciler {
     public static func reconcile(
         turns: [CursorAgentTurn],
         snapshots: [CursorMeterSnapshot],
+        billingChecks: [String: CursorBillingCheck] = [:],
         now: Date = Date(),
         graceWindow: TimeInterval = graceWindow,
         plateauLookback: TimeInterval = plateauLookback,
         unattributedLookback: TimeInterval = unattributedLookback
     ) -> [CursorDiscrepancyEvent] {
-        let orderedTurns = turns.sorted { $0.timestamp < $1.timestamp }
+        // External-key activity neither expects a Cursor quota debit nor explains one.
+        let orderedTurns = turns.filter { turn in
+            guard !turn.isOutsideCursorBilling else { return false }
+            let check = billingChecks[turn.generationUUID]
+            return !(check?.status == .nonChargeable && check?.covers(turn) == true)
+        }.sorted { $0.timestamp < $1.timestamp }
         let orderedSnapshots = snapshots.sorted { $0.timestamp < $1.timestamp }
         let increases = meterIncreases(from: orderedSnapshots)
         var matchedTurnIDs = Set<String>()
@@ -369,7 +391,7 @@ public enum CursorDiscrepancyReconciler {
             for turn in orderedTurns
                 where turn.meter == increase.meter
                     && !matchedTurnIDs.contains(turn.generationUUID)
-                    && turn.timestamp > window.start
+                    && (turn.endedAt ?? turn.timestamp) > window.start
                     && turn.timestamp <= window.end
             {
                 matchedTurnIDs.insert(turn.generationUUID)
@@ -379,8 +401,14 @@ public enum CursorDiscrepancyReconciler {
         var events: [CursorDiscrepancyEvent] = []
         for turn in orderedTurns
             where !matchedTurnIDs.contains(turn.generationUUID)
-                && orderedSnapshots.contains(where: { $0.timestamp <= turn.timestamp })
-                && now > turn.timestamp.addingTimeInterval(graceWindow)
+                && orderedSnapshots.contains(where: {
+                    $0.timestamp <= turn.timestamp && $0.percentUsed(for: turn.meter) != nil
+                })
+                && orderedSnapshots.contains(where: {
+                    $0.timestamp >= (turn.endedAt ?? turn.timestamp).addingTimeInterval(graceWindow)
+                        && $0.percentUsed(for: turn.meter) != nil
+                })
+                && now > (turn.endedAt ?? turn.timestamp).addingTimeInterval(graceWindow)
         {
             events.append(
                 CursorDiscrepancyEvent(
@@ -550,6 +578,14 @@ public final class CursorActivityStore: @unchecked Sendable {
         public var didBackfillTurnEndedAt: Bool
         /// Separate from the original backfill: even non-nil ends could go stale between reads.
         public var didBackfillIncrementalTurnActivity: Bool
+        public var didBackfillBillingRouting: Bool
+        public var didBackfillBillingConversations: Bool
+        public var billingChecks: [String: CursorBillingCheck]
+        public var lastBillingLookupAt: Date?
+
+        public var needsBillingRoutingBackfill: Bool {
+            (!didBackfillBillingRouting || !didBackfillBillingConversations) && !turns.isEmpty
+        }
 
         public var needsTurnActivityBackfill: Bool {
             !didBackfillIncrementalTurnActivity && !turns.isEmpty
@@ -562,7 +598,11 @@ public final class CursorActivityStore: @unchecked Sendable {
             events: [CursorDiscrepancyEvent] = [],
             logByteOffsets: [String: UInt64] = [:],
             didBackfillTurnEndedAt: Bool = false,
-            didBackfillIncrementalTurnActivity: Bool = false
+            didBackfillIncrementalTurnActivity: Bool = false,
+            didBackfillBillingRouting: Bool = false,
+            didBackfillBillingConversations: Bool = false,
+            billingChecks: [String: CursorBillingCheck] = [:],
+            lastBillingLookupAt: Date? = nil
         ) {
             self.periodStart = periodStart
             self.turns = turns
@@ -571,11 +611,16 @@ public final class CursorActivityStore: @unchecked Sendable {
             self.logByteOffsets = logByteOffsets
             self.didBackfillTurnEndedAt = didBackfillTurnEndedAt
             self.didBackfillIncrementalTurnActivity = didBackfillIncrementalTurnActivity
+            self.didBackfillBillingRouting = didBackfillBillingRouting
+            self.didBackfillBillingConversations = didBackfillBillingConversations
+            self.billingChecks = billingChecks
+            self.lastBillingLookupAt = lastBillingLookupAt
         }
 
         enum CodingKeys: String, CodingKey {
             case periodStart, turns, snapshots, events, logByteOffsets, didBackfillTurnEndedAt
-            case didBackfillIncrementalTurnActivity
+            case didBackfillIncrementalTurnActivity, didBackfillBillingRouting
+            case didBackfillBillingConversations, billingChecks, lastBillingLookupAt
         }
     }
 
@@ -605,11 +650,15 @@ public final class CursorActivityStore: @unchecked Sendable {
         let offsets = storedState.logByteOffsets
         let endedAtBackfill = storedState.didBackfillTurnEndedAt
         let incrementalActivityBackfill = storedState.didBackfillIncrementalTurnActivity
+        let billingRoutingBackfill = storedState.didBackfillBillingRouting
+        let conversationsBackfill = storedState.didBackfillBillingConversations
         storedState = State(
             periodStart: periodStart,
             logByteOffsets: offsets,
             didBackfillTurnEndedAt: endedAtBackfill,
-            didBackfillIncrementalTurnActivity: incrementalActivityBackfill
+            didBackfillIncrementalTurnActivity: incrementalActivityBackfill,
+            didBackfillBillingRouting: billingRoutingBackfill,
+            didBackfillBillingConversations: conversationsBackfill
         )
         try Self.save(storedState, to: fileURL)
     }
@@ -632,6 +681,17 @@ public final class CursorActivityStore: @unchecked Sendable {
         try Self.save(storedState, to: fileURL)
     }
 
+    public func markBillingRoutingBackfilled() throws {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !storedState.didBackfillBillingRouting || !storedState.didBackfillBillingConversations else { return }
+        var updated = storedState
+        updated.didBackfillBillingRouting = true
+        updated.didBackfillBillingConversations = true
+        try Self.save(updated, to: fileURL)
+        storedState = updated
+    }
+
     public func append(turns: [CursorAgentTurn]) throws {
         guard !turns.isEmpty else { return }
         lock.lock()
@@ -643,8 +703,10 @@ public final class CursorActivityStore: @unchecked Sendable {
                    existing.endedAt.map({ incomingEnd > $0 }) ?? true
                 {
                     existing.endedAt = incomingEnd
-                    byUUID[turn.generationUUID] = existing
                 }
+                if let reason = turn.routingReason { existing.routingReason = reason }
+                if let conversation = turn.conversationID { existing.conversationID = conversation }
+                byUUID[turn.generationUUID] = existing
             } else {
                 byUUID[turn.generationUUID] = turn
             }
@@ -652,6 +714,25 @@ public final class CursorActivityStore: @unchecked Sendable {
         storedState.turns = byUUID.values.sorted { $0.timestamp < $1.timestamp }
         _ = Self.normalizeMeterClassifications(in: &storedState)
         try Self.save(storedState, to: fileURL)
+    }
+
+    public func recordBillingLookup(at timestamp: Date) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        var updated = storedState
+        updated.lastBillingLookupAt = timestamp
+        try Self.save(updated, to: fileURL)
+        storedState = updated
+    }
+
+    public func merge(billingChecks: [String: CursorBillingCheck]) throws {
+        guard !billingChecks.isEmpty else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        var updated = storedState
+        updated.billingChecks.merge(billingChecks) { _, new in new }
+        try Self.save(updated, to: fileURL)
+        storedState = updated
     }
 
     /// Rewrites turn/event meters from model IDs so pre-fix composer/grok rows match Spending pools.
@@ -720,7 +801,9 @@ public final class CursorActivityStore: @unchecked Sendable {
                     generationUUID: turn.generationUUID,
                     meter: classified.meter,
                     modelID: classified.storedModelID,
-                    endedAt: turn.endedAt
+                    endedAt: turn.endedAt,
+                    routingReason: turn.routingReason,
+                    conversationID: turn.conversationID
                 )
             } else {
                 // Legacy nil modelID means Cursor's `default`/`auto` pool.
@@ -729,7 +812,9 @@ public final class CursorActivityStore: @unchecked Sendable {
                     generationUUID: turn.generationUUID,
                     meter: .cursorModels,
                     modelID: "auto",
-                    endedAt: turn.endedAt
+                    endedAt: turn.endedAt,
+                    routingReason: turn.routingReason,
+                    conversationID: turn.conversationID
                 )
             }
             if corrected != turn { changed = true }
@@ -779,6 +864,10 @@ extension CursorActivityStore.State: Codable {
         didBackfillIncrementalTurnActivity = try container.decodeIfPresent(
             Bool.self, forKey: .didBackfillIncrementalTurnActivity
         ) ?? false
+        didBackfillBillingRouting = try container.decodeIfPresent(Bool.self, forKey: .didBackfillBillingRouting) ?? false
+        didBackfillBillingConversations = try container.decodeIfPresent(Bool.self, forKey: .didBackfillBillingConversations) ?? false
+        billingChecks = try container.decodeIfPresent([String: CursorBillingCheck].self, forKey: .billingChecks) ?? [:]
+        lastBillingLookupAt = try container.decodeIfPresent(Date.self, forKey: .lastBillingLookupAt)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -790,5 +879,9 @@ extension CursorActivityStore.State: Codable {
         try container.encode(logByteOffsets, forKey: .logByteOffsets)
         try container.encode(didBackfillTurnEndedAt, forKey: .didBackfillTurnEndedAt)
         try container.encode(didBackfillIncrementalTurnActivity, forKey: .didBackfillIncrementalTurnActivity)
+        try container.encode(didBackfillBillingRouting, forKey: .didBackfillBillingRouting)
+        try container.encode(didBackfillBillingConversations, forKey: .didBackfillBillingConversations)
+        try container.encode(billingChecks, forKey: .billingChecks)
+        try container.encodeIfPresent(lastBillingLookupAt, forKey: .lastBillingLookupAt)
     }
 }

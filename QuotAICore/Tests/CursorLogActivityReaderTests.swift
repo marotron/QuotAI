@@ -51,6 +51,51 @@ final class CursorLogActivityReaderTests: XCTestCase {
         XCTAssertTrue(reader.readNewTurns(priorOffsets: second.offsets, knownTurns: reloaded.state.turns).turns.isEmpty)
     }
 
+    func testWaitsForCompleteRuntimeAndActivityLines() throws {
+        let start = "2026-11-04 13:00:00.000 [info] Selected Agent Host turn runtime {\"generationUUID\":\"\(uuid)\",\"modelId\":\"claude-haiku-5-5\"}"
+        try Data(start.utf8).write(to: logURL)
+        let reader = CursorLogActivityReader(logsDirectory: temporaryDirectory)
+        let incompleteStart = reader.readNewTurns(priorOffsets: [:])
+        XCTAssertTrue(incompleteStart.turns.isEmpty)
+        XCTAssertEqual(Array(incompleteStart.offsets.values), [0])
+
+        try Data((start + "\n").utf8).write(to: logURL)
+        let first = reader.readNewTurns(priorOffsets: incompleteStart.offsets)
+        XCTAssertEqual(first.turns.count, 1)
+
+        // The line is split in the middle of a multibyte character, as can happen
+        // while Cursor writes a tool response. Neither half may be discarded.
+        let later = "2026-11-04 13:50:00.000 [info] toolCall requestId=\(uuid) result=é\n"
+        let bytes = Data(later.utf8)
+        var partial = Data((start + "\n").utf8)
+        partial.append(bytes.dropLast(2))
+        try partial.write(to: logURL)
+        let incompleteActivity = reader.readNewTurns(priorOffsets: first.offsets, knownTurns: first.turns)
+        XCTAssertTrue(incompleteActivity.turns.isEmpty)
+        XCTAssertEqual(incompleteActivity.offsets, first.offsets)
+
+        try Data((start + "\n" + later).utf8).write(to: logURL)
+        let completed = reader.readNewTurns(priorOffsets: incompleteActivity.offsets, knownTurns: first.turns)
+        let updated = try XCTUnwrap(completed.turns.first)
+        XCTAssertEqual(updated.endedAt, first.turns[0].timestamp.addingTimeInterval(50 * 60))
+        XCTAssertEqual(Array(completed.offsets.values), [UInt64((start + "\n" + later).utf8.count)])
+    }
+
+    func testTruncatedLogExtendsRetainedTurn() throws {
+        let start = "2026-11-04 13:00:00.000 [info] Selected Agent Host turn runtime {\"generationUUID\":\"\(uuid)\",\"modelId\":\"claude-haiku-5-5\"}\n"
+        try Data(start.utf8).write(to: logURL)
+        let reader = CursorLogActivityReader(logsDirectory: temporaryDirectory)
+        let first = reader.readNewTurns(priorOffsets: [:])
+
+        let later = "2026-11-04 14:00:00.000 [info] toolCall requestId=\(uuid)\n"
+        try Data(later.utf8).write(to: logURL)
+        let rotated = reader.readNewTurns(priorOffsets: first.offsets, knownTurns: first.turns)
+        let updated = try XCTUnwrap(rotated.turns.first)
+        XCTAssertEqual(updated.timestamp, first.turns[0].timestamp)
+        XCTAssertEqual(updated.endedAt, first.turns[0].timestamp.addingTimeInterval(60 * 60))
+        XCTAssertEqual(Array(rotated.offsets.values), [UInt64(later.utf8.count)])
+    }
+
     func testOneShotRescanRepairsStaleEndAfterOriginalBackfill() throws {
         let log = """
         2026-11-04 13:00:00.000 [info] Selected Agent Host turn runtime {"generationUUID":"\(uuid)","modelId":"claude-haiku-5-5"}

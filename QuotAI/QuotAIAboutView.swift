@@ -11,12 +11,19 @@ enum QuotAIAboutInfo {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
     }
 
+    static var versionLabel: String {
+        ReleaseVersion.label(
+            marketing: marketingVersion,
+            candidate: (Bundle.main.object(forInfoDictionaryKey: "QuotAIReleaseCandidate") as? NSNumber)?.intValue ?? 0
+        )
+    }
+
     static var shortCommit: String {
         Bundle.main.object(forInfoDictionaryKey: "QuotAIGitCommit") as? String ?? "—"
     }
 
     static var versionLine: String {
-        "Version \(marketingVersion) (build \(buildNumber))"
+        "Version \(versionLabel) (build \(buildNumber))"
     }
 
     static var commitLine: String {
@@ -129,7 +136,7 @@ struct QuotAIChangelogView: View {
     @ViewBuilder
     private func releaseSection(_ release: ChangelogRelease) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("\(release.version) — \(release.date)")
+            Text(release.date.isEmpty ? release.version : "\(release.version) — \(release.date)")
                 .font(.headline)
 
             ForEach(release.sections) { section in

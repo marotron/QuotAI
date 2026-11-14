@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		00C117EFAB41BF4BB5016213 /* RefreshScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C2B193AFD31A76A03414C6 /* RefreshScheduleTests.swift */; };
 		024577DA90225EFD45F3BC7E /* MenuBarWindowPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177F1B250D9995BAEA6FE038 /* MenuBarWindowPanel.swift */; };
+		077A1A93F8999F6383564291 /* CursorUsageBillingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F43A78453AA0F885BD24195 /* CursorUsageBillingTests.swift */; };
 		0892FE50EFCD8B19A5562708 /* PaceCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */; };
 		08BA30F747B787595A93DAA4 /* CursorLogActivityReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90ECA3EB3FB1C69788FC4FE /* CursorLogActivityReader.swift */; };
 		0DD4034FD56032D78BD35816 /* CursorLogActivityReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BBD103A6918C171AC3F5AA1 /* CursorLogActivityReaderTests.swift */; };
@@ -50,6 +51,7 @@
 		591B7B7E3844A3F266842C7E /* PaceAlertThresholdStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D8D7ECE698C38261DD59F1 /* PaceAlertThresholdStoreTests.swift */; };
 		592F271C548C47950C94809F /* PaceAlertFamilyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C9701F74E3F456086252DB2 /* PaceAlertFamilyTests.swift */; };
 		5A9FB09FB6C1FC94462D0F2D /* CursorSealedToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03348913E147E1A98D87B3E /* CursorSealedToken.swift */; };
+		5B1BE5C7753AE0064CCB1F0C /* CursorUsageBillingClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C00C7AC7F21C3420245AB3 /* CursorUsageBillingClientTests.swift */; };
 		5BFC260AAFA68BBF7C9DF073 /* MenuPins.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A1170CBF0717A973229E129 /* MenuPins.swift */; };
 		5C0F500364002FA7EA6D1D97 /* PaceAlertBandChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */; };
 		5C3685E0B0936DF76FF1D4F1 /* CursorActivityParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A634315FCD00056AC526ACA4 /* CursorActivityParserTests.swift */; };
@@ -63,6 +65,7 @@
 		6D0EB0FC724C3C6A7DC157A8 /* CursorActivityStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADC00EA24C3EFAA64033DF97 /* CursorActivityStoreTests.swift */; };
 		6D50B528A8A98709232433AA /* CursorActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630916A2AD68FC1DCB2AC5A4 /* CursorActivity.swift */; };
 		6D7CE40B79A4F097A6203104 /* PaceAlertBands.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38663DAC42813CB673B58AA /* PaceAlertBands.swift */; };
+		6EAF0F17484CE64BFC764C16 /* CursorUsageBillingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F60A203CA4DDCE5D3494882 /* CursorUsageBillingClient.swift */; };
 		70EB91F8217E0C081AADF89C /* RingDialSegmentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01892621FA6BA723ADCA5EBE /* RingDialSegmentsTests.swift */; };
 		743C92E109E1CC3BE7E83E12 /* PaceHistorySampleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */; };
 		76EDE59750E39832A611FC31 /* NotificationAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */; };
@@ -84,9 +87,12 @@
 		9340A0320269F6E161D02A93 /* AlertMessageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41246CF6E708CBB9C7E79255 /* AlertMessageBuilder.swift */; };
 		949E10C25EC450C91A5B10B5 /* AboutWindowHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BF38C8A35CA757AEEEC0B21 /* AboutWindowHost.swift */; };
 		94D3BF51129072B418C4217E /* PaceHistoryChartZoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25443308466C84E30F29B30D /* PaceHistoryChartZoom.swift */; };
+		9631450250E0A44D07371233 /* CursorUsageBillingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F60A203CA4DDCE5D3494882 /* CursorUsageBillingClient.swift */; };
+		97FA2CD686AF156CF21B36C4 /* ReleaseVersionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A616CEE57EEAEDE3BEF3788 /* ReleaseVersionTests.swift */; };
 		988E8D070DE68CEB9D4DBB9A /* RemainingTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100900970A7EB9E28EF6C831 /* RemainingTime.swift */; };
 		9DF1B0F9D9FFCB1D5DE6DA79 /* NotificationAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */; };
 		A108881CC1E979DDC1AA8BDB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172E517E55BB1919952F6374 /* SettingsView.swift */; };
+		A10AD6D35B1BFBF4FBDABA09 /* ReleaseVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED059FAF2EB6CB721F3B6981 /* ReleaseVersion.swift */; };
 		A2EB294CEF72A4481B120A9A /* CursorSafeStorageKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C63BBC52053CDA4BE6AEBD /* CursorSafeStorageKey.swift */; };
 		A487EB3BC1A47752B67FC828 /* RefreshPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 192A550779A20E36529262CD /* RefreshPlanner.swift */; };
 		A4C0B1482CC682B10F1055CA /* RingIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F68F209DE9B284DFAE003A /* RingIcon.swift */; };
@@ -100,9 +106,12 @@
 		BA912E4145A0BB2BBF628AB8 /* MenuPinLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE79ED45E16F062344B5FD08 /* MenuPinLayoutTests.swift */; };
 		BAF66F190A8C5BBDCFD56DE2 /* PaceAlertBandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECC674FD09961315475BAFF /* PaceAlertBandsTests.swift */; };
 		BBEABA081CA2F226610DB285 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */; };
+		BE0CDB2F2D26EA3307ACD418 /* CursorUsageBillingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F60A203CA4DDCE5D3494882 /* CursorUsageBillingClient.swift */; };
 		BF6C1EDFD31D2E7A678F35CC /* PaceAlertThresholdStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33EDB2C3A66CC39BC7B49CB /* PaceAlertThresholdStore.swift */; };
 		C6448794FDF1AD2A9FA7942D /* PaceHistoryTipPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */; };
 		C66146299548948984B4AA28 /* RefreshFreshnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4358AC58989BD9B67A58DB /* RefreshFreshnessTests.swift */; };
+		CAFC695E09716C0C19E821E2 /* CursorBillingRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370265A84755C034C7F7568B /* CursorBillingRoutingTests.swift */; };
+		CE0E75E26DFF4B981A9F4018 /* CursorUsageBilling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA1F5FC67F8B32D80B3D8AB /* CursorUsageBilling.swift */; };
 		CE2DE693EF9F9710A517D305 /* PaceHistorySeriesFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */; };
 		CE7A9064D2EA35C569483CE2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172E517E55BB1919952F6374 /* SettingsView.swift */; };
 		D0A82923EF1EA1BFA9361ED0 /* MenuPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0248EF36AED12752B7A8D9 /* MenuPresentation.swift */; };
@@ -199,6 +208,7 @@
 		0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryTipPresentationTests.swift; sourceTree = "<group>"; };
 		05D8D7ECE698C38261DD59F1 /* PaceAlertThresholdStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertThresholdStoreTests.swift; sourceTree = "<group>"; };
 		09A98BF53179A39771BBE07A /* RingDialSegments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingDialSegments.swift; sourceTree = "<group>"; };
+		0A616CEE57EEAEDE3BEF3788 /* ReleaseVersionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseVersionTests.swift; sourceTree = "<group>"; };
 		0C377C78FBBBB551CB294212 /* MenuPinsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPinsView.swift; sourceTree = "<group>"; };
 		100900970A7EB9E28EF6C831 /* RemainingTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTime.swift; sourceTree = "<group>"; };
 		143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySampleStore.swift; sourceTree = "<group>"; };
@@ -213,6 +223,7 @@
 		25443308466C84E30F29B30D /* PaceHistoryChartZoom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartZoom.swift; sourceTree = "<group>"; };
 		27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySampleStoreTests.swift; sourceTree = "<group>"; };
 		2D65735D0AC0BD39999794D7 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		370265A84755C034C7F7568B /* CursorBillingRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorBillingRoutingTests.swift; sourceTree = "<group>"; };
 		384DBDA8A5819994DC483BDC /* LastRefreshStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastRefreshStatus.swift; sourceTree = "<group>"; };
 		38C2B193AFD31A76A03414C6 /* RefreshScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshScheduleTests.swift; sourceTree = "<group>"; };
 		3A1170CBF0717A973229E129 /* MenuPins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPins.swift; sourceTree = "<group>"; };
@@ -226,7 +237,10 @@
 		4AAFD417E417B50DE713398C /* PaceCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceCalculatorTests.swift; sourceTree = "<group>"; };
 		4C4F4D22979B55C7E8491E85 /* PaceHistoryChartModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartModelTests.swift; sourceTree = "<group>"; };
 		4E43043E693935CE5D71BAB9 /* AlertMessageBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertMessageBuilderTests.swift; sourceTree = "<group>"; };
+		4EA1F5FC67F8B32D80B3D8AB /* CursorUsageBilling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageBilling.swift; sourceTree = "<group>"; };
 		4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceMeterPresentationTests.swift; sourceTree = "<group>"; };
+		4F43A78453AA0F885BD24195 /* CursorUsageBillingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageBillingTests.swift; sourceTree = "<group>"; };
+		4F60A203CA4DDCE5D3494882 /* CursorUsageBillingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageBillingClient.swift; sourceTree = "<group>"; };
 		59AAAE5EDF7EA2DA84B33E25 /* PaceHistorySeriesFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySeriesFilterTests.swift; sourceTree = "<group>"; };
 		5BCD6BD67F062EB51D2E62F2 /* QuotAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C43130568DD9233B80DB58F /* EmailAlertService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailAlertService.swift; sourceTree = "<group>"; };
@@ -277,6 +291,7 @@
 		D38663DAC42813CB673B58AA /* PaceAlertBands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBands.swift; sourceTree = "<group>"; };
 		D42C45002964F1D37AEF7A57 /* PaceAlertDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertDecisionTests.swift; sourceTree = "<group>"; };
 		D5738338B3AFDC10195F8BF3 /* CursorSealedTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorSealedTokenTests.swift; sourceTree = "<group>"; };
+		D5C00C7AC7F21C3420245AB3 /* CursorUsageBillingClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageBillingClientTests.swift; sourceTree = "<group>"; };
 		DACFFF12333707318644EED0 /* MenuPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPresenterTests.swift; sourceTree = "<group>"; };
 		DD4358AC58989BD9B67A58DB /* RefreshFreshnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshFreshnessTests.swift; sourceTree = "<group>"; };
 		DE812ED1CB4BE4CF91A26E25 /* CursorConnectClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorConnectClient.swift; sourceTree = "<group>"; };
@@ -286,6 +301,7 @@
 		E61D2DB2B198A5D64C4B934B /* PaceHistoryChartDownsampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartDownsampleTests.swift; sourceTree = "<group>"; };
 		E6C2D8CD2677696268DAD617 /* QuotAICoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuotAICoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceCalculator.swift; sourceTree = "<group>"; };
+		ED059FAF2EB6CB721F3B6981 /* ReleaseVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseVersion.swift; sourceTree = "<group>"; };
 		F0372F0AA05AB178D5EA1251 /* PaceAlertCooldown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertCooldown.swift; sourceTree = "<group>"; };
 		F6DD824683EB5A25350088F4 /* PreviewApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -349,11 +365,14 @@
 				E479756FEDB5131AA3048CDB /* ChangelogParserTests.swift */,
 				A634315FCD00056AC526ACA4 /* CursorActivityParserTests.swift */,
 				ADC00EA24C3EFAA64033DF97 /* CursorActivityStoreTests.swift */,
+				370265A84755C034C7F7568B /* CursorBillingRoutingTests.swift */,
 				62B4D11D972B953514BEFC89 /* CursorDiscrepancyClustererTests.swift */,
 				92BAB2EBC5DBED0F7BF3C2B2 /* CursorDiscrepancyReconcilerTests.swift */,
 				CB8D0D3DA480E05872E591D4 /* CursorDiscrepancySnapshotBackfillTests.swift */,
 				9BBD103A6918C171AC3F5AA1 /* CursorLogActivityReaderTests.swift */,
 				D5738338B3AFDC10195F8BF3 /* CursorSealedTokenTests.swift */,
+				D5C00C7AC7F21C3420245AB3 /* CursorUsageBillingClientTests.swift */,
+				4F43A78453AA0F885BD24195 /* CursorUsageBillingTests.swift */,
 				BD54EF9FAB7890CB1EC1A309 /* IconLookTests.swift */,
 				C0447CCB4161A89612D76A3F /* LastRefreshStatusTests.swift */,
 				BE79ED45E16F062344B5FD08 /* MenuPinLayoutTests.swift */,
@@ -377,6 +396,7 @@
 				DD4358AC58989BD9B67A58DB /* RefreshFreshnessTests.swift */,
 				8CECF6449BA30923428C5B11 /* RefreshPlannerTests.swift */,
 				38C2B193AFD31A76A03414C6 /* RefreshScheduleTests.swift */,
+				0A616CEE57EEAEDE3BEF3788 /* ReleaseVersionTests.swift */,
 				22F0F40FD1FE615DF92CCF71 /* RemainingTimeTests.swift */,
 				01892621FA6BA723ADCA5EBE /* RingDialSegmentsTests.swift */,
 			);
@@ -401,6 +421,7 @@
 				DE812ED1CB4BE4CF91A26E25 /* CursorConnectClient.swift */,
 				B90ECA3EB3FB1C69788FC4FE /* CursorLogActivityReader.swift */,
 				99C63BBC52053CDA4BE6AEBD /* CursorSafeStorageKey.swift */,
+				4F60A203CA4DDCE5D3494882 /* CursorUsageBillingClient.swift */,
 				C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */,
 				5C43130568DD9233B80DB58F /* EmailAlertService.swift */,
 				BBF747F505C53CE0286EBF6D /* FreshnessBadgeView.swift */,
@@ -430,6 +451,7 @@
 				B131DB8CC45D74DB94B929E5 /* ChangelogParser.swift */,
 				630916A2AD68FC1DCB2AC5A4 /* CursorActivity.swift */,
 				E03348913E147E1A98D87B3E /* CursorSealedToken.swift */,
+				4EA1F5FC67F8B32D80B3D8AB /* CursorUsageBilling.swift */,
 				384DBDA8A5819994DC483BDC /* LastRefreshStatus.swift */,
 				3A1170CBF0717A973229E129 /* MenuPins.swift */,
 				9A0248EF36AED12752B7A8D9 /* MenuPresentation.swift */,
@@ -454,6 +476,7 @@
 				1A3B27473A43C29FD29082B0 /* RefreshFreshness.swift */,
 				192A550779A20E36529262CD /* RefreshPlanner.swift */,
 				5FF0DC0A78E85C1F26339810 /* RefreshSchedule.swift */,
+				ED059FAF2EB6CB721F3B6981 /* ReleaseVersion.swift */,
 				100900970A7EB9E28EF6C831 /* RemainingTime.swift */,
 				09A98BF53179A39771BBE07A /* RingDialSegments.swift */,
 			);
@@ -637,7 +660,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\nRES=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nmkdir -p \"$RES\"\ncp -f \"${SRCROOT}/CHANGELOG.md\" \"$RES/CHANGELOG.md\"\nCOMMIT=\"$(git -C \"${SRCROOT}\" rev-parse --short=7 HEAD 2>/dev/null || echo unknown)\"\nPLIST=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n/usr/libexec/PlistBuddy -c \"Add :QuotAIGitCommit string ${COMMIT}\" \"$PLIST\" 2>/dev/null \\\n  || /usr/libexec/PlistBuddy -c \"Set :QuotAIGitCommit ${COMMIT}\" \"$PLIST\"\n";
+			shellScript = "set -euo pipefail\nRES=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nmkdir -p \"$RES\"\ncp -f \"${SRCROOT}/CHANGELOG.md\" \"$RES/CHANGELOG.md\"\nCOMMIT=\"$(git -C \"${SRCROOT}\" rev-parse --short=7 HEAD 2>/dev/null || echo unknown)\"\nPLIST=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n/usr/libexec/PlistBuddy -c \"Add :QuotAIGitCommit string ${COMMIT}\" \"$PLIST\" 2>/dev/null \\\n  || /usr/libexec/PlistBuddy -c \"Set :QuotAIGitCommit ${COMMIT}\" \"$PLIST\"\n/usr/libexec/PlistBuddy -c \"Add :QuotAIReleaseCandidate integer ${INFOPLIST_KEY_QuotAIReleaseCandidate}\" \"$PLIST\" 2>/dev/null \\\n  || /usr/libexec/PlistBuddy -c \"Set :QuotAIReleaseCandidate ${INFOPLIST_KEY_QuotAIReleaseCandidate}\" \"$PLIST\"\n";
 		};
 		7A8F1D243EE388791B236E53 /* Embed full AppIcon.icns */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -669,6 +692,7 @@
 				E393E83A82F30644CA12D231 /* ChangelogParser.swift in Sources */,
 				6D50B528A8A98709232433AA /* CursorActivity.swift in Sources */,
 				5A9FB09FB6C1FC94462D0F2D /* CursorSealedToken.swift in Sources */,
+				CE0E75E26DFF4B981A9F4018 /* CursorUsageBilling.swift in Sources */,
 				AD18FB2510286FE5965DBA74 /* LastRefreshStatus.swift in Sources */,
 				5BFC260AAFA68BBF7C9DF073 /* MenuPins.swift in Sources */,
 				D0A82923EF1EA1BFA9361ED0 /* MenuPresentation.swift in Sources */,
@@ -693,6 +717,7 @@
 				7FD87EDBD96AF33B31D9458B /* RefreshFreshness.swift in Sources */,
 				A487EB3BC1A47752B67FC828 /* RefreshPlanner.swift in Sources */,
 				91F028BEA1164B660833678A /* RefreshSchedule.swift in Sources */,
+				A10AD6D35B1BFBF4FBDABA09 /* ReleaseVersion.swift in Sources */,
 				988E8D070DE68CEB9D4DBB9A /* RemainingTime.swift in Sources */,
 				23467012F3DF3E69736B516A /* RingDialSegments.swift in Sources */,
 			);
@@ -708,6 +733,7 @@
 				F744DC879AFD014E4D05A3A2 /* CursorConnectClient.swift in Sources */,
 				08BA30F747B787595A93DAA4 /* CursorLogActivityReader.swift in Sources */,
 				A2EB294CEF72A4481B120A9A /* CursorSafeStorageKey.swift in Sources */,
+				9631450250E0A44D07371233 /* CursorUsageBillingClient.swift in Sources */,
 				63FAB8D069873E14E9D56DE4 /* CursorVscdbImporter.swift in Sources */,
 				34370C0C370A2E28792D89DB /* EmailAlertService.swift in Sources */,
 				78C0C7D3FBB2B76D8D126D71 /* FreshnessBadgeView.swift in Sources */,
@@ -737,12 +763,16 @@
 				F28AD5664ACC9393705BEB82 /* ChangelogParserTests.swift in Sources */,
 				5C3685E0B0936DF76FF1D4F1 /* CursorActivityParserTests.swift in Sources */,
 				6D0EB0FC724C3C6A7DC157A8 /* CursorActivityStoreTests.swift in Sources */,
+				CAFC695E09716C0C19E821E2 /* CursorBillingRoutingTests.swift in Sources */,
 				573458FFC33BA33EE6B5218C /* CursorDiscrepancyClustererTests.swift in Sources */,
 				A5C3EA299F363921CA9FBB23 /* CursorDiscrepancyReconcilerTests.swift in Sources */,
 				2CACF4D1FEB84C1ED893FE89 /* CursorDiscrepancySnapshotBackfillTests.swift in Sources */,
 				A9F2A63688BBCAC2E2DE7EE6 /* CursorLogActivityReader.swift in Sources */,
 				0DD4034FD56032D78BD35816 /* CursorLogActivityReaderTests.swift in Sources */,
 				1A39A9441305B1E909CC233F /* CursorSealedTokenTests.swift in Sources */,
+				6EAF0F17484CE64BFC764C16 /* CursorUsageBillingClient.swift in Sources */,
+				5B1BE5C7753AE0064CCB1F0C /* CursorUsageBillingClientTests.swift in Sources */,
+				077A1A93F8999F6383564291 /* CursorUsageBillingTests.swift in Sources */,
 				7C068AB0E5F7802F60CA7DA1 /* IconLookTests.swift in Sources */,
 				EB01905B593C403716152CE0 /* LastRefreshStatusTests.swift in Sources */,
 				BA912E4145A0BB2BBF628AB8 /* MenuPinLayoutTests.swift in Sources */,
@@ -766,6 +796,7 @@
 				C66146299548948984B4AA28 /* RefreshFreshnessTests.swift in Sources */,
 				8300A6A914B59BA2F7ECEE61 /* RefreshPlannerTests.swift in Sources */,
 				00C117EFAB41BF4BB5016213 /* RefreshScheduleTests.swift in Sources */,
+				97FA2CD686AF156CF21B36C4 /* ReleaseVersionTests.swift in Sources */,
 				DC5676AEC84F8C26CB786FAB /* RemainingTimeTests.swift in Sources */,
 				70EB91F8217E0C081AADF89C /* RingDialSegmentsTests.swift in Sources */,
 			);
@@ -781,6 +812,7 @@
 				D83D8CB5C694C04497BDF2AC /* CursorConnectClient.swift in Sources */,
 				682A20A53422EE349CECDC37 /* CursorLogActivityReader.swift in Sources */,
 				0E66D145B86BE8C6A6ADB4F1 /* CursorSafeStorageKey.swift in Sources */,
+				BE0CDB2F2D26EA3307ACD418 /* CursorUsageBillingClient.swift in Sources */,
 				3498F01BB3B5BCDC98192BAE /* CursorVscdbImporter.swift in Sources */,
 				61B41F97E9FD3001E1BE1196 /* EmailAlertService.swift in Sources */,
 				2B5A1A0729BC47D0B90B6843 /* FreshnessBadgeView.swift in Sources */,
@@ -969,13 +1001,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 50;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = QuotAI;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_QuotAIReleaseCandidate = 0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1008,13 +1041,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 50;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = QuotAI;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_QuotAIReleaseCandidate = 0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

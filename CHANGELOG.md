@@ -2,9 +2,28 @@
 
 ## 0.19.3 — 2026-11-14
 
+### Changed
+
+- Pace chart hover balls are 50% transparent so the trajectory remains visible underneath
+
+- Pace chart hover tooltips show used quota percentages and corridor boundary percentages with two decimal places, for example **95.24% used**
+
+- Candidate builds show their `X.Y.Z-rc.N` version in About and the panel; the in-app changelog includes Unreleased changes while the public download stays on the last shipped release
+
 ### Fixed
 
+- Cursor discrepancy warnings now selectively check billing records for unmatched activity and remove explicitly Free requests from the chart and notifications; bounded background lookups and a current-period cache avoid downloading the full usage history on every refresh
+
+- Zoomed pace trajectories preserve the original readings and use the same linear interpolation as hover values, keeping the curve and hover ball aligned between refresh samples
+
+- Pace chart hover tooltip keeps the two-decimal **Over ≥** and **Under ≤** readings on one line inside the tooltip background
+
+- Long-running Cursor turns now match quota increases throughout their activity interval; missing-increase checks wait for same-meter observations after the latest activity plus grace
+
+- Cursor activity explicitly routed with `reason: "byok-connect-routed"` is excluded from Cursor billing discrepancy matching; existing activity is rescanned once to remove stale custom-API warnings
+
 - Cursor discrepancy detection now tracks ongoing Agent Host turns across log refreshes and relaunches, preventing false “meter increased without local activity” warnings; a one-time log rescan repairs stale activity end times
+- Incremental Cursor log reads retain unfinished lines for the next refresh and save activity before advancing log offsets, avoiding skipped activity records
 
 ## 0.19.2 — 2026-11-12
 

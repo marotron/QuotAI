@@ -59,11 +59,14 @@ targets:
           PLIST="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
           /usr/libexec/PlistBuddy -c "Add :QuotAIGitCommit string ${COMMIT}" "$PLIST" 2>/dev/null \
             || /usr/libexec/PlistBuddy -c "Set :QuotAIGitCommit ${COMMIT}" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :QuotAIReleaseCandidate integer ${INFOPLIST_KEY_QuotAIReleaseCandidate}" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :QuotAIReleaseCandidate ${INFOPLIST_KEY_QuotAIReleaseCandidate}" "$PLIST"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.marotron.QuotAI
         MARKETING_VERSION: "0.19.3"
-        CURRENT_PROJECT_VERSION: 44
+        CURRENT_PROJECT_VERSION: 50
+        INFOPLIST_KEY_QuotAIReleaseCandidate: 0
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: QuotAI
         INFOPLIST_KEY_LSUIElement: YES
@@ -80,6 +83,7 @@ targets:
     sources:
       - QuotAICore/Tests
       - QuotAI/CursorLogActivityReader.swift
+      - QuotAI/CursorUsageBillingClient.swift
     dependencies:
       - target: QuotAICore
     settings:

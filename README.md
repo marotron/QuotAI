@@ -34,6 +34,8 @@ Settings → Menu pins which rows stay on the menu, including Open Cursor Spendi
 ## Features
 
 - **Window panel** in the menu bar: meters (used ÷ elapsed = pace · corridor alert → reset), pace history chart, and actions (Refresh / Settings / About / Quit). Click the header version for the in-app changelog.
+- **Pace history** shows two-decimal hover readings and translucent markers; zoomed lines track the underlying readings and hover values.
+- **Optional Cursor discrepancy detection** compares local activity with quota changes and selectively checks detailed billing records for unmatched activity, excluding confirmed Free and custom-key requests. Billing lookups are bounded, cached, and run in the background.
 - **Rings** for used % and time to reset: one meter each, nested Cursor (Models + Other), or pace segments.
 - **Nested Cursor** blinks between Models and Other. A corridor alert blinks the quota ring that crossed the band; under paints blue and over paints orange ([pace chrome order](docs/pace-chrome.md)).
 - **Dynamic refresh** applies one shared schedule independently to Cursor and Grok Bot from each family’s time to reset (fixed interval still refreshes both together). Menu and Settings show `Last refresh: Cursor … · Grok Bot …` (24-hour) with Refresh all / Cursor / Grok Bot.
@@ -64,11 +66,15 @@ open QuotAI.xcodeproj
 
 The app is `QuotAI/` and `QuotAICore/`. Paths under `.scratch/` are not part of the build.
 
+**Specifications:** [product behavior](docs/pr.md), [technical architecture](docs/tech-specs.md), and [Cursor activity diagnostics](docs/cursor-discrepancies.md). Update the relevant specs alongside behavior changes.
+
 **CI:** pull requests and pushes to `main` run `make test` on GitHub Actions ([workflow](.github/workflows/ci.yml)). Full where/when map: [`docs/agents/ci-cd.md`](docs/agents/ci-cd.md).
 
 ## Release
 
 **Versioning (0.x):** QuotAI uses SemVer (`MAJOR.MINOR.PATCH`). While the app is `0.x`, a breaking change bumps **MINOR** (e.g. `0.17.2` → `0.18.0`) and is listed under `### Breaking` in `CHANGELOG.md`.
+
+Development uses `X.Y.Z-rc.N` candidates. Each product/test/Unreleased update increments RC and build together; About and the panel show the candidate label. Notes stay under Unreleased and public download links stay on the shipped version. Shipping clears the candidate to zero, increments build, promotes the notes, and updates the relevant README claims. See [versioning](.cursor/rules/versioning.mdc).
 
 ```bash
 make dmg        # package only → dist/QuotAI-<version>.dmg

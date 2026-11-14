@@ -748,7 +748,7 @@ private struct VersionChangelogButton: View {
                 AboutWindowHost.shared.showChangelog()
             #endif
         } label: {
-            Text("v\(QuotAIAboutInfo.marketingVersion)")
+            Text("v\(QuotAIAboutInfo.versionLabel)")
                 .monospacedDigit()
                 .padding(.horizontal, 5)
                 .padding(.vertical, 1)
@@ -761,7 +761,7 @@ private struct VersionChangelogButton: View {
             )
         )
         .help("Release notes")
-        .accessibilityLabel("Version \(QuotAIAboutInfo.marketingVersion)")
+        .accessibilityLabel("Version \(QuotAIAboutInfo.versionLabel)")
         .accessibilityHint("Opens release notes")
         .onContinuousHover { phase in
             switch phase {

@@ -1,83 +1,19 @@
 ---
-description: QuotAI-specific versioning — files to sync, CHANGELOG format, signed tags. Bump levels and closeout live in the global versioning rule.
-globs: CHANGELOG.md,project.yml,README.md
+description: QuotAI adapter for the shared RC-first versioning workflow.
+globs: CHANGELOG.md,project.yml,README.md,QuotAI/QuotAIAboutView.swift
 alwaysApply: true
 ---
 
-# Versioning (QuotAI)
+# QuotAI versioning adapter
 
-Follows SemVer (`MAJOR.MINOR.PATCH`), one version per app. Closeout block: see global `~/.cursor/rules/versioning.mdc`.
+Read `~/.codex/skills/release-versioning/SKILL.md` for the shared RC-first lifecycle. This replaces the previous bump-at-closeout-only policy.
 
-## Bump level
-
-Bump levels and the size rule (MINOR vs PATCH, the CHANGELOG section for each kind of change) are defined only in the global `~/.cursor/rules/versioning.mdc`. Follow that table.
-
-## Version bump = CHANGELOG entry (same commit)
-
-**Never bump `MARKETING_VERSION` without updating root `CHANGELOG.md` in the same commit.**
-
-1. Add a `## X.Y.Z — YYYY-MM-DD` section at the top (below the title).
-2. Group bullets under `### Added`, `### Fixed`, `### Changed`, or `### Breaking`.
-3. One section per release; do not edit past sections except typos (or when the user explicitly asks).
-
-## Files to keep in sync
-
-| File | Field |
-|---|----|
-| `project.yml` | `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` |
-| `QuotAI.xcodeproj/project.pbxproj` | regenerate via `xcodegen generate` after `project.yml` |
-| `README.md` | download link / version callouts that name the shipped build |
-| Git tag | `vX.Y.Z` (signed — see below) |
-| `CHANGELOG.md` | new top section for the bump |
-
-Increment `CURRENT_PROJECT_VERSION` on every release build.
-
-After bumping version, run `python3 ~/dev/scripts/update-dev-index.py` to refresh `~/dev/INDEX.md`.
-
-## Git
-
-- Do not land versioned work on `main` — branch `feat/…`, `fix/…`, or `hotfix/…` first.
-- Docs/chore/internal-only: no version bump, no CHANGELOG entry.
-- Do **not** retag old releases unless the user explicitly asks. Signed tags only from now on (leave unsigned `v0.9.4` as-is).
-
-## Signed release tags (required)
-
-GitHub **Verified** requires a cryptographically signed tag. Unsigned annotated and lightweight tags do **not** count.
-
-```bash
-git tag -s "vX.Y.Z" -m "X.Y.Z"
-git verify-tag "vX.Y.Z" # must succeed before push
-git push origin "vX.Y.Z"
-```
-
-**Never** for a ship tag: lightweight tags, `git tag -a` without signing, pushing when `git verify-tag` fails, or falling back to unsigned if signing is misconfigured — **stop** and fix signing first.
-
-### One-shot signing (prefer when global git config is unset)
-
-Do **not** change global git config unless the user asks.
-
-```bash
-ssh-add --apple-use-keychain ~/.ssh/id_ed25519_github
-git -c gpg.format=ssh -c user.signingkey="$HOME/.ssh/id_ed25519_github" tag -s "vX.Y.Z" -m "X.Y.Z"
-```
-
-Local verify needs an allowedSigners file:
-
-```bash
-ALLOWED=$(mktemp)
-echo "marotron@gmail.com $(cat ~/.ssh/id_ed25519_github.pub)" > "$ALLOWED"
-git -c gpg.format=ssh -c gpg.ssh.allowedSignersFile="$ALLOWED" verify-tag "vX.Y.Z"
-rm -f "$ALLOWED"
-```
-
-### Optional permanent setup (only if the user wants git config written)
-
-```bash
-git config --global gpg.format ssh
-git config --global user.signingkey ~/.ssh/id_ed25519_github
-git config --global tag.gpgsign true
-```
-
-GitHub → Settings → SSH and GPG keys → **New SSH key** → Key type **Signing Key**. Account-wide; one key covers QuotAI and MailGent.
-
-Closeout must propose the signed form: `Proposed tag: git tag -s vX.Y.Z -m "X.Y.Z"`.
+- Authority: `project.yml`: numeric `MARKETING_VERSION`, monotonic `CURRENT_PROJECT_VERSION`, `INFOPLIST_KEY_QuotAIReleaseCandidate` (0 final, N>0 RC). Regenerate with `make project`.
+- Label: core `ReleaseVersion.label` → `QuotAIAboutInfo.versionLabel` → About, panel and accessibility.
+- Notes: `## [Unreleased]` while candidate; promote to `## X.Y.Z — YYYY-MM-DD` on ship. Do not rewrite published history.
+- Public docs: README download/version claims stay on the shipped version until ship; then update all affected Features and claims. Update a privacy policy if present and affected.
+- Verification: `make test` plus concrete Do → Expect checks in the actual app; no MailGent-specific MCP harness.
+- Local packaging may build candidates with plain `QuotAI-X.Y.Z.dmg` filenames. Tagged packaging rejects candidate>0 and non-final tags. RC bookmark tags are skipped by Release CI; do not create them by default.
+- Preserve QuotAI's existing release channel; do not add MailGent alpha branding or prerelease policy.
+- Use feature/fix/hotfix branches and PRs. Keep changes uncommitted until authorized; “ship it” supplies authorization. Signed final tags only: `git tag -s vX.Y.Z -m "X.Y.Z"`, then `git verify-tag` before push. Prefer one-shot SSH signing options; do not change global Git settings or retag old releases unless asked.
+- After each version/RC/build bump run `python3 ~/dev/scripts/update-dev-index.py`.
