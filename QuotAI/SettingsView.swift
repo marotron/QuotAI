@@ -168,6 +168,7 @@ struct SettingsView: View {
         TabView {
             displayTab.tabItem { Label("Display", systemImage: "paintpalette") }
             accountTab.tabItem { Label("Account", systemImage: "person.crop.circle") }
+            refreshTab.tabItem { Label("Refresh", systemImage: "arrow.clockwise") }
             alertsTab.tabItem { Label("Alerts", systemImage: "bell") }
             emailTab.tabItem { Label("Email", systemImage: "envelope") }
             pinsTab.tabItem { Label("Menu pins", systemImage: "pin") }
@@ -235,7 +236,62 @@ struct SettingsView: View {
         }
     }
 
+    private func clockComponent(_ time: Binding<Int>, hours: Bool) -> Binding<Int> {
+        Binding(
+            get: { hours ? time.wrappedValue / 60 : time.wrappedValue % 60 },
+            set: { value in
+                time.wrappedValue = hours
+                    ? value * 60 + time.wrappedValue % 60
+                    : time.wrappedValue / 60 * 60 + value
+            }
+        )
+    }
+
     private var accountTab: some View {
+        settingsForm {
+            Section {
+                if let authError = store.authError {
+                    Text(authError)
+                        .foregroundStyle(.red)
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    Button("Re-auth from Cursor") {
+                        Task { await store.reauthFromCursor() }
+                    }
+                    SettingsNotes(lines: ["Reads the signed-in Cursor app session when possible."])
+                }
+                Button("Paste token…") {
+                    CursorAuthActions.promptPasteToken(into: store)
+                }
+                Button("Open Cursor Spending") {
+                    NSWorkspace.shared.open(MenuPresenter.spendingURL)
+                }
+                SettingsNotes(lines: ["Tokens stay in Keychain."])
+            }
+
+            Section {
+                Toggle(
+                    "Detect Cursor usage discrepancies",
+                    isOn: $store.discrepancyDetectionEnabled
+                )
+                SettingsNotes(lines: [
+                    "Reads local Cursor Agent Host logs and compares observed activity with the Cursor Models and Other Models quota meters.",
+                    "QuotAI retains only deduplicated local activity from the current Cursor billing period."
+                ])
+                if store.discrepancyDetectionEnabled {
+                    Toggle(
+                        "Send macOS notifications",
+                        isOn: $store.discrepancyNotificationsEnabled
+                    )
+                }
+            } header: {
+                Text("Cursor activity")
+            }
+
+        }
+    }
+
+    private var refreshTab: some View {
         settingsForm {
             Section {
                 Text(store.lastRefreshStatusLine)
@@ -312,40 +368,60 @@ struct SettingsView: View {
                 }
             }
 
-            Section {
-                Toggle(
-                    "Detect Cursor usage discrepancies",
-                    isOn: $store.discrepancyDetectionEnabled
-                )
-                SettingsNotes(lines: [
-                    "Reads local Cursor Agent Host logs and compares observed activity with the Cursor Models and Other Models quota meters.",
-                    "QuotAI retains only deduplicated local activity from the current Cursor billing period."
-                ])
-                if store.discrepancyDetectionEnabled {
-                    Toggle(
-                        "Send macOS notifications",
-                        isOn: $store.discrepancyNotificationsEnabled
-                    )
+            Section("Automatic refresh") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Toggle("Refresh on wake", isOn: $store.refreshOnWake)
+                    Divider()
+                    SettingsNotes(lines: [
+                        "Refreshes Cursor and Grok Bot when your Mac wakes from sleep. On by default.",
+                        "Runs during quiet hours when enabled. Turn this off to skip wake-triggered refreshes.",
+                        "Turning this off does not pause scheduled polling outside quiet hours."
+                    ])
                 }
-            } header: {
-                Text("Cursor activity")
             }
 
             Section {
-                VStack(alignment: .leading, spacing: 0) {
-                    Button("Re-auth from Cursor") {
-                        Task { await store.reauthFromCursor() }
+                VStack(alignment: .leading, spacing: 10) {
+                    Toggle("Quiet hours", isOn: $store.quietHoursEnabled)
+                    if store.quietHoursEnabled {
+                        ScheduleRuleRow {
+                            clockChip(title: "from", time: $store.quietStartMinute)
+                            Text("→").foregroundStyle(.secondary)
+                            clockChip(title: "until", time: $store.quietEndMinute)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    SettingsNotes(lines: ["Reads the signed-in Cursor app session when possible."])
+                    Divider()
+                    SettingsNotes(lines: [
+                        "Pauses scheduled polling, including Dynamic, high-usage and discrepancy-driven refreshes.",
+                        "Manual refresh, opening a stale panel, and app launch can still refresh during quiet hours.",
+                        "Refresh on wake also runs during quiet hours when its switch is on.",
+                        "Uses your Mac’s local time and can cross midnight. Equal start and end times disable the quiet window."
+                    ])
                 }
-                Button("Paste token…") {
-                    CursorAuthActions.promptPasteToken(into: store)
-                }
-                Button("Open Cursor Spending") {
-                    NSWorkspace.shared.open(MenuPresenter.spendingURL)
-                }
-                SettingsNotes(lines: ["Tokens stay in Keychain."])
             }
+
+            Section("Refresh faster at high usage") {
+                ForEach(0..<2, id: \.self) { index in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Toggle(["Cursor Models + Other Models", "Grok Bot"][index], isOn: $store.thresholdRules[index].enabled)
+                        if store.thresholdRules[index].enabled {
+                            ScheduleRuleRow {
+                                numberChip(title: "usage at or above", value: $store.thresholdRules[index].percent, range: 0...99, unit: "%")
+                                Text("→").foregroundStyle(.secondary)
+                                numberChip(title: "refresh every", value: $store.thresholdRules[index].minutes, range: 1...60, unit: "min")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                }
+                SettingsNotes(lines: [
+                    "A rule stays active until its quota resets. A current usage reading and reset time are required.",
+                    "Either Cursor meter reaching the shared threshold activates their faster refresh. The fastest rule or normal schedule wins.",
+                    "Quiet hours pause automatic polling; failed automatic requests wait at least 5 minutes before retrying."
+                ])
+            }
+
         }
     }
 
@@ -626,6 +702,28 @@ struct SettingsView: View {
     }
 
 
+    private func clockChip(title: String, time: Binding<Int>) -> some View {
+        HStack(spacing: 8) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 3) {
+                DragNumberField(value: clockComponent(time, hours: true), range: 0...23, label: "Quiet hours \(title) hour", padded: true)
+                Text(":").foregroundStyle(.secondary)
+                DragNumberField(value: clockComponent(time, hours: false), range: 0...59, label: "Quiet hours \(title) minute", padded: true)
+            }
+        }
+        .padding(.horizontal, 4)
+        .scheduleChipStyle()
+    }
+
+    private func numberChip(title: String, value: Binding<Int>, range: ClosedRange<Int>, unit: String) -> some View {
+        HStack(spacing: 4) {
+            Text(title).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            DragNumberField(value: value, range: range, label: title)
+            Text(unit)
+        }
+        .scheduleChipStyle()
+    }
+
     private func scheduleChip(title: String, minutes: Binding<Int>) -> some View {
         HStack(spacing: 4) {
             Text(title)
@@ -634,14 +732,7 @@ struct SettingsView: View {
                 .lineLimit(1)
             ScheduleDurationField(minutes: minutes, label: title)
         }
-        .padding(.leading, 8)
-        .padding(.trailing, 6)
-        .padding(.vertical, 3)
-        .background {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
-        }
-        .fixedSize()
+        .scheduleChipStyle()
     }
 
     private func scheduleUnderBinding(_ index: Int) -> Binding<Int> {
@@ -897,7 +988,8 @@ private struct ScheduleDurationField: View {
 
     @State private var unit: RefreshUnit
     @State private var draft: String
-    @FocusState private var focused: Bool
+    @State private var focused = false
+    @State private var dragging = false
 
     init(minutes: Binding<Int>, label: String) {
         _minutes = minutes
@@ -909,18 +1001,15 @@ private struct ScheduleDurationField: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            TextField("", text: $draft)
-                .labelsHidden()
-                .focused($focused)
-                .multilineTextAlignment(.trailing)
-                .monospacedDigit()
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 30)
-                .accessibilityLabel("\(label) amount")
-                .onSubmit(commitDraft)
-                .onChange(of: focused) { _, isFocused in
-                    if !isFocused { commitDraft() }
-                }
+            NativeDragNumberField(
+                value: Binding(
+                    get: { Self.parse(draft) ?? 1 },
+                    set: { count in draft = String(count); commitDraft() }
+                ),
+                range: 1...100_000, label: "\(label) amount",
+                onFocus: { focused = $0 }, onDrag: { dragging = $0 }
+            )
+            .frame(width: max(42, CGFloat(String(Self.parse(draft) ?? 1).count) * 9 + 18), height: 22)
             Picker("\(label) unit", selection: unitSelection) {
                 ForEach(RefreshUnit.allCases, id: \.self) { choice in
                     Text(choice.title(count: Self.parse(draft) ?? 1)).tag(choice)
@@ -932,7 +1021,7 @@ private struct ScheduleDurationField: View {
         }
         .fixedSize(horizontal: true, vertical: false)
         .onChange(of: minutes) { _, newValue in
-            guard !focused else { return }
+            guard !focused, !dragging else { return }
             let shown = RefreshDuration(count: Self.parse(draft) ?? 1, unit: unit).minutes
             guard shown != newValue else { return }
             apply(RefreshDuration.fitting(newValue))
@@ -973,6 +1062,31 @@ private struct ScheduleDurationField: View {
             return nil
         }
         return min(value, 100_000)
+    }
+}
+
+private extension View {
+    func scheduleChipStyle() -> some View {
+        self.padding(.leading, 8)
+            .padding(.trailing, 6)
+            .padding(.vertical, 3)
+            .background {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color.primary.opacity(0.06))
+            }
+            .fixedSize()
+    }
+}
+
+private struct DragNumberField: View {
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    let label: String
+    var padded = false
+
+    var body: some View {
+        NativeDragNumberField(value: $value, range: range, label: label, padded: padded)
+            .frame(width: max(42, CGFloat(String(range.upperBound).count) * 9 + 18), height: 22)
     }
 }
 

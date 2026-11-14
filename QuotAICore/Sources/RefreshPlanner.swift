@@ -17,22 +17,24 @@ public enum RefreshPlanner {
         grokPeriodEnds: [Date],
         lastCursor: Date?,
         lastGrok: Date?,
-        now: Date
+        now: Date,
+        cursorOverride: TimeInterval? = nil,
+        grokOverride: TimeInterval? = nil
     ) -> [RefreshFamily] {
-        let cursorInterval = interval(
+        let cursorInterval = min(cursorOverride ?? .infinity, interval(
             dynamic: dynamic,
             fixedMinutes: fixedMinutes,
             schedule: schedule,
             periodEnds: cursorPeriodEnds,
             now: now
-        )
-        let grokInterval = interval(
+        ))
+        let grokInterval = min(grokOverride ?? .infinity, interval(
             dynamic: dynamic,
             fixedMinutes: fixedMinutes,
             schedule: schedule,
             periodEnds: grokPeriodEnds,
             now: now
-        )
+        ))
         var due: [RefreshFamily] = []
         if isDue(last: lastCursor, interval: cursorInterval, now: now) {
             due.append(.cursor)
@@ -52,22 +54,24 @@ public enum RefreshPlanner {
         grokPeriodEnds: [Date],
         lastCursor: Date?,
         lastGrok: Date?,
-        now: Date
+        now: Date,
+        cursorOverride: TimeInterval? = nil,
+        grokOverride: TimeInterval? = nil
     ) -> Date {
-        let cursorInterval = interval(
+        let cursorInterval = min(cursorOverride ?? .infinity, interval(
             dynamic: dynamic,
             fixedMinutes: fixedMinutes,
             schedule: schedule,
             periodEnds: cursorPeriodEnds,
             now: now
-        )
-        let grokInterval = interval(
+        ))
+        let grokInterval = min(grokOverride ?? .infinity, interval(
             dynamic: dynamic,
             fixedMinutes: fixedMinutes,
             schedule: schedule,
             periodEnds: grokPeriodEnds,
             now: now
-        )
+        ))
         let cursorFire = dueAt(last: lastCursor, interval: cursorInterval, now: now)
         let grokFire = dueAt(last: lastGrok, interval: grokInterval, now: now)
         return min(cursorFire, grokFire)

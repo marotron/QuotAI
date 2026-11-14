@@ -139,6 +139,7 @@ struct MenuBarWindowPanel: View {
             }
             Spacer(minLength: 8)
             VersionChangelogButton(idleForeground: secondaryText)
+                .padding(.trailing, -5) // Align the label, rather than its hover padding, with the meters.
         }
         .font(.system(size: 11))
         .foregroundStyle(secondaryText)

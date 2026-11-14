@@ -1,5 +1,26 @@
 # Changelog
 
+## [Unreleased]
+
+## 0.20.0 — 2026-11-14
+
+### Added
+
+- Optional quiet hours for automatic polling and a separate refresh-on-wake switch
+- High-usage refresh rules shared by Cursor Models + Other Models, with a separate Grok Bot rule; usage thresholds range from 0–99%
+- Padded, vertically draggable quiet-hours time fields and refresh-rule numbers
+- The fastest applicable refresh rate wins: a five-minute usage rule and one-minute Dynamic cadence refresh every minute, including when Dynamic refresh accelerates as reset approaches
+
+### Changed
+
+- Settings separates Account from Refresh, bringing refresh status, controls, and schedules together in a new tab
+
+- Refresh on wake and Quiet hours explain that wake refresh bypasses quiet hours when enabled, while scheduled polling stays paused; the notes also clarify manual, panel-open and app-launch refreshes
+
+- The panel version text aligns with the right edge of the meter text, including when its button is hovered
+
+- Pace chart hover balls are 75% transparent for a clearer view of the trajectory underneath
+
 ## 0.19.3 — 2026-11-14
 
 ### Changed

@@ -608,7 +608,7 @@ struct PaceHistoryChart: View {
                     y: .value("Used", dot.used)
                 )
                 .symbolSize(50)
-                .foregroundStyle(dot.color.opacity(0.5))
+                .foregroundStyle(dot.color.opacity(0.25))
             }
         }
     }
