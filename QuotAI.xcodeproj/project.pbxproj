@@ -42,6 +42,7 @@
 		41254106484CD48E3D6CA36D /* PaceMeterPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */; };
 		44B8486A071945D6629EDC4E /* PercentDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BA1B979CE208DC53FD1E1A /* PercentDial.swift */; };
 		45B7311F1C6A719C83C89586 /* RingIconPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D196ED81F1692DCDD4A5447 /* RingIconPreview.swift */; };
+		48A1E7C5E0B1BAFF52EAF701 /* NativeDragNumberField.swift in Sources */ = {isa = PBXBuildFile; fileRef = F272F972D2BC5C3F78315A28 /* NativeDragNumberField.swift */; };
 		51441144ABF3E9F576C04AC1 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D65735D0AC0BD39999794D7 /* KeychainStore.swift */; };
 		52A7D17A6602F333C8D5CCC5 /* PaceHistoryChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA93C4905C6D4098659DE62 /* PaceHistoryChart.swift */; };
 		533F866C08085583414D271B /* CursorAuthActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42221A63599893EAE95BCF0C /* CursorAuthActions.swift */; };
@@ -108,8 +109,10 @@
 		BBEABA081CA2F226610DB285 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 787A9D283203FBDF1D37A8D1 /* libsqlite3.tbd */; };
 		BE0CDB2F2D26EA3307ACD418 /* CursorUsageBillingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F60A203CA4DDCE5D3494882 /* CursorUsageBillingClient.swift */; };
 		BF6C1EDFD31D2E7A678F35CC /* PaceAlertThresholdStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33EDB2C3A66CC39BC7B49CB /* PaceAlertThresholdStore.swift */; };
+		C5F75CA1046D89A4447660DF /* AutomaticRefreshPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F4ECCC6D4DCE359FDF368FE /* AutomaticRefreshPolicyTests.swift */; };
 		C6448794FDF1AD2A9FA7942D /* PaceHistoryTipPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */; };
 		C66146299548948984B4AA28 /* RefreshFreshnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4358AC58989BD9B67A58DB /* RefreshFreshnessTests.swift */; };
+		C89E6629143684D793363876 /* NativeDragNumberField.swift in Sources */ = {isa = PBXBuildFile; fileRef = F272F972D2BC5C3F78315A28 /* NativeDragNumberField.swift */; };
 		CAFC695E09716C0C19E821E2 /* CursorBillingRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370265A84755C034C7F7568B /* CursorBillingRoutingTests.swift */; };
 		CE0E75E26DFF4B981A9F4018 /* CursorUsageBilling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA1F5FC67F8B32D80B3D8AB /* CursorUsageBilling.swift */; };
 		CE2DE693EF9F9710A517D305 /* PaceHistorySeriesFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */; };
@@ -121,6 +124,7 @@
 		DCE51FCCEA2E00D48A69D5DF /* QuotAIKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B666266F381CBC367A25A8 /* QuotAIKeychain.swift */; };
 		DFD4D00A4AA3651AACFF1625 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B38E8042E5851CC0AACB82BC /* Assets.xcassets */; };
 		DFD7ED16254C1FBF1685B7C2 /* QuotaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A145FDCDD83F3F7243FAD8 /* QuotaStore.swift */; };
+		E1BA392C1E49FADA6E2A3711 /* AutomaticRefreshPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F2E72A02215DA3FB72A5EB7 /* AutomaticRefreshPolicy.swift */; };
 		E1D92074CC4252367B4DFDFB /* QuotAIAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E364CC587B574EDA89401BE2 /* QuotAIAboutView.swift */; };
 		E393E83A82F30644CA12D231 /* ChangelogParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B131DB8CC45D74DB94B929E5 /* ChangelogParser.swift */; };
 		E64A5BAF9FE516C09322F46B /* PaceHistoryTipPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B2202564AF01C5E6670DC28 /* PaceHistoryTipPresentation.swift */; };
@@ -231,6 +235,7 @@
 		3B2202564AF01C5E6670DC28 /* PaceHistoryTipPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryTipPresentation.swift; sourceTree = "<group>"; };
 		3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertBandChart.swift; sourceTree = "<group>"; };
 		3C9701F74E3F456086252DB2 /* PaceAlertFamilyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertFamilyTests.swift; sourceTree = "<group>"; };
+		3F2E72A02215DA3FB72A5EB7 /* AutomaticRefreshPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomaticRefreshPolicy.swift; sourceTree = "<group>"; };
 		41246CF6E708CBB9C7E79255 /* AlertMessageBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertMessageBuilder.swift; sourceTree = "<group>"; };
 		42221A63599893EAE95BCF0C /* CursorAuthActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorAuthActions.swift; sourceTree = "<group>"; };
 		442F33986FCB2D359079BCF4 /* PaceHistoryChartModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryChartModel.swift; sourceTree = "<group>"; };
@@ -240,6 +245,7 @@
 		4EA1F5FC67F8B32D80B3D8AB /* CursorUsageBilling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageBilling.swift; sourceTree = "<group>"; };
 		4EE8C398FE8C47B55BB62A9C /* PaceMeterPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceMeterPresentationTests.swift; sourceTree = "<group>"; };
 		4F43A78453AA0F885BD24195 /* CursorUsageBillingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageBillingTests.swift; sourceTree = "<group>"; };
+		4F4ECCC6D4DCE359FDF368FE /* AutomaticRefreshPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomaticRefreshPolicyTests.swift; sourceTree = "<group>"; };
 		4F60A203CA4DDCE5D3494882 /* CursorUsageBillingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageBillingClient.swift; sourceTree = "<group>"; };
 		59AAAE5EDF7EA2DA84B33E25 /* PaceHistorySeriesFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySeriesFilterTests.swift; sourceTree = "<group>"; };
 		5BCD6BD67F062EB51D2E62F2 /* QuotAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -303,6 +309,7 @@
 		E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceCalculator.swift; sourceTree = "<group>"; };
 		ED059FAF2EB6CB721F3B6981 /* ReleaseVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseVersion.swift; sourceTree = "<group>"; };
 		F0372F0AA05AB178D5EA1251 /* PaceAlertCooldown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertCooldown.swift; sourceTree = "<group>"; };
+		F272F972D2BC5C3F78315A28 /* NativeDragNumberField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDragNumberField.swift; sourceTree = "<group>"; };
 		F6DD824683EB5A25350088F4 /* PreviewApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -362,6 +369,7 @@
 			isa = PBXGroup;
 			children = (
 				4E43043E693935CE5D71BAB9 /* AlertMessageBuilderTests.swift */,
+				4F4ECCC6D4DCE359FDF368FE /* AutomaticRefreshPolicyTests.swift */,
 				E479756FEDB5131AA3048CDB /* ChangelogParserTests.swift */,
 				A634315FCD00056AC526ACA4 /* CursorActivityParserTests.swift */,
 				ADC00EA24C3EFAA64033DF97 /* CursorActivityStoreTests.swift */,
@@ -429,6 +437,7 @@
 				177F1B250D9995BAEA6FE038 /* MenuBarWindowPanel.swift */,
 				02D07303DB72FBD8BEC5E9DF /* MenuOptionTitles.swift */,
 				0C377C78FBBBB551CB294212 /* MenuPinsView.swift */,
+				F272F972D2BC5C3F78315A28 /* NativeDragNumberField.swift */,
 				779D2BA489C16FF69BEA863F /* NotificationAlertService.swift */,
 				3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */,
 				3ABB5D0F4B699BEDF9A4B8B6 /* PaceAlertOrchestrator.swift */,
@@ -448,6 +457,7 @@
 			isa = PBXGroup;
 			children = (
 				41246CF6E708CBB9C7E79255 /* AlertMessageBuilder.swift */,
+				3F2E72A02215DA3FB72A5EB7 /* AutomaticRefreshPolicy.swift */,
 				B131DB8CC45D74DB94B929E5 /* ChangelogParser.swift */,
 				630916A2AD68FC1DCB2AC5A4 /* CursorActivity.swift */,
 				E03348913E147E1A98D87B3E /* CursorSealedToken.swift */,
@@ -689,6 +699,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9340A0320269F6E161D02A93 /* AlertMessageBuilder.swift in Sources */,
+				E1BA392C1E49FADA6E2A3711 /* AutomaticRefreshPolicy.swift in Sources */,
 				E393E83A82F30644CA12D231 /* ChangelogParser.swift in Sources */,
 				6D50B528A8A98709232433AA /* CursorActivity.swift in Sources */,
 				5A9FB09FB6C1FC94462D0F2D /* CursorSealedToken.swift in Sources */,
@@ -741,6 +752,7 @@
 				024577DA90225EFD45F3BC7E /* MenuBarWindowPanel.swift in Sources */,
 				3BD34F90717179447A2DC2FE /* MenuOptionTitles.swift in Sources */,
 				F2BD0C352152896453AFABE1 /* MenuPinsView.swift in Sources */,
+				48A1E7C5E0B1BAFF52EAF701 /* NativeDragNumberField.swift in Sources */,
 				76EDE59750E39832A611FC31 /* NotificationAlertService.swift in Sources */,
 				5C0F500364002FA7EA6D1D97 /* PaceAlertBandChart.swift in Sources */,
 				8CF8CBF641AA78193A24046E /* PaceAlertOrchestrator.swift in Sources */,
@@ -760,6 +772,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6BE89DE482D0BC87A8FB7BDA /* AlertMessageBuilderTests.swift in Sources */,
+				C5F75CA1046D89A4447660DF /* AutomaticRefreshPolicyTests.swift in Sources */,
 				F28AD5664ACC9393705BEB82 /* ChangelogParserTests.swift in Sources */,
 				5C3685E0B0936DF76FF1D4F1 /* CursorActivityParserTests.swift in Sources */,
 				6D0EB0FC724C3C6A7DC157A8 /* CursorActivityStoreTests.swift in Sources */,
@@ -820,6 +833,7 @@
 				F87BC6F64C7E45348B7CAE2B /* MenuBarWindowPanel.swift in Sources */,
 				5489EBC2858AA40C0FB968DF /* MenuOptionTitles.swift in Sources */,
 				8A52B531BF813B76B6B343B7 /* MenuPinsView.swift in Sources */,
+				C89E6629143684D793363876 /* NativeDragNumberField.swift in Sources */,
 				9DF1B0F9D9FFCB1D5DE6DA79 /* NotificationAlertService.swift in Sources */,
 				24FC94F331FBF0E4CB21DDED /* PaceAlertBandChart.swift in Sources */,
 				24C4BD146B99880D51338CCC /* PaceAlertOrchestrator.swift in Sources */,
@@ -1001,7 +1015,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 50;
+				CURRENT_PROJECT_VERSION = 66;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1013,7 +1027,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.19.3;
+				MARKETING_VERSION = 0.20.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};
@@ -1041,7 +1055,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 50;
+				CURRENT_PROJECT_VERSION = 66;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1053,7 +1067,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.19.3;
+				MARKETING_VERSION = 0.20.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};

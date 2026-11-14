@@ -46,3 +46,7 @@ User proposed a daily no-refresh window (e.g. overnight sleep). Grilling locked 
 ### 2026-10-25 (later)
 
 Mirrored to GitHub [#31](https://github.com/marotron/QuotAI/issues/31).
+
+### 2026-11-14 — candidate implementation
+
+Candidate work for 0.20.0 is in progress. Decisions, scope and outstanding verification are recorded in [the automatic refresh contract](../../../docs/automatic-refresh.md). The issue remains open until acceptance is verified.

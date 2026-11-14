@@ -59,6 +59,102 @@ final class QuotaStore: ObservableObject {
     private static let discrepancyNotificationsKey = "notifyCursorUsageDiscrepancies"
     private static let discrepancyNotificationSignatureKey = "cursorDiscrepancyNotificationSignature"
 
+    struct ThresholdRule: Codable, Equatable {
+        var enabled = false
+        var percent = 90
+        var minutes = 1
+    }
+
+    @Published var quietHoursEnabled = UserDefaults.standard.bool(forKey: "quietHoursEnabled") {
+        didSet { UserDefaults.standard.set(quietHoursEnabled, forKey: "quietHoursEnabled"); startPolling(refreshNow: false) }
+    }
+    @Published var quietStartMinute = (UserDefaults.standard.object(forKey: "quietStartMinute") as? Int) ?? 1320 {
+        didSet { UserDefaults.standard.set(quietStartMinute, forKey: "quietStartMinute"); startPolling(refreshNow: false) }
+    }
+    @Published var quietEndMinute = (UserDefaults.standard.object(forKey: "quietEndMinute") as? Int) ?? 420 {
+        didSet { UserDefaults.standard.set(quietEndMinute, forKey: "quietEndMinute"); startPolling(refreshNow: false) }
+    }
+    @Published var refreshOnWake = (UserDefaults.standard.object(forKey: "refreshOnWake") as? Bool) ?? true {
+        didSet { UserDefaults.standard.set(refreshOnWake, forKey: "refreshOnWake") }
+    }
+    @Published var thresholdRules: [ThresholdRule] = {
+        guard let data = UserDefaults.standard.data(forKey: "thresholdRefreshRules"),
+              let rules = try? JSONDecoder().decode([ThresholdRule].self, from: data), [2, 3].contains(rules.count),
+              rules.allSatisfy({ (1...60).contains($0.minutes) })
+        else { return Array(repeating: ThresholdRule(), count: 2) }
+        var normalized = rules.map { rule in
+            var rule = rule
+            rule.percent = min(max(rule.percent, 0), 99)
+            return rule
+        }
+        if normalized.count == 3 {
+            let enabled = normalized.prefix(2).filter { $0.enabled }
+            var cursor = enabled.first ?? normalized[0]
+            if !enabled.isEmpty {
+                cursor.percent = enabled.map(\.percent).min() ?? cursor.percent
+                cursor.minutes = enabled.map(\.minutes).min() ?? cursor.minutes
+            }
+            normalized = [cursor, normalized[2]]
+        }
+        if normalized != rules {
+            UserDefaults.standard.set(try? JSONEncoder().encode(normalized), forKey: "thresholdRefreshRules")
+        }
+        return normalized
+    }() {
+        didSet {
+            UserDefaults.standard.set(try? JSONEncoder().encode(thresholdRules), forKey: "thresholdRefreshRules")
+            if thresholdRules[0] != oldValue[0] {
+                thresholdEnds[0] = nil
+                thresholdEnds[1] = nil
+            }
+            if thresholdRules[1] != oldValue[1] { thresholdEnds[2] = nil }
+            updateThresholds(now: Date())
+            startPolling(refreshNow: false)
+        }
+    }
+    private var thresholdEnds: [Date?] = {
+        let stored = UserDefaults.standard.array(forKey: "thresholdRefreshEnds") as? [Double] ?? []
+        guard stored.count == 3 else { return Array(repeating: nil, count: 3) }
+        return stored.map { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil }
+    }()
+    private var lastCursorAttempt: Date?
+    private var lastGrokAttempt: Date?
+    private var cursorRetryAfter: Date?
+    private var grokRetryAfter: Date?
+
+    private func updateThresholds(now: Date) {
+        let meters = [cursorModels, otherModels, grokBot]
+        for index in meters.indices {
+            let rule = thresholdRules[index == 2 ? 1 : 0]
+            if !rule.enabled || (thresholdEnds[index].map { $0 <= now } ?? false) {
+                thresholdEnds[index] = nil
+            }
+            if let knownEnd = meters[index].periodEnd, let activeEnd = thresholdEnds[index], knownEnd != activeEnd {
+                thresholdEnds[index] = nil
+            }
+            let fetched = index == 2 ? lastGrokRefreshed : lastCursorRefreshed
+            if rule.enabled, let fetched, now.timeIntervalSince(fetched) <= 3600,
+               let end = AutomaticRefreshPolicy.thresholdEnd(meter: meters[index], threshold: rule.percent, now: now) {
+                thresholdEnds[index] = end
+            }
+        }
+        UserDefaults.standard.set(thresholdEnds.map { $0?.timeIntervalSince1970 ?? 0 }, forKey: "thresholdRefreshEnds")
+    }
+
+    private func thresholdInterval(for family: RefreshFamily, now: Date) -> TimeInterval? {
+        let indices = family == .cursor ? [0, 1] : [2]
+        return indices.compactMap { index -> TimeInterval? in
+            let rule = thresholdRules[family == .cursor ? 0 : 1]
+            guard rule.enabled, let end = thresholdEnds[index], end > now else { return nil }
+            return TimeInterval(rule.minutes * 60)
+        }.min()
+    }
+
+    private func isQuiet(at now: Date) -> Bool {
+        AutomaticRefreshPolicy.isQuiet(now: now, enabled: quietHoursEnabled,
+                                       startMinute: quietStartMinute, endMinute: quietEndMinute)
+    }
+
     private var detectorHasRecentTurn: Bool {
         guard discrepancyDetectionEnabled,
               let latest = cursorActivityStore.state.turns.last(where: { !$0.isOutsideCursorBilling })?.timestamp
@@ -184,7 +280,10 @@ final class QuotaStore: ObservableObject {
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            Task { await self?.refresh(.all) }
+            Task { @MainActor in
+                guard let self, self.refreshOnWake else { return }
+                await self.refresh(.all)
+            }
         }
     }
 
@@ -337,19 +436,32 @@ final class QuotaStore: ObservableObject {
     }
 
     private func handlePollTimer() async {
-        if detectorHasRecentTurn {
-            await refresh(.cursor)
-        } else if dynamicRefresh {
-            let due = plannerDueFamilies(now: Date())
-            if due.contains(.cursor) && due.contains(.grok) {
-                await refresh(.all)
-            } else if due.contains(.cursor) {
-                await refresh(.cursor)
-            } else if due.contains(.grok) {
-                await refresh(.grok)
+        let now = Date()
+        guard !isQuiet(at: now) else { scheduleNextPoll(); return }
+        var due = plannerDueFamilies(now: now, automatic: true)
+        if !dynamicRefresh, thresholdInterval(for: .cursor, now: now) == nil,
+           thresholdInterval(for: .grok, now: now) == nil, !due.isEmpty {
+            due = RefreshFamily.allCases.filter { family in
+                let retry = family == .cursor ? cursorRetryAfter : grokRetryAfter
+                return retry.map { $0 <= now } ?? true
             }
-        } else {
-            await refresh(.all)
+        }
+        if detectorHasRecentTurn && (cursorRetryAfter.map { $0 <= now } ?? true) && !due.contains(.cursor) {
+            due.append(.cursor)
+        }
+        let scope: RefreshScope?
+        if due.contains(.cursor) && due.contains(.grok) { scope = .all }
+        else if due.contains(.cursor) { scope = .cursor }
+        else if due.contains(.grok) { scope = .grok }
+        else { scope = nil }
+        if let scope {
+            if scope != .grok { lastCursorAttempt = now }
+            if scope != .cursor { lastGrokAttempt = now }
+            await refresh(scope)
+            let failed = refreshError != nil || authError != nil
+            let retry = failed ? Date().addingTimeInterval(300) : nil
+            if scope != .grok { cursorRetryAfter = retry }
+            if scope != .cursor { grokRetryAfter = retry }
         }
         scheduleNextPoll()
     }
@@ -362,32 +474,38 @@ final class QuotaStore: ObservableObject {
         [grokBot.periodEnd].compactMap { $0 }
     }
 
-    private func plannerDueFamilies(now: Date) -> [RefreshFamily] {
-        RefreshPlanner.dueFamilies(
-            dynamic: dynamicRefresh,
-            fixedMinutes: pollIntervalMinutes,
-            schedule: refreshSchedule,
-            cursorPeriodEnds: cursorPeriodEnds,
-            grokPeriodEnds: grokPeriodEnds,
-            lastCursor: lastCursorRefreshed,
-            lastGrok: lastGrokRefreshed,
-            now: now
+    private func latest(_ first: Date?, _ second: Date?) -> Date? {
+        [first, second].compactMap { $0 }.max()
+    }
+
+    private func plannerDueFamilies(now: Date, automatic: Bool = false) -> [RefreshFamily] {
+        let due = RefreshPlanner.dueFamilies(
+            dynamic: dynamicRefresh, fixedMinutes: pollIntervalMinutes, schedule: refreshSchedule,
+            cursorPeriodEnds: cursorPeriodEnds, grokPeriodEnds: grokPeriodEnds,
+            lastCursor: automatic ? latest(lastCursorAttempt, lastCursorRefreshed) : lastCursorRefreshed,
+            lastGrok: automatic ? latest(lastGrokAttempt, lastGrokRefreshed) : lastGrokRefreshed,
+            now: now, cursorOverride: thresholdInterval(for: .cursor, now: now),
+            grokOverride: thresholdInterval(for: .grok, now: now)
         )
+        guard automatic else { return due }
+        return due.filter { family in
+            let retry = family == .cursor ? cursorRetryAfter : grokRetryAfter
+            return retry.map { $0 <= now } ?? true
+        }
     }
 
     private func plannerNextFire(now: Date) -> Date {
-        let planned = RefreshPlanner.nextFire(
-            dynamic: dynamicRefresh,
-            fixedMinutes: pollIntervalMinutes,
-            schedule: refreshSchedule,
-            cursorPeriodEnds: cursorPeriodEnds,
-            grokPeriodEnds: grokPeriodEnds,
-            lastCursor: lastCursorRefreshed,
-            lastGrok: lastGrokRefreshed,
-            now: now
-        )
+        if isQuiet(at: now) { return now.addingTimeInterval(60) }
+        func fire(_ family: RefreshFamily) -> Date {
+            let last = family == .cursor ? latest(lastCursorAttempt, lastCursorRefreshed) : latest(lastGrokAttempt, lastGrokRefreshed)
+            let retry = family == .cursor ? cursorRetryAfter : grokRetryAfter
+            let interval = pollIntervalSeconds(for: family, now: now)
+            let planned = last.map { max(now, $0.addingTimeInterval(interval)) } ?? now
+            return max(planned, retry ?? now)
+        }
+        let planned = min(fire(.cursor), fire(.grok))
         guard detectorHasRecentTurn else { return planned }
-        return min(planned, now.addingTimeInterval(60))
+        return min(planned, max(now.addingTimeInterval(60), cursorRetryAfter ?? now))
     }
 
     /// Minute clock and a finished fetch retune the timer without an extra request.
@@ -444,13 +562,13 @@ final class QuotaStore: ObservableObject {
         case .cursor: ends = cursorPeriodEnds
         case .grok: ends = grokPeriodEnds
         }
-        return RefreshPlanner.interval(
+        return min(thresholdInterval(for: family, now: now) ?? .infinity, RefreshPlanner.interval(
             dynamic: dynamicRefresh,
             fixedMinutes: pollIntervalMinutes,
             schedule: refreshSchedule,
             periodEnds: ends,
             now: now
-        )
+        ))
     }
 
     func isRefreshingFamily(_ family: RefreshFamily) -> Bool {
@@ -550,6 +668,7 @@ final class QuotaStore: ObservableObject {
                 historyBatch.append(sample)
             }
         }
+        updateThresholds(now: stamp)
         if !historyBatch.isEmpty {
             try? paceHistoryStore.append(contentsOf: historyBatch)
             paceHistoryEpoch &+= 1

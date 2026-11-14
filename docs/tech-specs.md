@@ -44,6 +44,7 @@ Read with [product requirements](pr.md). The [Cursor discrepancy contract](curso
 | Alert message builder | pure | `AlertMessageBuilder` subject/body |
 | Dynamic refresh schedule | pure | `RefreshSchedule.interval(periodEnds:now:)` — per-family period ends, first step strictly under the threshold; bad or duplicate JSON → default |
 | Per-meter refresh planner | pure | `RefreshPlanner` due families + next fire from shared schedule/fixed minutes and dual last-fetch times |
+| Automatic refresh policy | pure + app scheduling | 0.20.0 quiet-hours and shared Cursor/separate Grok threshold rules; choose `min(normal interval, active usage interval)` per family, reevaluated as reset approaches; see [automatic refresh](automatic-refresh.md) for boundaries and verification |
 | Last refresh status line | pure | `LastRefreshStatus.line` — `Last refresh: Cursor {HH:mm} · Grok Bot {HH:mm}` (24-hour; `—` when nil) |
 | History / chart model / filtering / downsampling / zoom / tips | pure + persistence | Preserve source samples independently of rendering; period rollover, series filtering, session zoom math and hover content |
 | Cursor activity parser | pure | Runtime records → UUID/start/model, conversation/routing evidence and latest observed activity (`endedAt`); evidence survives incremental merges |
@@ -58,6 +59,7 @@ Read with [product requirements](pr.md). The [Cursor discrepancy contract](curso
 
 - `QuotAICore` — pure parse + pace + presentation + alert seams (unit-tested)
 - `QuotAI` app — menu-bar window panel, Settings/About, Keychain, `state.vscdb` import, Connect `URLSession`, local log reader, notifications/email adapters, open Spending URL
+- Settings groups Cursor authentication and activity diagnostics under Account, and refresh status, actions, and scheduling under Refresh in 0.20.0. The split retains existing settings bindings; running-app layout verification is pending (decision 2026-11-14).
 - `QuotAIPanelPreview` — separate target with seeded meters and temporary stores; does not write production history. `.scratch/` prototypes are not production dependencies.
 - `project.yml` defines targets/settings. `make project` regenerates the Xcode project; `make test` regenerates then tests the QuotAI scheme.
 
@@ -74,6 +76,8 @@ Read with [product requirements](pr.md). The [Cursor discrepancy contract](curso
 ## Refresh, history, and pace details
 
 `QuotaStore` coordinates fetch application, history writes, rescheduling, alerts, and background reconciliation. RunLoop timers/wake handling drive polling; clock updates retune schedules without themselves fetching. `RefreshPlanner` tracks Cursor and Grok separately; fixed mode refreshes both.
+
+The panel header positions the version button so its text, excluding the button's hover padding, aligns with the trailing edge of the meter rows (2026-11-14; visual verification pending).
 
 Default dynamic schedule: reset strictly under 1 h → every 1 min; under 3 h → 5 min; under 6 h → 10 min; under 12 h → 15 min; under 24 h → 30 min; otherwise 60 min. Invalid stored schedules revert to defaults.
 
@@ -97,7 +101,7 @@ The reader processes complete lines and saves activity before offsets. Migration
 
 ## Release and specification maintenance
 
-RC4 zoom geometry uses `PaceHistoryChartDownsample.zoomSamples` to crop source readings with context on either side and remove only exactly collinear middle points. No LTTB limit or Y quantization applies while zoomed; quota series marks use `.linear` to match `PaceHistoryInterpolation`. Overview marks retain their reduced/smoothed rendering. Hover PointMarks use 0.5 color opacity. Regression checks compare zoom geometry to raw values, including between samples and beyond the former 200-point budget.
+Zoom geometry uses `PaceHistoryChartDownsample.zoomSamples` to crop source readings with context on either side and remove only exactly collinear middle points. No LTTB limit or Y quantization applies while zoomed; quota series marks use `.linear` to match `PaceHistoryInterpolation`. Overview marks retain their reduced/smoothed rendering. As of 0.20.0 (2026-11-14), hover PointMarks use 0.25 color opacity. Regression checks compare zoom geometry to raw values, including between samples and beyond the former 200-point budget.
 
 The shared `release-versioning` skill defines the RC-first lifecycle; [the local adapter](../.cursor/rules/versioning.mdc) maps it to QuotAI. `project.yml` holds numeric marketing version, build, and `INFOPLIST_KEY_QuotAIReleaseCandidate`. `ReleaseVersion.label` formats the RC suffix for About/panel, leaving Apple's bundle short version numeric. The changelog parser renders Unreleased alongside historical dated entries. Tagged packaging requires candidate 0 and a matching plain `vX.Y.Z`; release CI skips prerelease tags. Candidate adoption is working-tree code, not a release.
 

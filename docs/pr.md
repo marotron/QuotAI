@@ -19,7 +19,7 @@ macOS menu-bar app for understanding Cursor Spending quota, time to reset, and c
 - **Window panel:** used %, elapsed %, neutral pace %, corridor status, reset time, pace-history chart, and actions. Menu pins choose action/display rows; Compact uses two columns and Normal one.
 - **Actions:** Refresh all / Cursor / Grok Bot, Settings, About, Quit, and **Open Cursor Spending** → `https://cursor.com/dashboard/spending`.
 - **Unavailable data:** never fabricate a zero. Missing Grok does not make a valid Cursor meter unavailable. Transient refresh failures retain prior values and show error/freshness information.
-- **About:** version, short commit SHA, embedded changelog, and release links; panel version opens the changelog.
+- **About:** version, short commit SHA, embedded changelog, and release links; panel version opens the changelog. The panel version text aligns with the right edge of the meter text, including on hover (2026-11-14; visual verification pending).
 
 ## Authentication and secrets — existing baseline
 
@@ -35,7 +35,7 @@ macOS menu-bar app for understanding Cursor Spending quota, time to reset, and c
 - Manual family refreshes, refresh on wake, and panel-open refresh when stale are supported. Last successful refresh and freshness are shown per family in 24-hour time.
 - Successful updates append local history samples, not one sample per day. Each meter's series rolls when its reported period start changes.
 - The chart plots used % against elapsed %, with meter colors, corridor bands, hover details, series filters, and session-only X zoom up to ×10. Hover quota readings and used-% corridor boundaries show exactly two decimal places (for example `95.24% used`); main meter rows and axis ticks keep compact formatting. Closing the panel resets zoom; chart downsampling does not change stored samples.
-- Quiet hours and usage-threshold-driven polling remain proposals.
+- Version 0.20.0 adds optional quiet hours and high-usage refresh rules; see [automatic refresh](automatic-refresh.md) for decisions and acceptance status. The highest applicable refresh rate (shortest interval) wins between the selected fixed/Dynamic cadence and an active usage rule: five minutes versus one minute means one minute. Quiet hours and error retry delays still apply. Running-app acceptance remains incomplete.
 
 ## Pace and corridor alerts — existing baseline
 
@@ -67,6 +67,8 @@ Activity-interval matching requires valid same-meter readings before activity an
 
 Settings cover account/auth, refresh, display, menu pins/density, pace alerts, and optional discrepancy detection/notifications. Distribution is GitHub Releases with DMGs and manual updates; builds are ad-hoc signed unless signing/notarization is configured. See [CI/CD](agents/ci-cd.md).
 
+Decision 2026-11-14, 0.20.0: Settings separates **Account** (Cursor authentication, spending link, and activity diagnostics) from **Refresh** (status, manual refresh, cadence, and automatic refresh policies). The implementation is pending running-app layout verification; see [automatic refresh](automatic-refresh.md).
+
 - xAI Management API
 - Extending AIMonitor
 - Non-macOS
@@ -81,7 +83,7 @@ See [`.scratch/quotai/issues/05-throwaway-poc.md`](../.scratch/quotai/issues/05-
 
 RC3 tooltip refinement: two-decimal corridor readings remain single-line, and all hover content must fit inside the content-sized surface, including when a discrepancy row is present. This is a layout refinement, not a change to meter values or matching.
 
-RC4 chart precision: zoomed trajectories use original visible readings, preserve every change in slope without a point-budget/Y-rounding approximation, and use linear interpolation consistent with hover values. Exactly collinear points may be omitted without changing the line. Hover markers are 50% opaque. Values between refresh samples remain interpolated estimates, not additional observations; overview smoothing/downsampling remains display-only.
+Chart precision: zoomed trajectories use original visible readings, preserve every change in slope without a point-budget/Y-rounding approximation, and use linear interpolation consistent with hover values. Exactly collinear points may be omitted without changing the line. As of 0.20.0 (2026-11-14), hover markers are 25% opaque (75% transparent). Values between refresh samples remain interpolated estimates, not additional observations; overview smoothing/downsampling remains display-only.
 
 Version lifecycle follows the shared RC-first policy (adopted from MailGent on 2026-11-14). Product work opens the next numeric marketing version as `X.Y.Z-rc.1`; candidate updates increment RC and build together. About/panel display RC identity, while the public README stays on the shipped release and candidate notes stay under Unreleased. Authorized ship clears RC to 0, increments build, promotes dated notes and updates public documentation. The policy was first applied to `0.19.3-rc.1` (build 45), followed by the `0.19.3` release (build 50). See [the repo adapter](../.cursor/rules/versioning.mdc).
 

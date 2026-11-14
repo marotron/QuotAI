@@ -1,0 +1,7 @@
+---
+description: Align text-only idle buttons by their visible text.
+globs: QuotAI/**/*.swift
+alwaysApply: false
+---
+
+When a button normally displays only text and its button chrome appears on hover, align the visible text with neighboring content when left or right alignment is intended. Account for the button's internal padding by shifting the whole button, retaining its hover and click area.
