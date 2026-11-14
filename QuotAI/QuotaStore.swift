@@ -618,24 +618,20 @@ final class QuotaStore: ObservableObject {
                 }.value
                 try cursorActivityStore.replaceLogByteOffsets(priorOffsets)
             }
-            // One-shot: retained turns lack `endedAt` but offsets already past history →
-            // re-read from 0 so active-turn intervals can suppress false unattributed bumps.
-            let needsEndedAtBackfill = !cursorActivityStore.state.didBackfillTurnEndedAt
-                && !priorOffsets.isEmpty
-                && cursorActivityStore.state.turns.contains(where: { $0.endedAt == nil })
-            if needsEndedAtBackfill {
+            // One-shot repair includes stale non-nil ends left by the old incremental parser,
+            // even if its original endedAt backfill already ran.
+            if cursorActivityStore.state.needsTurnActivityBackfill {
                 priorOffsets = [:]
             }
+            let knownTurns = cursorActivityStore.state.turns
             let reader = cursorLogActivityReader
             let read = await Task.detached {
-                reader.readNewTurns(priorOffsets: priorOffsets)
+                reader.readNewTurns(priorOffsets: priorOffsets, knownTurns: knownTurns)
             }.value
             try cursorActivityStore.replaceLogByteOffsets(read.offsets)
             let turns = read.turns.filter { $0.timestamp >= periodStart }
             try cursorActivityStore.append(turns: turns)
-            if needsEndedAtBackfill {
-                try cursorActivityStore.markTurnEndedAtBackfilled()
-            }
+            try cursorActivityStore.markTurnEndedAtBackfilled()
             let paceSamples =
                 paceHistoryStore.series(for: .cursor) + paceHistoryStore.series(for: .other)
             let backfilled = CursorDiscrepancySnapshotBackfill.snapshots(

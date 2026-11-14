@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.3 — 2026-11-14
+
+### Fixed
+
+- Cursor discrepancy detection now tracks ongoing Agent Host turns across log refreshes and relaunches, preventing false “meter increased without local activity” warnings; a one-time log rescan repairs stale activity end times
+
 ## 0.19.2 — 2026-11-12
 
 ### Fixed

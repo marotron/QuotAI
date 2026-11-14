@@ -34,15 +34,24 @@ final class CursorLogActivityReader: @unchecked Sendable {
         })
     }
 
-    func readNewTurns(priorOffsets: [String: UInt64]) -> ReadResult {
+    func readNewTurns(priorOffsets: [String: UInt64], knownTurns: [CursorAgentTurn] = []) -> ReadResult {
         var offsets = priorOffsets
         var byUUID: [String: CursorAgentTurn] = [:]
+        for turn in knownTurns {
+            byUUID[turn.generationUUID.lowercased()] = turn
+        }
+        var mentioned = Set<String>()
         for url in logFiles() {
             let path = url.path
-            let (fileTurns, newOffset) = readNewTurns(from: url, priorOffset: offsets[path] ?? 0)
+            let (fileTurns, newOffset) = readNewTurns(
+                from: url,
+                priorOffset: offsets[path] ?? 0,
+                knownTurns: Array(byUUID.values)
+            )
             offsets[path] = newOffset
             for turn in fileTurns {
                 let key = turn.generationUUID.lowercased()
+                mentioned.insert(key)
                 if var existing = byUUID[key] {
                     if let incomingEnd = turn.endedAt,
                        existing.endedAt.map({ incomingEnd > $0 }) ?? true
@@ -55,7 +64,7 @@ final class CursorLogActivityReader: @unchecked Sendable {
                 }
             }
         }
-        let turns = byUUID.values.sorted { $0.timestamp < $1.timestamp }
+        let turns = mentioned.compactMap { byUUID[$0] }.sorted { $0.timestamp < $1.timestamp }
         return ReadResult(turns: turns, offsets: offsets)
     }
 
@@ -76,7 +85,11 @@ final class CursorLogActivityReader: @unchecked Sendable {
         }
     }
 
-    private func readNewTurns(from url: URL, priorOffset: UInt64) -> (turns: [CursorAgentTurn], offset: UInt64) {
+    private func readNewTurns(
+        from url: URL,
+        priorOffset: UInt64,
+        knownTurns: [CursorAgentTurn]
+    ) -> (turns: [CursorAgentTurn], offset: UInt64) {
         guard let size = (try? url.resourceValues(forKeys: [.fileSizeKey])).flatMap(\.fileSize)
         else {
             return ([], priorOffset)
@@ -97,7 +110,7 @@ final class CursorLogActivityReader: @unchecked Sendable {
             guard let text = String(data: data, encoding: .utf8) else {
                 return ([], currentSize)
             }
-            return (CursorActivityParser.parse(log: text), currentSize)
+            return (CursorActivityParser.parse(log: text, knownTurns: knownTurns), currentSize)
         } catch {
             return ([], priorOffset)
         }

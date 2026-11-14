@@ -54,18 +54,23 @@ public enum CursorActivityParser {
         return (.otherModels, modelID)
     }
 
-    public static func parse(log: String) -> [CursorAgentTurn] {
+    /// Returns turns mentioned in this chunk, extending activity for starts retained from earlier reads.
+    public static func parse(log: String, knownTurns: [CursorAgentTurn] = []) -> [CursorAgentTurn] {
         let lines = log.components(separatedBy: "\n")
         var turnsByUUID: [String: CursorAgentTurn] = [:]
+        for turn in knownTurns {
+            turnsByUUID[turn.generationUUID.lowercased()] = turn
+        }
         var order: [String] = []
+        var mentioned = Set<String>()
 
         for line in lines {
             guard let turn = parse(line: line) else { continue }
             let key = turn.generationUUID.lowercased()
             if turnsByUUID[key] == nil {
-                order.append(key)
                 turnsByUUID[key] = turn
             }
+            if mentioned.insert(key).inserted { order.append(key) }
         }
 
         guard !turnsByUUID.isEmpty else { return [] }
@@ -78,6 +83,7 @@ public enum CursorActivityParser {
             for uuid in uuidTokens(in: line) {
                 let key = uuid.lowercased()
                 guard turnsByUUID[key] != nil else { continue }
+                if mentioned.insert(key).inserted { order.append(key) }
                 if let prior = latestActivity[key] {
                     if timestamp > prior { latestActivity[key] = timestamp }
                 } else {
@@ -88,7 +94,7 @@ public enum CursorActivityParser {
 
         return order.compactMap { key in
             guard var turn = turnsByUUID[key] else { return nil }
-            if let activity = latestActivity[key], activity > turn.timestamp {
+            if let activity = latestActivity[key], activity > (turn.endedAt ?? turn.timestamp) {
                 turn.endedAt = activity
             }
             return turn
@@ -542,6 +548,12 @@ public final class CursorActivityStore: @unchecked Sendable {
         public var logByteOffsets: [String: UInt64]
         /// One-shot: historical logs were re-read to fill `endedAt` on retained turns.
         public var didBackfillTurnEndedAt: Bool
+        /// Separate from the original backfill: even non-nil ends could go stale between reads.
+        public var didBackfillIncrementalTurnActivity: Bool
+
+        public var needsTurnActivityBackfill: Bool {
+            !didBackfillIncrementalTurnActivity && !turns.isEmpty
+        }
 
         public init(
             periodStart: Date? = nil,
@@ -549,7 +561,8 @@ public final class CursorActivityStore: @unchecked Sendable {
             snapshots: [CursorMeterSnapshot] = [],
             events: [CursorDiscrepancyEvent] = [],
             logByteOffsets: [String: UInt64] = [:],
-            didBackfillTurnEndedAt: Bool = false
+            didBackfillTurnEndedAt: Bool = false,
+            didBackfillIncrementalTurnActivity: Bool = false
         ) {
             self.periodStart = periodStart
             self.turns = turns
@@ -557,10 +570,12 @@ public final class CursorActivityStore: @unchecked Sendable {
             self.events = events
             self.logByteOffsets = logByteOffsets
             self.didBackfillTurnEndedAt = didBackfillTurnEndedAt
+            self.didBackfillIncrementalTurnActivity = didBackfillIncrementalTurnActivity
         }
 
         enum CodingKeys: String, CodingKey {
             case periodStart, turns, snapshots, events, logByteOffsets, didBackfillTurnEndedAt
+            case didBackfillIncrementalTurnActivity
         }
     }
 
@@ -586,13 +601,15 @@ public final class CursorActivityStore: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         guard storedState.periodStart != periodStart else { return }
-        // Keep log cursors + endedAt backfill flag: files are not period-scoped.
+        // Keep log cursors and backfill flags: files are not period-scoped.
         let offsets = storedState.logByteOffsets
         let endedAtBackfill = storedState.didBackfillTurnEndedAt
+        let incrementalActivityBackfill = storedState.didBackfillIncrementalTurnActivity
         storedState = State(
             periodStart: periodStart,
             logByteOffsets: offsets,
-            didBackfillTurnEndedAt: endedAtBackfill
+            didBackfillTurnEndedAt: endedAtBackfill,
+            didBackfillIncrementalTurnActivity: incrementalActivityBackfill
         )
         try Self.save(storedState, to: fileURL)
     }
@@ -605,11 +622,13 @@ public final class CursorActivityStore: @unchecked Sendable {
         try Self.save(storedState, to: fileURL)
     }
 
+    /// Marks both the original end-time backfill and the repair for stale incremental ends complete.
     public func markTurnEndedAtBackfilled() throws {
         lock.lock()
         defer { lock.unlock() }
-        guard !storedState.didBackfillTurnEndedAt else { return }
+        guard !storedState.didBackfillTurnEndedAt || !storedState.didBackfillIncrementalTurnActivity else { return }
         storedState.didBackfillTurnEndedAt = true
+        storedState.didBackfillIncrementalTurnActivity = true
         try Self.save(storedState, to: fileURL)
     }
 
@@ -757,6 +776,9 @@ extension CursorActivityStore.State: Codable {
         events = try container.decodeIfPresent([CursorDiscrepancyEvent].self, forKey: .events) ?? []
         logByteOffsets = try container.decodeIfPresent([String: UInt64].self, forKey: .logByteOffsets) ?? [:]
         didBackfillTurnEndedAt = try container.decodeIfPresent(Bool.self, forKey: .didBackfillTurnEndedAt) ?? false
+        didBackfillIncrementalTurnActivity = try container.decodeIfPresent(
+            Bool.self, forKey: .didBackfillIncrementalTurnActivity
+        ) ?? false
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -767,5 +789,6 @@ extension CursorActivityStore.State: Codable {
         try container.encode(events, forKey: .events)
         try container.encode(logByteOffsets, forKey: .logByteOffsets)
         try container.encode(didBackfillTurnEndedAt, forKey: .didBackfillTurnEndedAt)
+        try container.encode(didBackfillIncrementalTurnActivity, forKey: .didBackfillIncrementalTurnActivity)
     }
 }

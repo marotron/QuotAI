@@ -89,6 +89,32 @@ final class CursorActivityParserTests: XCTestCase {
         XCTAssertEqual(ended, formatter.date(from: "2026-11-04 14:46:00.789"))
     }
 
+    func testLaterChunkExtendsKnownTurnWithoutRepeatingRuntimeSelection() throws {
+        let uuid = "a83679db-f9e5-4e72-8b56-c60449e43f3f"
+        let first = CursorActivityParser.parse(log: """
+        2026-11-04 13:00:00.000 [info] Selected Agent Host turn runtime {"generationUUID":"\(uuid)","modelId":"claude-haiku-5-5"}
+        2026-11-04 13:00:12.000 [info] toolCall requestId=\(uuid)
+        """)
+        let later = CursorActivityParser.parse(log: """
+        2026-11-04 13:50:00.000 [info] toolCall requestId=\(uuid.uppercased()) status=running
+        2026-11-04 14:00:00.000 [info] requestId=b83679db-f9e5-4e72-8b56-c60449e43f3f
+        """, knownTurns: first)
+
+        let updated = try XCTUnwrap(later.first)
+        XCTAssertEqual(later.count, 1)
+        XCTAssertEqual(updated.generationUUID, uuid)
+        XCTAssertEqual(updated.timestamp, first[0].timestamp)
+        XCTAssertEqual(updated.meter, .otherModels)
+        XCTAssertEqual(updated.modelID, "claude-haiku-5-5")
+        XCTAssertEqual(updated.endedAt, first[0].timestamp.addingTimeInterval(50 * 60))
+        XCTAssertEqual(CursorActivityParser.parse(log: "unrelated", knownTurns: later), [])
+
+        let replayed = CursorActivityParser.parse(log: """
+        2026-11-04 13:10:00.000 [info] toolCall requestId=\(uuid)
+        """, knownTurns: later)
+        XCTAssertEqual(replayed, later, "Replaying older log activity must not shorten an active interval")
+    }
+
     func testIgnoresActivityForUnknownGenerationUUID() {
         let known = "a83679db-f9e5-4e72-8b56-c60449e43f3f"
         let unknown = "b83679db-f9e5-4e72-8b56-c60449e43f3f"
