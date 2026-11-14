@@ -44,3 +44,7 @@ Feature proposal captured from user discussion and mirrored to GitHub [#55](http
 ### 2026-11-14 — candidate implementation
 
 Candidate work for 0.20.0 is in progress. Decisions, scope and outstanding verification are recorded in [the automatic refresh contract](../../../docs/automatic-refresh.md). The issue remains open until acceptance is verified.
+
+### 2026-11-14 — released, verification open
+
+The 0.20.0 release includes this feature under Settings → Refresh. The issue remains open for the outstanding checks in the [automatic refresh contract](../../../docs/automatic-refresh.md).
