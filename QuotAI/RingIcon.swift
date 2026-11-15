@@ -3,6 +3,8 @@ import QuotAICore
 
 /// Single-row menu-bar ring dials (proto A / B / G at 22pt).
 enum RingIcon {
+    static let imageEdgePadding: CGFloat = 2
+    static let dialSpacing: CGFloat = 3
     struct Dial {
         var avatar: BarIcon.Avatar
         /// Beside the ring when Show icons is on, and inside when Center is Icon.
@@ -28,18 +30,18 @@ enum RingIcon {
         let height: CGFloat = 22
         let midY: CGFloat = 11
         let avatar: CGFloat = 10
-        let ringD: CGFloat = 20
+        let ringD: CGFloat = 21
         var ringR: CGFloat { ringD / 2 }
         let gap: CGFloat = 3
-        let ringGap: CGFloat = 3
+        let ringGap: CGFloat = RingIcon.dialSpacing
         let avatarGap: CGFloat = 2
         let metricGap: CGFloat = 2
-        let outerR: CGFloat = 9.2
-        let timelineStroke: CGFloat = 0.8
+        let outerR: CGFloat = 9.8
+        let timelineStroke: CGFloat = 1.6
         let quotaStroke: CGFloat = 1.6
         /// Rings · by pace — thicker so neon segments read at 22pt.
         let paceQuotaStroke: CGFloat = 2.4
-        let ringGapStroke: CGFloat = 0.55
+        let ringGapStroke: CGFloat = 0.8
         var singleStroke: CGFloat { quotaStroke * 2 }
         var paceSingleStroke: CGFloat { paceQuotaStroke * 2 }
         /// Changes the glyph size in a dual-value stack beside the ring.
@@ -139,7 +141,7 @@ enum RingIcon {
             }
         }()
 
-        var width: CGFloat = 2
+        var width: CGFloat = imageEdgePadding
         for (i, dial) in dials.enumerated() {
             if i > 0 { width += m.ringGap }
             if showAvatarsBeside, dial.showAvatar { width += m.avatar + m.avatarGap }
@@ -148,10 +150,10 @@ enum RingIcon {
                 width += m.metricGap + colWidth
             }
         }
-        width += 2
+        width += imageEdgePadding
 
         let image = NSImage(size: NSSize(width: width, height: m.height), flipped: true) { _ in
-            var x: CGFloat = 2
+            var x: CGFloat = imageEdgePadding
             for (i, dial) in dials.enumerated() {
                 if i > 0 { x += m.ringGap }
                 let avatarColor: NSColor = {
@@ -266,7 +268,7 @@ enum RingIcon {
             let arcs = RingDialSegments.arcs(
                 usedPct: used,
                 elapsedPct: dial.elapsedPct ?? 0,
-                style: style,
+                style: dial.elapsedPct == nil && style == .paceUnderPale ? .timelineBrand : style,
                 onPaceLo: onPaceLo,
                 onPaceHi: onPaceHi
             )
@@ -326,12 +328,19 @@ enum RingIcon {
             let innerR = hasTimeline
                 ? usedRadiusTimeline(index: last, stroke: stroke, metrics: m)
                 : usedRadiusPace(index: last, stroke: stroke, metrics: m)
-            // Fill the hole. A hair of air so the mark does not sit on the stroke.
-            let s = max(0, (innerR - stroke / 2) * 2 - 0.4)
+            // Radial inset chosen for each mark; preserve the shared 50% opacity.
+            let inset: CGFloat
+            switch dial.avatar {
+            case .cursor: inset = 0.5
+            case .grok: inset = 0.5
+            case .codex: inset = 0.8
+            }
+            let s = max(0, (innerR - stroke / 2 - inset) * 2)
             BarIcon.drawAvatar(
                 dial.avatar,
                 in: NSRect(x: center.x - s / 2, y: center.y - s / 2, width: s, height: s),
-                ink: avatarColor
+                ink: avatarColor,
+                opacity: 0.5
             )
         }
     }

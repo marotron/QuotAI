@@ -249,6 +249,7 @@ struct SettingsView: View {
 
     private var accountTab: some View {
         settingsForm {
+            CodexAccountSettings(store: store.codex)
             Section {
                 if let authError = store.authError {
                     Text(authError)
@@ -310,18 +311,29 @@ struct SettingsView: View {
                         }
                         Text("Dynamic").tag(QuotaStore.dynamicRefreshTag)
                     }
-                    HStack(spacing: 8) {
-                        Button("Refresh all") {
-                            Task { await store.refresh(.all) }
+                    if store.codex.enabled {
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 8) {
+                                refreshAllButton
+                                refreshCursorButton
+                                refreshGrokButton
+                                refreshCodexButton
+                            }.fixedSize(horizontal: true, vertical: false)
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(spacing: 8) { refreshAllButton; refreshCursorButton }
+                                HStack(spacing: 8) { refreshGrokButton; refreshCodexButton }
+                            }
                         }
-                        Button("Refresh Cursor") {
-                            Task { await store.refresh(.cursor) }
+                        HStack {
+                            if store.codex.isRefreshing { ProgressView().controlSize(.small) }
+                            if let refreshed = store.codex.lastRefreshed {
+                                Text("Codex updated \(LastRefreshStatus.format24Hour(refreshed))").foregroundStyle(.secondary)
+                            }
                         }
-                        Button("Refresh Grok Bot") {
-                            Task { await store.refresh(.grok) }
-                        }
+                        if let error = store.codex.error { Text(error).foregroundStyle(.orange) }
+                    } else {
+                        HStack(spacing: 8) { refreshAllButton; refreshCursorButton; refreshGrokButton }
                     }
-                    .disabled(store.isRefreshing)
                 }
             }
 
@@ -348,7 +360,7 @@ struct SettingsView: View {
                     )
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     SettingsNotes(lines: [
-                        "Cursor and Grok each use this schedule, counted from their own next reset.",
+                        "Cursor, Grok Bot and enabled Codex each use this schedule, counted from their reported reset times.",
                         "Rows are checked from the top, and the reset must be strictly under that row.",
                         "Intervals can't go below 1 minute.",
                         "If two rows share a threshold, the schedule resets to the default."
@@ -373,7 +385,7 @@ struct SettingsView: View {
                     Toggle("Refresh on wake", isOn: $store.refreshOnWake)
                     Divider()
                     SettingsNotes(lines: [
-                        "Refreshes Cursor and Grok Bot when your Mac wakes from sleep. On by default.",
+                        "Refreshes Cursor, Grok Bot and enabled Codex when your Mac wakes from sleep. On by default.",
                         "Runs during quiet hours when enabled. Turn this off to skip wake-triggered refreshes.",
                         "Turning this off does not pause scheduled polling outside quiet hours."
                     ])
@@ -415,14 +427,53 @@ struct SettingsView: View {
                         }
                     }
                 }
+                if store.codex.enabled {
+                    if store.codex.windows.isEmpty {
+                        Text("Sign in under Account to configure rules for the available Codex windows.")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(store.codex.windows) { window in
+                        VStack(alignment: .leading, spacing: 10) {
+                            Toggle(window.title, isOn: codexRuleField(window.id, \.enabled, fallback: false))
+                            if store.codex.rules[window.id]?.enabled == true {
+                                ScheduleRuleRow {
+                                    numberChip(title: "usage at or above", value: codexRuleField(window.id, \.percent, fallback: 90), range: 0...99, unit: "%")
+                                    Text("→").foregroundStyle(.secondary)
+                                    numberChip(title: "refresh every", value: codexRuleField(window.id, \.minutes, fallback: 1), range: 1...60, unit: "min")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+                    }
+                }
                 SettingsNotes(lines: [
                     "A rule stays active until its quota resets. A current usage reading and reset time are required.",
                     "Either Cursor meter reaching the shared threshold activates their faster refresh. The fastest rule or normal schedule wins.",
-                    "Quiet hours pause automatic polling; failed automatic requests wait at least 5 minutes before retrying."
+                    "One request refreshes all Codex windows. Quiet hours pause automatic polling; failed automatic requests wait at least 5 minutes before retrying."
                 ])
             }
 
         }
+    }
+
+    private var refreshAllButton: some View {
+        Button("Refresh all") { Task { await store.refresh(.all) } }
+            .disabled(store.isRefreshing || store.codex.isRefreshing)
+    }
+
+    private var refreshCursorButton: some View {
+        Button("Refresh Cursor") { Task { await store.refresh(.cursor) } }
+            .disabled(store.isRefreshing)
+    }
+
+    private var refreshGrokButton: some View {
+        Button("Refresh Grok Bot") { Task { await store.refresh(.grok) } }
+            .disabled(store.isRefreshing)
+    }
+
+    private var refreshCodexButton: some View {
+        Button("Refresh Codex") { Task { await store.codex.refresh() } }
+            .disabled(store.codex.isRefreshing || store.codex.requiresSignIn || store.codex.isSigningIn)
     }
 
     private var alertsTab: some View {
@@ -713,6 +764,14 @@ struct SettingsView: View {
         }
         .padding(.horizontal, 4)
         .scheduleChipStyle()
+    }
+
+    private func codexRuleField<T>(_ id: String, _ key: WritableKeyPath<CodexRefreshRule, T>, fallback: T) -> Binding<T> {
+        Binding(get: { store.codex.rules[id]?[keyPath: key] ?? fallback }, set: { value in
+            var rule = store.codex.rules[id] ?? CodexRefreshRule()
+            rule[keyPath: key] = value
+            store.codex.setRule(rule, for: id)
+        })
     }
 
     private func numberChip(title: String, value: Binding<Int>, range: ClosedRange<Int>, unit: String) -> some View {

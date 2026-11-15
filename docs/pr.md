@@ -1,6 +1,12 @@
 # Product requirements — QuotAI
 
+
+Candidate decision 2026-11-14: menu-bar timeline rings use 1.6 pt elapsed stroke, 3.2 pt single usage stroke, 0.8 pt separation, 10 pt center opening, and a 21 pt slot (21.2 pt visible diameter). Codex windows use matching geometry and an elapsed ring when reset and duration permit; running-app visual verification is pending.
 Last updated: 2026-11-14
+
+**0.21.0** implements optional direct-native Codex subscription quotas. The [Codex quota contract](codex-quota.md) records confirmed scope, credentials, per-window display, refresh rules and outstanding running-app verification.
+
+Locked target 2026-11-15: optional segmented menu-bar elapsed rings use the wider-gap prototype treatment. See the [segmented elapsed ring contract](segmented-elapsed-ring.md) for scope, open details and pending acceptance; implementation has not been verified.
 
 ## Authority and status
 
@@ -15,7 +21,7 @@ macOS menu-bar app for understanding Cursor Spending quota, time to reset, and c
 ## Meters and presentation — existing baseline
 
 - **Meters:** Cursor Models, optional Other Models, and Grok Bot. Cursor Models and Other share a billing cycle; Grok has its own reported start/reset.
-- **Menu bar:** bars, individual quota rings, nested Cursor rings, or pace segments; configurable labels, ring center content, and colors. Nested Cursor alternates Models and Other; corridor alerts can blink the affected ring.
+- **Menu bar:** bars, individual quota rings, nested Cursor rings, or pace segments; configurable labels, ring center content, and colors. Center icons are drawn at 50% opacity with per-icon inset inside the innermost ring: Cursor 0.55 pt, Grok 0.6 pt, and Codex 0.7 pt (candidate decision 2026-11-15; running-app check pending). Candidate decision 2026-11-15: adjacent ring dials use consistent spacing across providers (visual verification pending). Nested Cursor alternates Models and Other; corridor alerts can blink the affected ring.
 - **Window panel:** used %, elapsed %, neutral pace %, corridor status, reset time, pace-history chart, and actions. Menu pins choose action/display rows; Compact uses two columns and Normal one.
 - **Actions:** Refresh all / Cursor / Grok Bot, Settings, About, Quit, and **Open Cursor Spending** → `https://cursor.com/dashboard/spending`.
 - **Unavailable data:** never fabricate a zero. Missing Grok does not make a valid Cursor meter unavailable. Transient refresh failures retain prior values and show error/freshness information.
@@ -73,7 +79,7 @@ Decision 2026-11-14, 0.20.0: Settings separates **Account** (Cursor authenticati
 - Extending AIMonitor
 - Non-macOS
 - Single Cursor account; macOS 14+ and native Swift only. Multi-account, App Store distribution, and official API migration remain roadmap work.
-- Perplexity/OpenAI providers, model catalog, custom notification chrome, quiet hours, usage-threshold refresh, and a new pace metric are separate proposals, not baseline functionality.
+- Perplexity, model catalog, custom notification chrome and a new pace metric remain separate proposals. Codex behavior is recorded under its detailed contract; quiet hours and usage-threshold refresh shipped in 0.20.0 with the verification status recorded in their contract.
 
 ## PoC learnings
 
@@ -88,3 +94,8 @@ Chart precision: zoomed trajectories use original visible readings, preserve eve
 Version lifecycle follows the shared RC-first policy (adopted from MailGent on 2026-11-14). Product work opens the next numeric marketing version as `X.Y.Z-rc.1`; candidate updates increment RC and build together. About/panel display RC identity, while the public README stays on the shipped release and candidate notes stay under Unreleased. Authorized ship clears RC to 0, increments build, promotes dated notes and updates public documentation. The policy was first applied to `0.19.3-rc.1` (build 45), followed by the `0.19.3` release (build 50). See [the repo adapter](../.cursor/rules/versioning.mdc).
 
 Behavior changes update this specification and the relevant technical/detail contract in the same change set. Record decision dates and implementation status. Release notes record shipped changes; research/issues retain evidence and history. Changes to locked requirements must be recorded explicitly rather than silently substituting current implementation behavior.
+
+
+Decision 2026-11-15: the approved dropdown matrix and compact refresh header include Codex when enabled; see [Codex quota contract](codex-quota.md). Seeded native light/dark previews were checked; live refresh and edge-state acceptance remains pending.
+
+Decision 2026-11-15: Codex and future supported providers place high-usage rules in the shared Settings → Refresh section below existing providers; see [automatic refresh](automatic-refresh.md). Running-app verification is pending.

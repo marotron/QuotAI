@@ -8,9 +8,11 @@ struct FreshnessBadgeView: View {
     let interval: TimeInterval
     let isSpinning: Bool
     let accessibilityName: String
+    var compact: Bool = false
     let action: () -> Void
 
     @State private var hovering = false
+    @FocusState private var focused: Bool
     @Environment(\.colorScheme) private var colorScheme
 
     private var age: TimeInterval { max(0, now.timeIntervalSince(lastAt)) }
@@ -19,9 +21,49 @@ struct FreshnessBadgeView: View {
     private var elapsed: Double {
         RefreshFreshness.elapsedFraction(age: age, interval: interval)
     }
-    private var showRefresh: Bool { hovering || isSpinning }
+    private var showRefresh: Bool { hovering || isSpinning || (compact && focused) }
 
+    @ViewBuilder
     var body: some View {
+        if compact {
+            compactBadge
+        } else {
+            standardBadge
+        }
+    }
+
+    private var compactBadge: some View {
+        Button(action: action) {
+            ZStack {
+                Text(compactAge)
+                    .font(.system(size: 9, weight: .medium))
+                    .opacity(showRefresh ? 0 : 1)
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 9, weight: .semibold))
+                    .opacity(showRefresh ? 1 : 0)
+                    .rotationEffect(.degrees(isSpinning ? 360 : 0))
+                    .animation(isSpinning ? .linear(duration: 0.7).repeatForever(autoreverses: false) : .default, value: isSpinning)
+            }
+            .frame(width: 27, height: 16)
+            .foregroundStyle(showRefresh ? Color.white : Color.secondary)
+            .background(RoundedRectangle(cornerRadius: 4).fill(
+                showRefresh ? Color(red: 0x0a / 255, green: 0x82 / 255, blue: 1) : Color.primary.opacity(0.08)))
+            .animation(.easeInOut(duration: 0.12), value: showRefresh)
+        }
+        .buttonStyle(.plain)
+        .focused($focused)
+        .disabled(isSpinning)
+        .onHover { hovering = $0 }
+        .help("Refresh \(accessibilityName)")
+        .accessibilityLabel("Refresh \(accessibilityName), \(MenuBarWindowPanel.relativeAgo(from: lastAt, to: now))")
+    }
+
+    private var compactAge: String {
+        let value = MenuBarWindowPanel.relativeAgo(from: lastAt, to: now)
+        return value == "just now" ? "now" : value.replacingOccurrences(of: " ago", with: "")
+    }
+
+    private var standardBadge: some View {
         Button(action: action) {
             HStack(spacing: 4) {
                 // fixedSize — the status row squeezes flexible text first; the
