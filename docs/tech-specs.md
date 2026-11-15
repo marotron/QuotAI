@@ -1,6 +1,16 @@
 # Tech specs — QuotAI
 
+
+Candidate decision 2026-11-15: icons inside menu-bar rings draw at 50% opacity with per-icon insets from the innermost usage-ring opening: Cursor 0.55 pt, Grok 0.6 pt and Codex 0.7 pt (decision updated 2026-11-15 from a shared 0.5 pt), including nested and Codex rings; beside-meter icons and center text retain their existing opacity. Running-app verification is pending.
+
+Candidate decision 2026-11-15: adjacent ring image groups overlap their transparent image padding to preserve the same 3 pt slot-to-slot spacing across Cursor, Grok and Codex; the authentication-symbol and bars layouts retain their own spacing. Running-app verification is pending.
+
+Candidate decision 2026-11-14: menu-bar timeline rings use 1.6 pt elapsed stroke, 3.2 pt single usage stroke, 0.8 pt separation, 10 pt center opening, and a 21 pt slot (21.2 pt visible diameter). Codex windows use matching geometry and an elapsed ring when reset and duration permit; running-app visual verification is pending.
 Last updated: 2026-11-14
+
+**0.21.0** adds `CodexNativeClient`, `CodexQuotaStore`, shared matrix presentation and core `CodexQuota` parsing/rules. Native browser OAuth and URLSession quota reads use a separate `codex-oauth` Keychain item; no CLI/helper is required. Codex joins `QuotaStore`'s one-shot timer independently of the two existing Connect families. See [the Codex contract](codex-quota.md) for exact source boundaries, secret handling, behavior and pending acceptance.
+
+Locked target 2026-11-15: optional segmented menu-bar elapsed rings use the wider-gap prototype treatment. See the [segmented elapsed ring contract](segmented-elapsed-ring.md) for scope, open details and pending acceptance; implementation has not been verified.
 
 ## Authority and status
 
@@ -108,3 +118,8 @@ The shared `release-versioning` skill defines the RC-first lifecycle; [the local
 PR/main run `make test`; signed `v*` tags run test → DMG → release. See [CI/CD](agents/ci-cd.md) and repository versioning rules.
 
 Update product/technical/detail contracts in the same change set as behavior changes. Keep agreed targets marked pending until acceptance checks pass. Research supports the contract; it is not an alternate specification. Documentation-only changes need no app version bump.
+
+
+Decision 2026-11-15: the dropdown renders Codex windows in the shared meter matrix and routes header refresh controls through existing provider stores; see [Codex quota contract](codex-quota.md). Seeded native light/dark previews were checked; live refresh and edge-state acceptance remains pending.
+
+Decision 2026-11-15: provider-specific high-usage rule bindings share the Settings → Refresh section and control layout; Codex retains its per-window state and scheduling. See [automatic refresh](automatic-refresh.md).

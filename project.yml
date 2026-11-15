@@ -64,8 +64,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.marotron.QuotAI
-        MARKETING_VERSION: "0.20.0"
-        CURRENT_PROJECT_VERSION: 66
+        MARKETING_VERSION: "0.21.0"
+        CURRENT_PROJECT_VERSION: 79
         INFOPLIST_KEY_QuotAIReleaseCandidate: 0
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: QuotAI

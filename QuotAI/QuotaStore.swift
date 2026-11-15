@@ -32,6 +32,8 @@ final class QuotaStore: ObservableObject {
     @Published private(set) var cursorDiscrepancyEvents: [CursorDiscrepancyEvent] = []
 
     let paceHistoryStore: PaceHistorySampleStore
+    let codex: CodexQuotaStore
+    private var codexChanges: AnyCancellable?
     let cursorActivityStore: CursorActivityStore
     private let cursorLogActivityReader: CursorLogActivityReader
 
@@ -255,6 +257,7 @@ final class QuotaStore: ObservableObject {
     }
 
     init() {
+        codex = CodexQuotaStore()
         #if PANEL_PREVIEW
             isPreview = false
         #endif
@@ -275,6 +278,8 @@ final class QuotaStore: ObservableObject {
         if discrepancyDetectionEnabled {
             cursorDiscrepancyEvents = cursorActivityStore.state.events
         }
+        codexChanges = codex.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
+        codex.onScheduleChange = { [weak self] in self?.restartPollingIfFireChanged() }
         startPolling(refreshNow: true)
         startDisplayClock()
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -292,6 +297,7 @@ final class QuotaStore: ObservableObject {
         /// No timers, no network, no keychain; history goes to a throwaway temp file so the
         /// real app's `pace-history.json` is never touched.
         init(previewHistoryFileURL: URL) {
+            codex = CodexQuotaStore(preview: true)
             isPreview = true
             paceHistoryStore = PaceHistorySampleStore(fileURL: previewHistoryFileURL)
             cursorActivityStore = CursorActivityStore(
@@ -305,6 +311,7 @@ final class QuotaStore: ObservableObject {
             discrepancyNotificationsEnabled = true
 
             let now = Date()
+            codex.seedPanelPreview(now: now)
             let periodStart = Calendar.current.date(byAdding: .day, value: -25, to: now) ?? now
             let periodEnd = Calendar.current.date(byAdding: .day, value: 5, to: now) ?? now
             // Tweak these to exercise panel states: on-corridor / under / exhausted.
@@ -438,6 +445,7 @@ final class QuotaStore: ObservableObject {
     private func handlePollTimer() async {
         let now = Date()
         guard !isQuiet(at: now) else { scheduleNextPoll(); return }
+        let codexDue = codex.nextFire(normal: codexNormalInterval(now: now), now: now) <= now
         var due = plannerDueFamilies(now: now, automatic: true)
         if !dynamicRefresh, thresholdInterval(for: .cursor, now: now) == nil,
            thresholdInterval(for: .grok, now: now) == nil, !due.isEmpty {
@@ -457,12 +465,13 @@ final class QuotaStore: ObservableObject {
         if let scope {
             if scope != .grok { lastCursorAttempt = now }
             if scope != .cursor { lastGrokAttempt = now }
-            await refresh(scope)
+            await refresh(scope, includeCodex: false)
             let failed = refreshError != nil || authError != nil
             let retry = failed ? Date().addingTimeInterval(300) : nil
             if scope != .grok { cursorRetryAfter = retry }
             if scope != .cursor { grokRetryAfter = retry }
         }
+        if codexDue { await codex.refresh(automatic: true) }
         scheduleNextPoll()
     }
 
@@ -503,7 +512,7 @@ final class QuotaStore: ObservableObject {
             let planned = last.map { max(now, $0.addingTimeInterval(interval)) } ?? now
             return max(planned, retry ?? now)
         }
-        let planned = min(fire(.cursor), fire(.grok))
+        let planned = min(fire(.cursor), fire(.grok), codex.nextFire(normal: codexNormalInterval(now: now), now: now))
         guard detectorHasRecentTurn else { return planned }
         return min(planned, max(now.addingTimeInterval(60), cursorRetryAfter ?? now))
     }
@@ -519,21 +528,29 @@ final class QuotaStore: ObservableObject {
 
     /// Pull families that are stale by their own interval (or never fetched).
     func refreshIfStale() async {
+        let now = Date()
+        let codexDue = codex.isStale(normal: codexNormalInterval(now: now), now: now)
         let due = plannerDueFamilies(now: Date())
-        if due.isEmpty { return }
         if due.contains(.cursor) && due.contains(.grok) {
-            await refresh(.all)
+            await refresh(.all, includeCodex: false)
         } else if due.contains(.cursor) {
             await refresh(.cursor)
-        } else {
+        } else if due.contains(.grok) {
             await refresh(.grok)
         }
+        if codexDue { await codex.refresh() }
     }
 
-    func refresh(_ scope: RefreshScope = .all, forceReimport: Bool = false) async {
+    func refresh(_ scope: RefreshScope = .all, forceReimport: Bool = false, includeCodex: Bool = true) async {
         #if PANEL_PREVIEW
             if isPreview { return }
         #endif
+        if scope == .all, includeCodex {
+            async let codexFetch: Void = codex.refresh()
+            await refresh(scope, forceReimport: forceReimport, includeCodex: false)
+            await codexFetch
+            return
+        }
         guard !isRefreshing else { return }
         isRefreshing = true
         refreshingScope = scope
@@ -553,6 +570,15 @@ final class QuotaStore: ObservableObject {
         } catch {
             refreshError = Self.refreshFailureMessage(error)
         }
+    }
+
+    private func codexNormalInterval(now: Date) -> TimeInterval {
+        RefreshPlanner.interval(dynamic: dynamicRefresh, fixedMinutes: pollIntervalMinutes,
+            schedule: refreshSchedule, periodEnds: codex.windows.compactMap(\.resetsAt), now: now)
+    }
+
+    func codexPollIntervalSeconds(now: Date) -> TimeInterval {
+        codex.interval(normal: codexNormalInterval(now: now), now: now)
     }
 
     /// Current poll interval seconds for a single family (dynamic schedule or fixed minutes).

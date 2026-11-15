@@ -23,3 +23,7 @@ Ship tags must be **signed**: `git tag -s vX.Y.Z -m "…"`, then `git verify-tag
 
 After bumping version, run `python3 ~/dev/scripts/update-dev-index.py` to refresh `~/dev/INDEX.md`.
 
+
+### UI prototypes
+
+Before changing UI, use the corresponding window/element baseline and create an experiment copy. After the change is approved, implemented and verified, update that baseline to match the app. See `docs/agents/ui-prototypes.md` for the catalog, coverage and promotion workflow.

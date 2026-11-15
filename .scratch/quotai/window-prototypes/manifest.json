@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-15",
+  "candidate": "0.21.0",
+  "build": 79,
+  "baselineStatus": "dropdown checked in native preview; settings reference reflects source, native settings comparison pending",
+  "sources": {
+    "QuotAI/MenuBarWindowPanel.swift": "ab502f391e9c4666f4bc030d483e2aeec6436743cb9d6e67cde9785c41748441",
+    "QuotAI/CodexQuotaViews.swift": "652ad18f7c40b0dc1679a20d8de97b2b2ab26fcd42794a0ead373a87b74a3c85",
+    "QuotAI/SettingsView.swift": "6bc8aff75fa89550ea5711faaa1bc09f252f509fa45b29c9c937114687c2bab4",
+    "QuotAI/QuotAIAboutView.swift": "bf20723879267074da00af786d129dca0fce8e913aee94ed831f16d9d2383b6e"
+  },
+  "experiment": "experiments/codex-matrix/index.html",
+  "decision": "Approved 2026-11-15; implemented in rc.10, native preview visually checked",
+  "verification": {
+    "date": "2026-11-15",
+    "dropdownExperiment": [
+      "Browser visual check at 470 CSS px width in Comet: light and dark layouts fit; local metric glyphs and provider assets render.",
+      "A/B toggles current separate Codex block and matrix. Missing duration/reset sample displays dashes.",
+      "All local HTML asset/link targets resolved; inline scripts pass node --check.",
+      "Compact refresh header visually checked at 470 CSS px: Cursor, Grok and Codex icons, times and age badges fit beside version; separate Codex freshness row removed in B.",
+      "Four-provider refresh header visually checked at 470 CSS px; Perplexity sample click completed and changed its timestamp to 12:47. Hover/focus transitions, busy animation and reduced-motion styling are defined in the prototype.",
+      "Separated double-arrow refresh-all control visually checked at 470 CSS px; clicking updates Cursor, Grok, Codex and Perplexity sample timestamps together.",
+      "Refresh-all and provider badge icons now share one SVG and one 11 \u00d7 11 CSS px size rule; separator and refresh-all action retained.",
+      "Native seeded panel preview checked in light and dark on 2026-11-15: Codex 5h and 7d align in the meter grid; compact three-provider header and dividers fit. Corridor results use native thresholds. Preview host version is independent of product version."
+    ],
+    "limitations": [
+      "Native visual parity pending; historical chart rendering retained from source prototype.",
+      "Settings, About and Changelog remain initial references with catalogued gaps.",
+      "Over/exhausted/stale presets are illustrative; full native corridor evaluator is not ported."
+    ]
+  },
+  "approvedTarget": {
+    "path": "locked/codex-matrix-2026-11-15/index.html?matrix=1",
+    "sha256": "86dae2d60b4fbdab98e05204893f86259ad471356764f6adb63044e12d10c3e5",
+    "note": "Perplexity is a future-provider placeholder; product omits it until integration."
+  },
+  "settingsExperiment": {
+    "path": "experiments/codex-high-usage-settings/index.html",
+    "decision": "requested and implemented; native settings comparison pending",
+    "note": "Initial Settings reference already placed Codex below Grok; experiment copied and labels reconciled with source."
+  },
+  "settingsRefreshExperiment": {
+    "path": "experiments/refresh-codex-button/index.html",
+    "decision": "implemented in rc.12; native Settings layout comparison pending"
+  }
+}

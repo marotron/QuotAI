@@ -9,6 +9,7 @@ enum BarIcon {
     enum Avatar: String {
         case cursor = "CursorAvatar"
         case grok = "GrokAvatar"
+        case codex = "CodexAvatar"
     }
 
     struct Row {
@@ -64,7 +65,7 @@ enum BarIcon {
         showRemaining: Bool,
         foreground ink: NSColor
     ) -> NSImage {
-        precondition(rows.count == 2, "BarIcon expects Cursor + Grok layout rows")
+        precondition((1...2).contains(rows.count), "BarIcon expects one or two rows")
         let m = Metrics()
         let percents = rows.map(percentLabel)
         let remainings = rows.map { $0.remaining ?? "—" }
@@ -79,7 +80,7 @@ enum BarIcon {
 
         let image = NSImage(size: NSSize(width: width, height: m.height), flipped: true) { _ in
             for (index, row) in rows.enumerated() {
-                let midY = (CGFloat(index) + 0.5) * m.rowHeight
+                let midY = rows.count == 1 ? m.height / 2 : (CGFloat(index) + 0.5) * m.rowHeight
                 if showAvatars {
                     drawAvatar(
                         row.avatar,
@@ -216,12 +217,12 @@ enum BarIcon {
     }
 
     /// Body takes `ink`. White holes (Cursor triangle, Grok eyes) are not painted, so they stay clear.
-    static func drawAvatar(_ avatar: Avatar, in box: NSRect, ink: NSColor) {
+    static func drawAvatar(_ avatar: Avatar, in box: NSRect, ink: NSColor, opacity: CGFloat = 1) {
         if let parts = cutouts[avatar] {
             let fitted = aspectFit(parts.aspect, in: box)
             // Flipped: menu-bar / ring canvases are flipped contexts.
             tinted(parts.body, ink, pointSize: fitted.size, flipVertically: true)?.draw(
-                in: fitted, from: .zero, operation: .sourceOver, fraction: 1
+                in: fitted, from: .zero, operation: .sourceOver, fraction: opacity
             )
             return
         }
@@ -235,7 +236,7 @@ enum BarIcon {
             return true
         }
         painted.isTemplate = false
-        painted.draw(in: box, from: .zero, operation: .sourceOver, fraction: 1)
+        painted.draw(in: box, from: .zero, operation: .sourceOver, fraction: opacity)
     }
 
     /// Series-tinted avatar for SwiftUI (panel meters / tip). Same cutout mask as the menu bar.
@@ -275,7 +276,7 @@ enum BarIcon {
 
     private static let cutouts: [Avatar: Cutout] = {
         var found: [Avatar: Cutout] = [:]
-        for avatar in [Avatar.cursor, .grok] {
+        for avatar in [Avatar.cursor, .grok, .codex] {
             if let cutout = loadCutout(named: avatar.rawValue) {
                 found[avatar] = cutout
             }
@@ -409,6 +410,7 @@ enum BarIcon {
         switch avatar {
         case .cursor: name = "cube.fill"
         case .grok: name = "circle.fill"
+        case .codex: name = "terminal"
         }
         return NSImage(systemSymbolName: name, accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: size, weight: .regular))

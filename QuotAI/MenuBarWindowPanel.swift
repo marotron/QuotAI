@@ -15,6 +15,7 @@ struct MenuBarWindowPanel: View {
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("menuPinDensity") private var menuPinDensity: MenuPinDensity = .compact
     /// Meter-avatar chart filter (solo → hide → all). Lives on the panel so chart remounts keep it.
+    @State private var refreshAllHovered = false
     @State private var seriesFilter = PaceHistorySeriesFilter.all
     /// Pace chart X zoom (elapsed %). Session state — survives history remounts; clears with the panel.
     @State private var paceChartXDomain: ClosedRange<Double> = PaceHistoryChartZoom.fullDomain
@@ -41,6 +42,8 @@ struct MenuBarWindowPanel: View {
 
             metersGrid
                 .padding(.horizontal, 5)
+
+            CodexPanelSection(store: store.codex)
 
             chartWell
                 .padding(.top, 4)
@@ -89,63 +92,70 @@ struct MenuBarWindowPanel: View {
     // MARK: - Status
 
     private var statusRow: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(spacing: 5) {
+            Button { Task { await store.refresh(.all) } } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 9, weight: .semibold))
+                    .frame(width: 18, height: 18)
+            }
+            .buttonStyle(PanelActionButtonStyle(isHovered: refreshAllHovered, idleForeground: secondaryText))
+            .onHover { refreshAllHovered = $0 }
+            .disabled(store.isRefreshing || store.codex.isRefreshing)
+            .help("Refresh all quotas")
+            .accessibilityLabel("Refresh all quotas")
+            .padding(.leading, -3.5)
+            statusDivider
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                HStack(spacing: 0) {
-                    Text("Last refresh: ")
-                    // Avatars inked in the row text color so they read as part of the line.
-                    Image(nsImage: BarIcon.tintedAvatar(
-                        .cursor,
-                        ink: NSColor(secondaryText),
-                        pointSize: 11
-                    ))
-                    .frame(width: 11, height: 11)
-                    Text(" Cursor ")
-                    Text(timeText(store.lastCursorRefreshed))
-                        .monospacedDigit()
-                    if let cursor = store.lastCursorRefreshed {
-                        FreshnessBadgeView(
-                            lastAt: cursor,
-                            now: context.date,
-                            interval: store.pollIntervalSeconds(for: .cursor, now: context.date),
-                            isSpinning: store.isRefreshingFamily(.cursor),
-                            accessibilityName: "Cursor"
-                        ) {
-                            Task { await store.refresh(.cursor) }
-                        }
-                    }
-                    Text(" · ")
-                    Image(nsImage: BarIcon.tintedAvatar(
-                        .grok,
-                        ink: NSColor(secondaryText),
-                        pointSize: 11
-                    ))
-                    .frame(width: 11, height: 11)
-                    Text(" Grok ")
-                    Text(timeText(store.lastGrokRefreshed))
-                        .monospacedDigit()
-                    if let grok = store.lastGrokRefreshed {
-                        FreshnessBadgeView(
-                            lastAt: grok,
-                            now: context.date,
-                            interval: store.pollIntervalSeconds(for: .grok, now: context.date),
-                            isSpinning: store.isRefreshingFamily(.grok),
-                            accessibilityName: "Grok Bot"
-                        ) {
-                            Task { await store.refresh(.grok) }
+                HStack(spacing: 3) {
+                    refreshFamily(.cursor, date: store.lastCursorRefreshed, now: context.date)
+                    Text("·")
+                    refreshFamily(.grok, date: store.lastGrokRefreshed, now: context.date)
+                    if store.codex.enabled {
+                        Text("·")
+                        Image(nsImage: BarIcon.tintedAvatar(.codex, ink: NSColor(secondaryText), pointSize: 11))
+                            .frame(width: 11, height: 11)
+                        Text(timeText(store.codex.lastRefreshed)).monospacedDigit()
+                        if let date = store.codex.lastRefreshed {
+                            FreshnessBadgeView(lastAt: date, now: context.date,
+                                interval: store.codexPollIntervalSeconds(now: context.date),
+                                isSpinning: store.codex.isRefreshing, accessibilityName: "Codex", compact: true) {
+                                Task { await store.codex.refresh() }
+                            }
                         }
                     }
                 }
             }
-            Spacer(minLength: 8)
+            Spacer(minLength: 4)
+            statusDivider
             VersionChangelogButton(idleForeground: secondaryText)
-                .padding(.trailing, -5) // Align the label, rather than its hover padding, with the meters.
+                .padding(.trailing, -5)
         }
-        .font(.system(size: 11))
+        .font(.system(size: 10))
         .foregroundStyle(secondaryText)
         .padding(.horizontal, 14)
         .padding(.vertical, 2)
         .frame(minHeight: 20)
+    }
+
+    private var statusDivider: some View {
+        Rectangle().fill(divider).frame(width: 1, height: 12).padding(.horizontal, 2)
+            .accessibilityHidden(true)
+    }
+
+    private func refreshFamily(_ family: RefreshFamily, date: Date?, now: Date) -> some View {
+        HStack(spacing: 3) {
+            Image(nsImage: BarIcon.tintedAvatar(family == .cursor ? .cursor : .grok,
+                ink: NSColor(secondaryText), pointSize: 11)).frame(width: 11, height: 11)
+            Text(timeText(date)).monospacedDigit()
+            if let date {
+                FreshnessBadgeView(lastAt: date, now: now,
+                    interval: store.pollIntervalSeconds(for: family, now: now),
+                    isSpinning: store.isRefreshingFamily(family),
+                    accessibilityName: family == .cursor ? "Cursor" : "Grok", compact: true) {
+                    Task { await store.refresh(family == .cursor ? .cursor : .grok) }
+                }
+            }
+        }
     }
 
     // MARK: - Meters
@@ -176,6 +186,11 @@ struct MenuBarWindowPanel: View {
                 series: .grok,
                 meterId: .grok
             )
+            if store.codex.enabled {
+                ForEach(store.codex.windows) { window in
+                    codexMeterRow(window)
+                }
+            }
         }
         .padding(.horizontal, 14)
         .padding(.top, 2)
@@ -189,16 +204,23 @@ struct MenuBarWindowPanel: View {
         title: String,
         meter: QuotaMeter,
         avatar: BarIcon.Avatar,
-        series: PaceHistorySeriesColor,
-        meterId: PaceHistoryMeterId
+        series: PaceHistorySeriesColor? = nil,
+        meterId: PaceHistoryMeterId? = nil,
+        expired: Bool = false
     ) -> some View {
         HStack(alignment: .center, spacing: 6) {
-            seriesAvatarButton(avatar, series: series, meterId: meterId)
+            if let series, let meterId {
+                seriesAvatarButton(avatar, series: series, meterId: meterId)
+            } else {
+                Image(nsImage: BarIcon.tintedAvatar(avatar, ink: NSColor(secondaryText), pointSize: 14))
+                    .frame(width: 14, height: 14)
+            }
 
             Text(title)
                 .font(.system(size: 11))
                 .foregroundStyle(primaryText)
                 .lineLimit(1)
+                .help(title)
                 // Never squeeze the meter name into "Cursor Mod…" — the metric
                 // cluster below absorbs row pressure instead.
                 .fixedSize()
@@ -224,16 +246,30 @@ struct MenuBarWindowPanel: View {
                     paceFact(meter)
                         .frame(width: Self.pctColumnWidth, alignment: .trailing)
                         .help(paceHelp(meter))
-                    alertSlot(for: meter)
+                    if meter.percentUsed == nil || (meter.periodStart == nil && !meter.isUnavailable && (meter.percentUsed ?? 0) < 100) {
+                        Text("—").foregroundStyle(secondaryText).frame(width: 14, height: 14)
+                    } else {
+                        alertSlot(for: meter)
+                    }
                     op("→")
-                    fact(icon: "timer", value: resetText(meter))
+                    fact(icon: "timer", value: expired ? "Reset passed" : resetText(meter))
                         .frame(width: Self.resetColumnWidth, alignment: .trailing)
-                        .help(resetHelp(meter))
+                        .help(expired ? "Reset passed · awaiting refresh" : resetHelp(meter))
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .frame(minHeight: 20)
+    }
+
+    private func codexMeterRow(_ window: CodexQuotaWindow) -> some View {
+        let end = window.resetsAt.flatMap { $0 > now ? $0 : nil }
+        let start = end.flatMap { end in window.duration.map { end.addingTimeInterval(-$0) } }
+        let meter = QuotaMeter(name: "Codex", percentUsed: window.usedPercent,
+            periodStart: start, periodEnd: end).projected(at: now)
+        return meterRow(title: window.title, meter: meter, avatar: .codex,
+                        expired: window.resetsAt.map { $0 <= now } ?? false)
+            .opacity(store.codex.error == nil && !store.codex.requiresSignIn ? 1 : 0.55)
     }
 
     private static let pctColumnWidth: CGFloat = 46

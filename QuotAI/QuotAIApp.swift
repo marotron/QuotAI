@@ -104,6 +104,11 @@ struct QuotAIApp: App {
         Settings {
             SettingsView(store: store)
         }
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About QuotAI") { AboutWindowHost.shared.showAbout() }
+            }
+        }
     }
 }
 
@@ -411,7 +416,7 @@ private struct MenuBarIconLabel: View {
                     .id(iconAnimTick)
             } else {
                 HStack(spacing: 4) {
-                    Image(nsImage: symbolIcon)
+                    Image(nsImage: codexIndicators(appendingTo: symbolIcon))
                     Text(presentation.barTitle)
                 }
             }
@@ -470,6 +475,7 @@ private struct MenuBarIconLabel: View {
 
     private var needsSignificantBlink: Bool {
         guard blinkSignificantPace else { return false }
+        if store.codex.enabled && store.codex.showInMenuBar && store.codex.windows.contains(where: { meterNeedsBlink(codexMeter($0)) }) { return true }
         if meterNeedsBlink(store.cursorModels) { return true }
         if showOtherModels, meterNeedsBlink(store.otherModels) { return true }
         return meterNeedsBlink(store.grokBot)
@@ -493,12 +499,68 @@ private struct MenuBarIconLabel: View {
 
     /// Cursor (+ optional Other Models stacked) and Grok: avatar · bar(s)/rings · percent · time.
     private func compactIcon() -> NSImage {
+        let base: NSImage
         switch iconLook {
         case .bars:
-            return barIcon()
+            base = barIcon()
         case .ringsPerQuota, .ringsPaired, .ringsPace:
-            return ringIcon()
+            base = ringIcon()
         }
+        return codexIndicators(appendingTo: base)
+    }
+
+    private func codexIndicators(appendingTo base: NSImage) -> NSImage {
+        guard store.codex.enabled, store.codex.showInMenuBar, !store.codex.windows.isEmpty else { return base }
+        let stale = store.codex.error != nil || store.codex.requiresSignIn
+        let images: [NSImage] = store.codex.windows.map { window in
+            let meter = codexMeter(window)
+            let elapsed = meter.periodElapsedPercent(now: clock)
+            let remaining = window.resetsAt.map { $0 > clock ? RemainingTime.format(seconds: $0.timeIntervalSince(clock)) : "↻" }
+            let color = paceBarColor(meter)
+            if iconLook == .bars {
+                return BarIcon.image(rows: [BarIcon.Row(avatar: .codex, fills: [window.usedPercent], remaining: remaining,
+                    barColors: [blinkedBarColor(color, meter: meter)], avatarColor: lightAvatarColor(from: [color]), timeline: elapsed)],
+                    showAvatars: showAvatars, showPercent: showUsedPercent, showRemaining: showRemaining, foreground: .white)
+            }
+            let dial = RingIcon.Dial(avatar: .codex, showAvatar: true, usedPcts: [window.usedPercent],
+                brandColors: [color], avatarColor: lightAvatarColor(from: [color]), elapsedPct: elapsed,
+                remaining: remaining, displayedUsedIndex: 0, smartSignificant: [meterIsSmartSignificant(meter)],
+                blinkOff: [quotaBlinkOff(meter)])
+            return RingIcon.image(look: iconLook, dials: [dial], showAvatarsBeside: showAvatars,
+                showUsedPercent: showUsedPercent, showElapsedPercent: alternateElapsedActive ? false : showElapsedPercent,
+                showRemainingBeside: alternateElapsedActive ? false : showRemaining,
+                alternateShowsRemaining: alternateElapsedActive ? alternateShowsRemainingPhase : nil,
+                ringCenter: ringCenterContent, colorMode: iconColorMode, onPaceLo: onPaceLo, onPaceHi: onPaceHi,
+                foreground: .white, paceColor: tintColor)
+        }
+        // Ring images already carry padding on both sides. Overlap that transparent
+        // padding so every pair of dial slots has the same spacing as RingIcon.
+        let ringStyle = iconLook != .bars
+        let betweenImages: CGFloat = ringStyle ? RingIcon.dialSpacing - 2 * RingIcon.imageEdgePadding : 3
+        let firstGap: CGFloat = ringStyle && store.authError == nil ? betweenImages : 3
+        let width = base.size.width + firstGap + images.reduce(CGFloat(0)) { $0 + $1.size.width }
+            + CGFloat(images.count - 1) * betweenImages
+        let image = NSImage(size: NSSize(width: width, height: 22), flipped: true) { _ in
+            base.draw(in: NSRect(origin: .zero, size: base.size))
+            var x = base.size.width
+            for (index, icon) in images.enumerated() {
+                x += index == 0 ? firstGap : betweenImages
+                icon.draw(in: NSRect(x: x, y: 0, width: icon.size.width, height: icon.size.height),
+                    from: .zero, operation: .sourceOver, fraction: stale ? 0.45 : 1,
+                    respectFlipped: true, hints: nil)
+                x += icon.size.width
+            }
+            return true
+        }
+        return image
+    }
+
+    private func codexMeter(_ window: CodexQuotaWindow) -> QuotaMeter {
+        let end = window.resetsAt.flatMap { $0 > clock ? $0 : nil }
+        let start = end.flatMap { end in window.duration.map { end.addingTimeInterval(-$0) } }
+        return QuotaMeter(name: "Codex", percentUsed: window.usedPercent,
+            secondsRemaining: end.map { $0.timeIntervalSince(clock) },
+            isUnavailable: window.usedPercent == nil, periodStart: start, periodEnd: end)
     }
 
     private func barIcon() -> NSImage {

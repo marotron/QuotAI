@@ -2,6 +2,41 @@
 
 ## [Unreleased]
 
+## 0.21.0 — 2026-11-15
+
+### Added
+
+- Optional **Codex subscription quotas** with native browser sign-in, separate Keychain credentials, usage and reset times for each returned window, and optional per-window menu-bar indicators. No Codex installation or helper download is required.
+- Configurable **Codex high-usage refresh rules** share one request across quota windows and respect quiet hours and retry delays. Codex history and notifications remain outside this first version.
+
+### Changed
+
+- Refresh settings place the Codex refresh button with the other manual refresh controls, wrapping to a second row when needed.
+
+- Codex high-usage refresh rules appear below Grok in the shared Refresh settings section, with matching threshold and interval controls.
+
+- The dropdown aligns Codex quota windows with the shared usage, elapsed, pace and reset columns. Its compact refresh header provides per-provider refresh buttons and a refresh-all control.
+
+- Ring-center icon spacing is tuned separately for Cursor, Grok and Codex.
+
+- Ring-center icons have a little more space between the icon and the surrounding ring.
+
+- Icons inside menu-bar rings are shown at 50% opacity.
+
+- Codex indicators use the OpenAI logo in the menu bar and panel.
+
+- Codex menu-bar indicators follow Display style, color, icon, label, and ring-center choices alongside Cursor and Grok.
+
+- Menu-bar rings have a thicker elapsed-time outline and wider separation; Codex windows use the same ring style and show elapsed time when available.
+
+### Fixed
+
+- The gaps between menu-bar rings are consistent across Cursor, Grok and Codex.
+
+- Codex menu-bar rings, bars and labels display upright.
+
+- The macOS application-menu **About QuotAI** opens the same About window as the dropdown, including the release-candidate label.
+
 ## 0.20.0 — 2026-11-14
 
 ### Added
