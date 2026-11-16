@@ -35,3 +35,27 @@ Decision 2026-11-14: 0.20.0 places refresh status, manual actions, rate and Dyna
 - [ ] Run `make test` and check the candidate in the running app before marking either issue resolved. `make test` passed on 2026-11-14; running-app checks remain outstanding.
 
 2026-11-14, RC5 interaction verification: the shared native numeric control was exercised in an isolated macOS window using the shipping control source. Upward drag changed 90→94; downward drag returned 94→90; typing and committing 75 preserved both digits; dragging the focused field changed 75→79. Full Settings layout and scheduler acceptance remain separate checks.
+
+
+Decision 2026-11-15: compact dropdown provider freshness badges replace their age with the refresh icon using the same clipped downward slide on hover or keyboard focus. The icon remains stationary until the provider is refreshing, then rotates only while the request is active. The leading Refresh All button performs the same clipped downward icon transition on hover or focus, stays stationary afterward, and rotates while its coordinated all-provider refresh is active. It remains in its hovered state after the request completes without accepting duplicate refreshes. Both use the same blue/white hover treatment; Reduce Motion suppresses slide and rotation. See the approved prototype `.scratch/quotai/window-prototypes/locked/refresh-badge-motion-2026-11-15/`. Candidate 0.22.0-rc.2 passed `make test`; a seeded native preview with simulated reads showed centered rotation throughout Refresh All and Codex-only refresh. Live-account, hover/focus and Reduce Motion acceptance remain pending.
+
+- [x] On 2026-11-15, `make test` passed and the seeded native preview showed a Cursor refresh in progress and then returned the badge and Refresh All control to their idle accessibility states.
+- [ ] Verify the complete slide and rotation visually for Cursor, Grok, Codex and Refresh All, including Reduce Motion and live network refreshes.
+
+Decision 2026-11-15: a refresh arrow spins only while its corresponding request is active. Candidate 0.22.0-rc.3 isolates rotation from the slide transition and stops the rotation timeline on completion or when Reduce Motion is enabled. The reported rc.2 recording showed repeated badge motion after refresh. On 2026-11-15, the seeded native rc.3 preview showed Cursor-only and Refresh All enter the in-progress state, return to idle after the simulated requests, and remain visually still on a later check. `make test` passed. Live network failure and Reduce Motion verification remain pending.
+
+- [x] In the seeded native preview, verify that Cursor-only and Refresh All stop animating after the simulated requests complete and remain idle after the pointer moves away.
+- [ ] Verify individual Grok and Codex refreshes, live network failures and Reduce Motion in the running app.
+
+Decision 2026-11-15: revise the earlier stop-at-completion motion. Provider refresh badges rotate steadily during the request and for one second after completion, then settle and transition gently back to age text; a later pointer or keyboard re-entry can reveal the refresh icon again. Refresh All rotates in place for the same period and returns to its original icon without sliding. A new refresh during the finishing period keeps the spin continuous. Reduce Motion suppresses rotation and sliding. On 2026-11-15 the seeded rc.4 native preview showed a provider refresh and Refresh All running, continuing visibly after request completion, and returning to their resting presentation; make test passed. Live failure, repeat-click and Reduce Motion checks remain pending. See the copied experiment `.scratch/quotai/window-prototypes/experiments/refresh-smooth-tail/`.
+
+- [x] Check single-provider and Refresh All busy, finishing and rest states in the seeded native preview.
+- [ ] Verify exact timing, retry during the finishing period, live failure and Reduce Motion in the running app.
+
+Investigation 2026-11-15: Cursor credential resolution and post-fetch Keychain saves ran synchronously on MainActor; these are blocking I/O candidates, although live timings were not measured. Candidate rc.5 runs these operations in detached tasks and renders arrow rotation through Core Animation rather than main-thread TimelineView updates. Network reads were already asynchronous. History writes, discrepancy processing and chart updates still include main-actor work; full live performance profiling remains pending. The motion contract is unchanged.
+
+Verification 2026-11-15: rc.5 passed `make test`; seeded native Cursor-only and Refresh All checks showed centered layer rotation and return to age/idle. The preview uses simulated delays and does not establish live Keychain latency or whole-panel responsiveness. No live timing measurement has been claimed.
+
+Decision 2026-11-15: preserve the refresh symbol’s natural aspect ratio within its square 11 pt rotation frame. AppKit measured the selected arrow.clockwise symbol at 10 × 12 pt; filling a square stretched its geometry. Candidate rc.6 uses centered aspect-fit rendering; the animation timing is unchanged. `make test` passed and the corrected icon was checked during a seeded native Refresh All operation on 2026-11-15. User visual acceptance remains pending.
+
+Decision 2026-11-16: use the existing dropdown prototype SVG path for native refresh arrows, preserving its circular arc and 16 × 16 proportions. `make test` passed and the seeded native Refresh All preview showed the circular arrow on 2026-11-16.

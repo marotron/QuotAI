@@ -1,13 +1,18 @@
 {
-  "date": "2026-11-15",
-  "candidate": "0.21.0",
-  "build": 79,
-  "baselineStatus": "dropdown checked in native preview; settings reference reflects source, native settings comparison pending",
+  "date": "2026-11-16",
+  "candidate": "0.22.0",
+  "build": 88,
+  "baselineStatus": "dropdown updated for 0.22.0 with seeded native Codex blocked and exhausted notice verification; other window references remain initial",
   "sources": {
-    "QuotAI/MenuBarWindowPanel.swift": "ab502f391e9c4666f4bc030d483e2aeec6436743cb9d6e67cde9785c41748441",
-    "QuotAI/CodexQuotaViews.swift": "652ad18f7c40b0dc1679a20d8de97b2b2ab26fcd42794a0ead373a87b74a3c85",
+    "QuotAI/MenuBarWindowPanel.swift": "9a5d253fd1d9f0c39a2414e3fb6a3b591ac879c36d3ef3bc892de9e5268e2f63",
+    "QuotAI/CodexQuotaViews.swift": "d6b80c9cbdc047449ef8e3cce992448d1db1a7e7d50ebf0c99f61f4e08432069",
     "QuotAI/SettingsView.swift": "6bc8aff75fa89550ea5711faaa1bc09f252f509fa45b29c9c937114687c2bab4",
-    "QuotAI/QuotAIAboutView.swift": "bf20723879267074da00af786d129dca0fce8e913aee94ed831f16d9d2383b6e"
+    "QuotAI/QuotAIAboutView.swift": "bf20723879267074da00af786d129dca0fce8e913aee94ed831f16d9d2383b6e",
+    "QuotAI/PaceHistoryChart.swift": "39ef41e2a398dc9dfbb02cf7932d1c3104d1a0d4f8c85dc9d2bd02e47ed1029b",
+    "QuotAI/QuotaStore.swift": "d083bd0100f2f5f6106d57b927d7a36fbbcb578d0d52ef7782fe3cf925dbd628",
+    "QuotAICore/Sources/PaceHistorySampleStore.swift": "87dc77340eea010f7e56f57e6c6fd09779522f93f337d23c87fd4ea0942a9196",
+    "QuotAI/FreshnessBadgeView.swift": "4e863384ea79c9f4decc5114e83543cf716b07ad7a59e8eca00ee3474ffe49f8",
+    "QuotAI/CodexQuotaStore.swift": "e1f78629e04ec661b30b76e4fe999c87029749b8e3bb07c0ecda1cb9ecf27e77"
   },
   "experiment": "experiments/codex-matrix/index.html",
   "decision": "Approved 2026-11-15; implemented in rc.10, native preview visually checked",
@@ -21,7 +26,9 @@
       "Four-provider refresh header visually checked at 470 CSS px; Perplexity sample click completed and changed its timestamp to 12:47. Hover/focus transitions, busy animation and reduced-motion styling are defined in the prototype.",
       "Separated double-arrow refresh-all control visually checked at 470 CSS px; clicking updates Cursor, Grok, Codex and Perplexity sample timestamps together.",
       "Refresh-all and provider badge icons now share one SVG and one 11 \u00d7 11 CSS px size rule; separator and refresh-all action retained.",
-      "Native seeded panel preview checked in light and dark on 2026-11-15: Codex 5h and 7d align in the meter grid; compact three-provider header and dividers fit. Corridor results use native thresholds. Preview host version is independent of product version."
+      "Native seeded panel preview checked in light and dark on 2026-11-15: Codex 5h and 7d align in the meter grid; compact three-provider header and dividers fit. Corridor results use native thresholds. Preview host version is independent of product version.",
+      "2026-11-15: current native preview showed the Cursor badge in a simulated refresh, then its idle accessibility state; make test passed. Full motion, Reduce Motion and live refresh checks remain pending.",
+      "2026-11-15: rc.3 seeded native preview verified Cursor-only and Refresh All busy states, return to idle, and stationary badges on later screenshots; make test passed."
     ],
     "limitations": [
       "Native visual parity pending; historical chart rendering retained from source prototype.",
@@ -42,5 +49,42 @@
   "settingsRefreshExperiment": {
     "path": "experiments/refresh-codex-button/index.html",
     "decision": "implemented in rc.12; native Settings layout comparison pending"
+  },
+  "codexHistoryExperiment": {
+    "path": "experiments/codex-pace-history/index.html",
+    "baselineSHA256": "4fa8609cda99824a204f4a07a023ead0d7e04178f8fda8bf3e6f67b19af7d97d",
+    "decision": "candidate 0.22.0-rc.1; native seeded preview and avatar solo filter checked; live data acceptance pending"
+  },
+  "refreshBadgeMotion": {
+    "path": "experiments/refresh-badge-motion/index.html",
+    "locked": "locked/refresh-badge-motion-2026-11-15/index.html?slide=down&hover=still",
+    "decision": "Approved downward slide; rc.3 isolates rotation and stops it after refresh. Seeded native preview checked Cursor-only and Refresh All completion and idle state; live errors and Reduce Motion remain pending.",
+    "sha256": "1220017bb9848ce745378d4aa0dd566b2ad2f42efaf2359f2e99b2b7a2a2f01a"
+  },
+  "smoothRefreshMotion": {
+    "path": "experiments/refresh-smooth-tail/index.html",
+    "decision": "Implemented in rc.4; requested one-second finishing spin and slow badge return. Seeded native preview observed provider and refresh-all busy, finishing and idle states; live failure, repeat-click and Reduce Motion checks pending."
+  },
+  "refreshResponsiveness": {
+    "path": "experiments/refresh-render-thread/index.html",
+    "findings": "Cursor credential resolution and save performed synchronous Keychain/SQLite I/O on MainActor; live duration not measured. Spinner used a UI-thread TimelineView.",
+    "implementation": "Detached Cursor refresh credential I/O; Core Animation arrow layer; existing finish/slide timing retained.",
+    "verification": "make test passed; native seeded Cursor and Refresh All centered rotation and idle states checked; live Keychain latency and remaining main-thread history/chart work need profiling."
+  },
+  "refreshIconAspect": {
+    "path": "experiments/refresh-icon-aspect/index.html",
+    "finding": "SF arrow.clockwise measures 10 \u00d7 12 pt; rendering it to fill 11 \u00d7 11 distorted its aspect ratio.",
+    "implementation": "Center and aspect-fit the symbol inside the existing square rotation frame.",
+    "verification": "make test passed; seeded native Refresh All icon checked. Animation timing unchanged; user visual acceptance pending."
+  },
+  "refreshSVGIcon": {
+    "path": "experiments/refresh-svg-icon/index.html",
+    "decision": "Native arrow matches existing prototype SVG geometry; seeded Refresh All preview and make test passed on 2026-11-16."
+  },
+  "codexBlockNoticeExperiment": {
+    "path": "experiments/codex-block-message/index.html",
+    "decision": "Approved for release 2026-11-16; seeded native blocked and exhausted states visually checked; live account and discrepancy combination pending.",
+    "lockedPath": "locked/codex-block-message-2026-11-16/index.html",
+    "lockedSHA256": "17855bfd16534b4ff30865b07bd92784732e3707304ccc3e6751534436bccd31"
   }
 }

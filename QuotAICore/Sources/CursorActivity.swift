@@ -539,7 +539,7 @@ public enum CursorDiscrepancySnapshotBackfill {
                 var entry = byTimestamp[sample.timestamp] ?? (nil, nil)
                 entry.other = sample.usedPct
                 byTimestamp[sample.timestamp] = entry
-            case .grok:
+            case .grok, .codex:
                 continue
             }
         }

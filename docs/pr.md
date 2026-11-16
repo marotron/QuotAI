@@ -99,3 +99,13 @@ Behavior changes update this specification and the relevant technical/detail con
 Decision 2026-11-15: the approved dropdown matrix and compact refresh header include Codex when enabled; see [Codex quota contract](codex-quota.md). Seeded native light/dark previews were checked; live refresh and edge-state acceptance remains pending.
 
 Decision 2026-11-15: Codex and future supported providers place high-usage rules in the shared Settings → Refresh section below existing providers; see [automatic refresh](automatic-refresh.md). Running-app verification is pending.
+
+Decision 2026-11-15: Codex history follows the existing pace chart per reported quota window; see [Codex quota contract](codex-quota.md). Candidate 0.22.0 passed core tests and a seeded native chart preview; live acceptance remains pending.
+
+Decision 2026-11-15: dropdown refresh badges slide down to a static icon on hover and rotate during refresh; Refresh All uses the same downward hover transition and rotates while its coordinated refresh is active. See [automatic refresh](automatic-refresh.md); candidate 0.22.0-rc.2 passed a seeded native refresh preview; live and Reduce Motion acceptance remain pending.
+
+Decision 2026-11-15: refresh-button rotation is limited to the corresponding active request and must stop at completion, without repeating its slide transition; see [automatic refresh](automatic-refresh.md). Candidate rc.3 passed Cursor-only and Refresh All seeded native preview checks; live failure and Reduce Motion acceptance remain pending.
+
+Decision 2026-11-15: refresh indicators continue rotating for one second after completion and settle; provider badges return gently to age text and Refresh All rotates in place. This revises the earlier immediate-stop decision; see [automatic refresh](automatic-refresh.md). Seeded native busy, finishing and rest states were checked; live and Reduce Motion acceptance remains pending.
+
+Decision 2026-11-16: the Codex blocked-usage notice is suppressed when an ordinary Codex window is exhausted; otherwise it appears below the chart after any discrepancy notice. See [Codex quota contract](codex-quota.md). Seeded native notice states verified 2026-11-16; live account acceptance pending.

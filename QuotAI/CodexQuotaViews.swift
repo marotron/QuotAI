@@ -50,9 +50,6 @@ struct CodexPanelSection: View {
                 if !store.requiresSignIn, !store.isRefreshing, store.windows.isEmpty {
                     Text("No quota windows available").font(.system(size: 11)).foregroundStyle(.secondary)
                 }
-                if store.ordinaryUsageAllowed == false {
-                    Text("Included usage is currently blocked by Codex.").font(.system(size: 11)).foregroundStyle(.secondary)
-                }
                 if let error = store.error { Text(error).font(.system(size: 11)).foregroundStyle(.orange) }
             }
             .padding(.horizontal, 19)

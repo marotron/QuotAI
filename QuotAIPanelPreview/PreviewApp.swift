@@ -4,7 +4,7 @@ import QuotAICore
 /// Design-preview host for `MenuBarWindowPanel`.
 ///
 /// Compiles the real panel sources (shared with the `QuotAI` target) against a seeded
-/// `QuotaStore` — no timers, no network, no keychain. Panel actions stay look-only via
+/// `QuotaStore` — no timers, no network, no keychain. Refresh controls simulate a short read without network via
 /// `#if PANEL_PREVIEW` guards; the appearance picker flips the panel between light and
 /// dark so both palettes can be checked side by side.
 @main
@@ -41,10 +41,18 @@ private enum PreviewAppearance: String, CaseIterable, Identifiable {
 private struct PanelPreviewRoot: View {
     @ObservedObject var store: QuotaStore
     @State private var appearance: PreviewAppearance = .system
+    @State private var codexBlock = "Normal"
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
+                Picker("Codex", selection: $codexBlock) {
+                    Text("Normal").tag("Normal")
+                    Text("Blocked").tag("Blocked")
+                    Text("Exhausted").tag("Exhausted")
+                }
+                .onChange(of: codexBlock) { _, value in store.codex.setPanelPreviewBlock(value) }
+                .frame(width: 145)
                 Spacer()
                 Picker("Appearance", selection: $appearance) {
                     ForEach(PreviewAppearance.allCases) { mode in

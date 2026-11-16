@@ -1,10 +1,41 @@
 import Foundation
 
 /// Stable ids for pace-history series (menu meters).
-public enum PaceHistoryMeterId: String, Codable, Hashable, Sendable, CaseIterable {
-    case cursor
-    case other
-    case grok
+public enum PaceHistoryMeterId: Hashable, Sendable, CaseIterable, Codable {
+    case cursor, other, grok
+    case codex(String)
+
+    public static let allCases: [Self] = [.cursor, .other, .grok]
+    public var rawValue: String {
+        switch self {
+        case .cursor: return "cursor"
+        case .other: return "other"
+        case .grok: return "grok"
+        case .codex(let id): return "codex:" + id
+        }
+    }
+    public init?(rawValue: String) {
+        switch rawValue {
+        case "cursor": self = .cursor
+        case "other": self = .other
+        case "grok": self = .grok
+        default:
+            guard rawValue.hasPrefix("codex:"), rawValue.count > 6 else { return nil }
+            self = .codex(String(rawValue.dropFirst(6)))
+        }
+    }
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        guard let id = Self(rawValue: raw) else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unknown history meter")
+        }
+        self = id
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// One refresh sample on the used % × elapsed % plane.
@@ -59,6 +90,14 @@ public final class PaceHistorySampleStore: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return samples.filter { $0.meterId == meterId }
+    }
+
+    /// Remove Codex readings when credentials are replaced or disconnected.
+    public func removeCodexHistory() throws {
+        lock.lock()
+        defer { lock.unlock() }
+        samples.removeAll { if case .codex = $0.meterId { return true }; return false }
+        try Self.save(samples, to: fileURL)
     }
 
     /// Append a sample. Clears that meter’s series when `periodStart` differs from the stored period.

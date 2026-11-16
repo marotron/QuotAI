@@ -13,14 +13,16 @@ public enum PaceHistoryTipPresentation {
     }
 
     /// Cursor + Other share one billing window; Grok has its own.
-    public enum BillingFamily: String, CaseIterable, Sendable {
+    public enum BillingFamily: Hashable, Sendable {
         case cursor
         case grok
+        case codex(String)
 
         public var tipPrefix: String {
             switch self {
             case .cursor: return "Cursor"
             case .grok: return "Grok"
+            case .codex(let name): return name
             }
         }
     }
@@ -37,7 +39,11 @@ public enum PaceHistoryTipPresentation {
     }
 
     public static func billingFamily(for id: PaceHistoryMeterId) -> BillingFamily {
-        id == .grok ? .grok : .cursor
+        switch id {
+        case .grok: return .grok
+        case .cursor, .other: return .cursor
+        case .codex(let id): return .codex(id)
+        }
     }
 
     /// Infer billing window from the latest sample (periodStart + elapsed → duration).

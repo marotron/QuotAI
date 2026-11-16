@@ -1,0 +1,1 @@
+Refresh icon proportions, 2026-11-15. Copy of the dropdown baseline. Native SF Symbol arrow.clockwise measures 10 × 12 pt at the selected font; preserve that aspect inside the 11 × 11 pt rotation frame instead of stretching. Animation timing is unchanged.

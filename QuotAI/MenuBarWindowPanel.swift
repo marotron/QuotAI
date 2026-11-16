@@ -16,6 +16,8 @@ struct MenuBarWindowPanel: View {
     @AppStorage("menuPinDensity") private var menuPinDensity: MenuPinDensity = .compact
     /// Meter-avatar chart filter (solo → hide → all). Lives on the panel so chart remounts keep it.
     @State private var refreshAllHovered = false
+    @State private var refreshAllVisualSpinning = false
+    @FocusState private var refreshAllFocused: Bool
     @State private var seriesFilter = PaceHistorySeriesFilter.all
     /// Pace chart X zoom (elapsed %). Session state — survives history remounts; clears with the panel.
     @State private var paceChartXDomain: ClosedRange<Double> = PaceHistoryChartZoom.fullDomain
@@ -44,6 +46,9 @@ struct MenuBarWindowPanel: View {
                 .padding(.horizontal, 5)
 
             CodexPanelSection(store: store.codex)
+            if let error = store.codexHistoryError {
+                Text(error).font(.system(size: 11)).foregroundStyle(.orange).padding(.horizontal, 19)
+            }
 
             chartWell
                 .padding(.top, 4)
@@ -53,6 +58,16 @@ struct MenuBarWindowPanel: View {
             if store.discrepancyDetectionEnabled,
                let event = store.cursorDiscrepancyEvents.last {
                 discrepancyWarning(event)
+                    .padding(.horizontal, 19)
+                    .padding(.bottom, 6)
+            }
+
+            if store.codex.enabled,
+               CodexQuotaSnapshot.shouldShowBlockedNotice(allowed: store.codex.ordinaryUsageAllowed,
+                                                           windows: store.codex.windows) {
+                Text("Included usage is currently blocked by Codex.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 19)
                     .padding(.bottom, 6)
             }
@@ -93,14 +108,28 @@ struct MenuBarWindowPanel: View {
 
     private var statusRow: some View {
         HStack(spacing: 5) {
-            Button { Task { await store.refresh(.all) } } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 9, weight: .semibold))
+            Button {
+                guard !store.isRefreshingAll, !store.isRefreshing, !store.codex.isRefreshing else { return }
+                Task { await store.refresh(.all) }
+            } label: {
+                RefreshArrow(isSpinning: refreshAllVisualSpinning,
+                             color: refreshAllHovered || refreshAllFocused || refreshAllVisualSpinning ? .white : secondaryText)
                     .frame(width: 18, height: 18)
             }
-            .buttonStyle(PanelActionButtonStyle(isHovered: refreshAllHovered, idleForeground: secondaryText))
+            .buttonStyle(PanelActionButtonStyle(isHovered: refreshAllHovered || refreshAllFocused, idleForeground: secondaryText,
+                                                highlightWhileDisabled: refreshAllVisualSpinning))
+            .focused($refreshAllFocused)
+            .task(id: store.isRefreshingAll) {
+                if store.isRefreshingAll {
+                    refreshAllVisualSpinning = true
+                } else if refreshAllVisualSpinning {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    guard !Task.isCancelled else { return }
+                    refreshAllVisualSpinning = false
+                }
+            }
             .onHover { refreshAllHovered = $0 }
-            .disabled(store.isRefreshing || store.codex.isRefreshing)
+            .disabled(!store.isRefreshingAll && (store.isRefreshing || store.codex.isRefreshing))
             .help("Refresh all quotas")
             .accessibilityLabel("Refresh all quotas")
             .padding(.leading, -3.5)
@@ -268,7 +297,8 @@ struct MenuBarWindowPanel: View {
         let meter = QuotaMeter(name: "Codex", percentUsed: window.usedPercent,
             periodStart: start, periodEnd: end).projected(at: now)
         return meterRow(title: window.title, meter: meter, avatar: .codex,
-                        expired: window.resetsAt.map { $0 <= now } ?? false)
+                        series: window.slot == "primary" ? .codex : .codexSecondary,
+                        meterId: .codex(window.id), expired: window.resetsAt.map { $0 <= now } ?? false)
             .opacity(store.codex.error == nil && !store.codex.requiresSignIn ? 1 : 0.55)
     }
 
@@ -309,6 +339,7 @@ struct MenuBarWindowPanel: View {
         case .cursor: return "Cursor Models"
         case .other: return "Other Models"
         case .grok: return "Grok Bot"
+        case .codex(let id): return store.codex.windows.first(where: { $0.id == id })?.title ?? "Codex"
         }
     }
 
@@ -399,6 +430,7 @@ struct MenuBarWindowPanel: View {
                 series: historySeries,
                 showOtherModels: showOtherModels,
                 discrepancyClusters: discrepancyClustersForChart,
+                seriesNames: Dictionary(uniqueKeysWithValues: store.codex.windows.map { (.codex($0.id), $0.title) }),
                 seriesFilter: seriesFilter,
                 xDomain: $paceChartXDomain
             )
@@ -472,6 +504,12 @@ struct MenuBarWindowPanel: View {
         var map: [PaceHistoryMeterId: [PaceHistorySample]] = [:]
         for id in PaceHistoryMeterId.allCases {
             map[id] = store.paceHistoryStore.series(for: id)
+        }
+        if store.codex.enabled {
+            for window in store.codex.windows {
+                let id = PaceHistoryMeterId.codex(window.id)
+                map[id] = store.paceHistoryStore.series(for: id)
+            }
         }
         return map
     }
@@ -814,6 +852,7 @@ private struct VersionChangelogButton: View {
 private struct PanelActionButtonStyle: ButtonStyle {
     var isHovered: Bool
     var idleForeground: Color? = nil
+    var highlightWhileDisabled = false
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
 
@@ -829,7 +868,7 @@ private struct PanelActionButtonStyle: ButtonStyle {
     }
 
     func makeBody(configuration: Configuration) -> some View {
-        let highlighted = isEnabled && (configuration.isPressed || isHovered)
+        let highlighted = (isEnabled && (configuration.isPressed || isHovered)) || highlightWhileDisabled
         return configuration.label
             .foregroundStyle(highlighted ? Color.white : (idleForeground ?? normalText))
             .background(

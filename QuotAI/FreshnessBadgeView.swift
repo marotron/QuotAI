@@ -1,5 +1,7 @@
 import QuotAICore
 import SwiftUI
+import AppKit
+import QuartzCore
 
 /// Ago chip + inverse-pie / refresh glyph. Click refreshes that family.
 struct FreshnessBadgeView: View {
@@ -12,8 +14,11 @@ struct FreshnessBadgeView: View {
     let action: () -> Void
 
     @State private var hovering = false
+    @State private var visualSpinning = false
+    @State private var suppressHoverAfterRefresh = false
     @FocusState private var focused: Bool
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var age: TimeInterval { max(0, now.timeIntervalSince(lastAt)) }
     private var tint: RefreshFreshness.Tint { RefreshFreshness.tint(age: age) }
@@ -21,7 +26,9 @@ struct FreshnessBadgeView: View {
     private var elapsed: Double {
         RefreshFreshness.elapsedFraction(age: age, interval: interval)
     }
-    private var showRefresh: Bool { hovering || isSpinning || (compact && focused) }
+    private var showRefresh: Bool {
+        visualSpinning || (!suppressHoverAfterRefresh && (hovering || (compact && focused)))
+    }
 
     @ViewBuilder
     var body: some View {
@@ -33,29 +40,52 @@ struct FreshnessBadgeView: View {
     }
 
     private var compactBadge: some View {
-        Button(action: action) {
+        Button {
+            guard !isSpinning else { return }
+            action()
+        } label: {
             ZStack {
                 Text(compactAge)
                     .font(.system(size: 9, weight: .medium))
                     .opacity(showRefresh ? 0 : 1)
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 9, weight: .semibold))
+                    .offset(y: showRefresh ? 16 : 0)
+                RefreshArrow(isSpinning: visualSpinning, color: showRefresh ? .white : .secondary)
                     .opacity(showRefresh ? 1 : 0)
-                    .rotationEffect(.degrees(isSpinning ? 360 : 0))
-                    .animation(isSpinning ? .linear(duration: 0.7).repeatForever(autoreverses: false) : .default, value: isSpinning)
+                    .offset(y: showRefresh ? 0 : -16)
             }
             .frame(width: 27, height: 16)
+            .clipped()
             .foregroundStyle(showRefresh ? Color.white : Color.secondary)
             .background(RoundedRectangle(cornerRadius: 4).fill(
                 showRefresh ? Color(red: 0x0a / 255, green: 0x82 / 255, blue: 1) : Color.primary.opacity(0.08)))
-            .animation(.easeInOut(duration: 0.12), value: showRefresh)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.5), value: showRefresh)
         }
         .buttonStyle(.plain)
         .focused($focused)
-        .disabled(isSpinning)
-        .onHover { hovering = $0 }
+        .onHover { active in
+            hovering = active
+            if active { suppressHoverAfterRefresh = false }
+        }
+        .onChange(of: focused) { _, active in
+            if active { suppressHoverAfterRefresh = false }
+        }
+        .task(id: isSpinning) { await updateVisualSpin() }
         .help("Refresh \(accessibilityName)")
         .accessibilityLabel("Refresh \(accessibilityName), \(MenuBarWindowPanel.relativeAgo(from: lastAt, to: now))")
+        .accessibilityHint(isSpinning ? "Refresh in progress" : "Refresh this provider")
+    }
+
+    @MainActor
+    private func updateVisualSpin() async {
+        if isSpinning {
+            visualSpinning = true
+            suppressHoverAfterRefresh = false
+        } else if visualSpinning {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard !Task.isCancelled else { return }
+            suppressHoverAfterRefresh = true
+            visualSpinning = false
+        }
     }
 
     private var compactAge: String {
@@ -89,7 +119,11 @@ struct FreshnessBadgeView: View {
         .buttonStyle(.plain)
         .disabled(isSpinning)
         .opacity(isSpinning ? 0.85 : 1)
-        .onHover { hovering = $0 }
+        .onHover { active in
+            hovering = active
+            if active { suppressHoverAfterRefresh = false }
+        }
+        .task(id: isSpinning) { await updateVisualSpin() }
         .padding(.leading, 4)
         .padding(.trailing, 1)
         .help("Refresh \(accessibilityName)")
@@ -110,20 +144,12 @@ struct FreshnessBadgeView: View {
                 }
                 .opacity(showRefresh ? 0 : 1)
 
-            Image(systemName: "arrow.clockwise")
-                .font(.system(size: 9, weight: .semibold))
+            RefreshArrow(isSpinning: visualSpinning, color: fresh)
                 .foregroundStyle(fresh)
                 .scaleEffect(0.8)
                 .frame(width: 12, height: 12)
                 .opacity(showRefresh ? 1 : 0)
-                // Rest pose −30° CCW; spin adds a full turn from there.
-                .rotationEffect(.degrees(-60 + (isSpinning ? 360 : 0)))
-                .animation(
-                    isSpinning
-                        ? .linear(duration: 0.7).repeatForever(autoreverses: false)
-                        : .default,
-                    value: isSpinning
-                )
+                .rotationEffect(.degrees(-60))
         }
         .frame(width: 12, height: 12)
         .animation(.easeInOut(duration: 0.08), value: showRefresh)
@@ -148,6 +174,108 @@ struct FreshnessBadgeView: View {
                 blue: 0x4a / 255 + (0x0b / 255 - 0x4a / 255) * u
             )
         }
+    }
+}
+
+/// Core Animation keeps rotation smooth when the main thread handles a refresh update.
+struct RefreshArrow: View {
+    let isSpinning: Bool
+    var color: Color = .white
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        RefreshRotation(isSpinning: isSpinning && !reduceMotion, reduceMotion: reduceMotion, color: NSColor(color))
+            .frame(width: 11, height: 11)
+    }
+}
+
+private final class RefreshRotationImage: NSView {
+    let arrow = CALayer()
+    var rotating = false
+    var tint: NSColor?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.addSublayer(arrow)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layout() {
+        super.layout()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        arrow.bounds = CGRect(origin: .zero, size: bounds.size)
+        arrow.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        arrow.contentsScale = window?.backingScaleFactor ?? 2
+        CATransaction.commit()
+    }
+}
+
+private struct RefreshRotation: NSViewRepresentable {
+    let isSpinning: Bool
+    let reduceMotion: Bool
+    let color: NSColor
+
+    func makeNSView(context: Context) -> RefreshRotationImage {
+        RefreshRotationImage()
+    }
+
+    func updateNSView(_ view: RefreshRotationImage, context: Context) {
+        let layer = view.arrow
+        if view.tint != color {
+            view.tint = color
+            // Match the approved prototype's 16 × 16 SVG path exactly.
+            let tinted = NSImage(size: NSSize(width: 11, height: 11), flipped: false) { rect in
+                guard let context = NSGraphicsContext.current?.cgContext else { return false }
+                context.saveGState()
+                context.translateBy(x: rect.minX, y: rect.maxY)
+                context.scaleBy(x: rect.width / 16, y: -rect.height / 16)
+                context.setStrokeColor(color.cgColor)
+                context.setLineWidth(1.4)
+                context.setLineCap(.round)
+                context.setLineJoin(.round)
+                context.addArc(center: CGPoint(x: 8.2857463365, y: 8.0542835776), radius: 5.1,
+                               startAngle: -30.0555840477 * .pi / 180,
+                               endAngle: 22.4274343791 * .pi / 180, clockwise: true)
+                context.move(to: CGPoint(x: 10, y: 5.5))
+                context.addLine(to: CGPoint(x: 13.5, y: 5.5))
+                context.addLine(to: CGPoint(x: 13.5, y: 2))
+                context.strokePath()
+                context.restoreGState()
+                return true
+            }
+            var proposed = CGRect(x: 0, y: 0, width: 22, height: 22)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            layer.contents = tinted.cgImage(forProposedRect: &proposed, context: nil, hints: nil)
+            CATransaction.commit()
+        }
+        if reduceMotion {
+            layer.removeAnimation(forKey: "refreshRotation")
+            view.rotating = false
+            return
+        }
+        guard view.rotating != isSpinning else { return }
+        view.rotating = isSpinning
+        let current = layer.presentation().map { atan2(Double($0.transform.m12), Double($0.transform.m11)) } ?? 0
+        layer.removeAnimation(forKey: "refreshRotation")
+        let animation = CABasicAnimation(keyPath: "transform.rotation.z")
+        animation.fromValue = current
+        if isSpinning {
+            animation.toValue = current - 2 * Double.pi
+            animation.duration = 0.8
+            animation.repeatCount = .infinity
+            animation.timingFunction = CAMediaTimingFunction(name: .linear)
+        } else {
+            let phase = current > 0 ? current - 2 * Double.pi : current
+            animation.fromValue = phase
+            animation.toValue = -2 * Double.pi
+            animation.duration = 0.35
+            animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        }
+        layer.add(animation, forKey: "refreshRotation")
     }
 }
 

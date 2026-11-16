@@ -1,0 +1,1 @@
+Refresh responsiveness investigation, 2026-11-15. Copy of the dropdown baseline; visual behavior is unchanged. Native implementation moves Cursor credential I/O off MainActor and uses a Core Animation layer for steady rotation. The one-second finish and gentle return remain.

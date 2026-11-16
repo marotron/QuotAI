@@ -20,6 +20,8 @@ final class QuotaStore: ObservableObject {
     /// Last fetch failed. Shown in the menu; the rings stay up with the previous meters.
     @Published var refreshError: String?
     @Published var isRefreshing = false
+    /// True for the full coordinated Refresh All operation, including Codex.
+    @Published private(set) var isRefreshingAll = false
     /// Which family (or `.all`) is mid-refresh; drives badge spin without blanking the status row.
     @Published private(set) var refreshingScope: RefreshScope?
     @Published var lastCursorRefreshed: Date?
@@ -28,6 +30,7 @@ final class QuotaStore: ObservableObject {
     @Published private(set) var displayClock = Date()
     /// Bumps when pace-history samples are written so the window panel can redraw.
     @Published private(set) var paceHistoryEpoch = 0
+    @Published private(set) var codexHistoryError: String?
     /// Current billing-period detector events, published for the panel.
     @Published private(set) var cursorDiscrepancyEvents: [CursorDiscrepancyEvent] = []
 
@@ -280,6 +283,12 @@ final class QuotaStore: ObservableObject {
         }
         codexChanges = codex.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
         codex.onScheduleChange = { [weak self] in self?.restartPollingIfFireChanged() }
+        codex.onHistoryReset = { [weak self] in
+            guard let self else { return }
+            try self.paceHistoryStore.removeCodexHistory()
+            self.paceHistoryEpoch &+= 1
+        }
+        codex.onHistorySample = { [weak self] windows, stamp in self?.recordCodexHistory(windows, at: stamp) }
         startPolling(refreshNow: true)
         startDisplayClock()
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -340,6 +349,20 @@ final class QuotaStore: ObservableObject {
                 periodStart: periodStart,
                 periodEnd: periodEnd
             )
+            let codexSamples = codex.windows.flatMap { window -> [PaceHistorySample] in
+                guard let end = window.resetsAt, let duration = window.duration,
+                      let used = window.usedPercent else { return [] }
+                let start = end.addingTimeInterval(-duration)
+                let elapsed = max(0, min(1, now.timeIntervalSince(start) / duration))
+                return (0..<8).map { step in
+                    let t = Double(step) / 7
+                    return PaceHistorySample(meterId: .codex(window.id), usedPct: used * t,
+                        elapsedPct: elapsed * t * 100,
+                        timestamp: start.addingTimeInterval(duration * elapsed * t), periodStart: start)
+                }
+            }
+            try? paceHistoryStore.append(contentsOf: codexSamples)
+            codexChanges = codex.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
         }
 
         /// One gentle ramp per series so the chart well shows three trajectories.
@@ -543,9 +566,28 @@ final class QuotaStore: ObservableObject {
 
     func refresh(_ scope: RefreshScope = .all, forceReimport: Bool = false, includeCodex: Bool = true) async {
         #if PANEL_PREVIEW
-            if isPreview { return }
+            if isPreview {
+                guard !isRefreshing else { return }
+                isRefreshing = true
+                refreshingScope = scope
+                isRefreshingAll = scope == .all && includeCodex
+                if scope == .all, includeCodex {
+                    async let codexPreview: Void = codex.refresh()
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    await codexPreview
+                } else {
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                }
+                refreshingScope = nil
+                isRefreshing = false
+                isRefreshingAll = false
+                return
+            }
         #endif
         if scope == .all, includeCodex {
+            guard !isRefreshingAll else { return }
+            isRefreshingAll = true
+            defer { isRefreshingAll = false }
             async let codexFetch: Void = codex.refresh()
             await refresh(scope, forceReimport: forceReimport, includeCodex: false)
             await codexFetch
@@ -635,6 +677,13 @@ final class QuotaStore: ObservableObject {
     }
 
     private func resolveCredentials(forceReimport: Bool) async throws -> QuotAIKeychain.Credentials {
+        try await Task.detached(priority: .userInitiated) {
+            try Self.readCredentials(forceReimport: forceReimport)
+        }.value
+    }
+
+    /// Keychain and Cursor SQLite access can block; never execute on the UI actor.
+    nonisolated private static func readCredentials(forceReimport: Bool) throws -> QuotAIKeychain.Credentials {
         if !forceReimport, let existing = try KeychainStore.load(), !Self.containsSealedToken(existing) {
             return existing
         }
@@ -652,7 +701,7 @@ final class QuotaStore: ObservableObject {
         throw CursorConnectClient.ClientError.unauthorized
     }
 
-    private static func containsSealedToken(_ credentials: QuotAIKeychain.Credentials) -> Bool {
+    nonisolated private static func containsSealedToken(_ credentials: QuotAIKeychain.Credentials) -> Bool {
         CursorSealedToken.isSealed(credentials.accessToken)
             || CursorSealedToken.isSealed(credentials.refreshToken)
     }
@@ -671,7 +720,9 @@ final class QuotaStore: ObservableObject {
             credentials: credentials,
             scope: connectScope(for: scope)
         )
-        try KeychainStore.save(result.credentials)
+        try await Task.detached(priority: .userInitiated) {
+            try KeychainStore.save(result.credentials)
+        }.value
         let stamp = Date()
         var historyBatch: [PaceHistorySample] = []
         if let cursor = result.cursorModels {
@@ -713,6 +764,13 @@ final class QuotaStore: ObservableObject {
             other: includeOther ? otherModels : nil,
             grok: grokBot
         )
+    }
+
+    private func recordCodexHistory(_ windows: [CodexQuotaWindow], at stamp: Date) {
+        let samples = windows.compactMap { $0.paceHistorySample(at: stamp) }
+        guard !samples.isEmpty else { return }
+        do { try paceHistoryStore.append(contentsOf: samples); codexHistoryError = nil; paceHistoryEpoch &+= 1 }
+        catch { codexHistoryError = "Could not save Codex history." }
     }
 
     /// Sample for a successful meter update when used %, elapsed %, and period start are present.
