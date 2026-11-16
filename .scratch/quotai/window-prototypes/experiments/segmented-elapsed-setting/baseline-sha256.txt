@@ -1,0 +1,1 @@
+32cbd319b4c120ac5ec0a3ee2a7725b07e3eab291d35386b17c6afc8c38bdeb4  .scratch/quotai/window-prototypes/baselines/settings/index.html

@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuotAI · Segmented elapsed rings prototype</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111318;color:#edeef2;font:14px -apple-system,BlinkMacSystemFont,sans-serif;padding:36px 40px 110px}main{max-width:1360px;margin:auto}h1{font-size:30px;letter-spacing:-1px;font-weight:600;margin:10px 0}h2{font-size:17px;font-weight:550;margin:0 0 18px}p{color:#a5abb9;line-height:1.6;max-width:900px}small,.eyebrow{font-size:11px;color:#98a2b6;letter-spacing:1.2px;text-transform:uppercase}.eyebrow{color:#bfcbff}header{display:flex;justify-content:space-between;align-items:start;gap:24px}input[type=number]{width:72px;font:inherit;background:#252a35;color:inherit;border:1px solid #414858;border-radius:6px;padding:8px}button,select{font:inherit;color:inherit;background:#252a35;border:1px solid #414858;border-radius:7px;padding:8px 12px;cursor:pointer}button.active{background:#c5ceff;color:#171c31;border-color:#c5ceff}button:hover{filter:brightness(1.12)}label{color:#a5abb9;font-size:12px}.toolbar{display:flex;gap:18px;flex-wrap:wrap;align-items:center;border-top:1px solid #2c313c;border-bottom:1px solid #2c313c;padding:16px 0;margin:25px 0}.controls{display:flex;gap:5px;align-items:center}.controls label{margin-right:5px}.panel{background:#191d25;border:1px solid #2e3440;border-radius:12px;padding:24px;margin:18px 0}.badge{border:1px solid #46506a;border-radius:20px;padding:5px 10px;color:#c5ceff;font-size:12px}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:24px}.menu{background:var(--menu);display:flex;align-items:center;width:max-content;flex-shrink:0;border-bottom:solid rgba(35,36,73,.8);border-radius:0;box-sizing:content-box}.bar-viewport{overflow:auto}.bar-context{height:16px;background:#afd0fa;border-top:1px solid #d6e5ff;width:max-content}.menu img{display:block;flex-shrink:0}.caption{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#a5abb9;margin-bottom:10px}.caption strong{color:#e0e4ef;font-weight:500}.scroll{overflow:auto;padding:8px 0}.zoomstage{min-height:70px;background:var(--menu);display:flex;align-items:center;padding:24px;border-radius:6px;width:max-content;min-width:100%}.zoomstage img{display:block;flex-shrink:0}.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:20px}.dimensions{display:grid;grid-template-columns:minmax(530px,1.3fr) minmax(320px,1fr);gap:25px}.diagram{background:#141820;border-radius:8px;overflow:auto}.diagram svg{display:block;min-width:530px;width:100%;height:auto}.diagram text{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;fill:#d2d9eb}.diagram .dim{stroke:#a4b8f2;stroke-width:1;fill:none}.diagram .guide{stroke:#536077;stroke-width:1;stroke-dasharray:3 4;fill:none}table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:right;padding:10px 8px;border-bottom:1px solid #303643;font-variant-numeric:tabular-nums;white-space:nowrap}td:first-child,th:first-child{text-align:left;white-space:normal}th{color:#a2acc0;font-weight:500}.changed{color:#c6d1ff}code{font:12px ui-monospace,SFMono-Regular,monospace;color:#bbc8e9}.legend{display:flex;gap:24px;flex-wrap:wrap}.swatch{display:inline-block;width:13px;height:13px;border-radius:50%;margin-right:7px;vertical-align:-2px}.footnote{font-size:12px}.switcher{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;border:1px solid #5a6685;background:#272e40;box-shadow:0 8px 30px #0008;border-radius:30px;padding:8px;z-index:5}.switcher span{min-width:245px;text-align:center;font-size:13px}.switcher button{border-radius:50%;border:0}.layout{position:relative;display:inline-block;vertical-align:top}.layout img{display:block}.layout svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}.layout text{font:11px -apple-system,sans-serif;fill:#f4f6ff;paint-order:stroke;stroke:#191d25;stroke-width:3px}.layout line,.layout rect{stroke:#b9c9ff;fill:none;stroke-width:1}.layout-stage{padding:42px 160px 54px 18px;background:#141820;width:max-content;min-width:100%;border-radius:6px}.pixels{image-rendering:pixelated}.mono{font-variant-numeric:tabular-nums}.strip{display:flex;gap:0;height:50px;margin:20px 0 8px;border-left:1px solid #c2cce0}.strip>div{height:100%;position:relative;border-right:1px solid #9aa8c1}.strip span{position:absolute;top:58px;left:50%;transform:translateX(-50%);font-size:11px;white-space:nowrap}.radial{padding-bottom:46px}.source{font-size:12px;line-height:1.6;color:#8994a8}.source summary{cursor:pointer;color:#b8c4df}.source pre{white-space:pre-wrap}a{color:#c5ceff}@media(max-width:950px){body{padding:24px 18px 110px}.dimensions,.comparison{grid-template-columns:1fr}header{display:block}.switcher span{min-width:200px}}
+
+.measurement-link{display:grid;grid-template-columns:minmax(240px,.65fr) minmax(0,1.35fr);gap:24px;align-items:start}.measurement-graphic{background:#111720;border:1px solid #3a5064;border-radius:10px;padding:14px;position:sticky;top:16px}.measurement-graphic svg{display:block;width:100%;max-height:420px}.measurement-graphic h3{font-size:14px;margin:0 0 8px;line-height:1.5}.measurement-graphic p{font-size:12px;margin:8px 0}.measurement-values{font-variant-numeric:tabular-nums;color:#c5eefa}.measurement-table{max-height:620px;padding-top:0}.measurement-table th{position:sticky;top:0;background:#191d25;z-index:1}.measurement-table tr.active td{background:#17313c;border-bottom-color:#5599a8}.measurement-table tr{cursor:pointer}.measurement-select{display:flex;gap:8px;align-items:center;text-align:left;border:0;padding:3px;background:none;color:inherit;font-size:12px;line-height:1.5}.measurement-select:focus-visible{outline:2px solid #75e3f5;outline-offset:4px}.measure-number{display:inline-flex;justify-content:center;align-items:center;background:#283b49;border:1px solid #658a9d;color:#c9eff6;border-radius:50%;width:24px;height:24px;flex-shrink:0;font:11px ui-monospace,SFMono-Regular,monospace}.active .measure-number,.measurement-graphic .measure-number{background:#75e3f5;border-color:#75e3f5;color:#10232b}.measurement-table td:first-child{min-width:180px}.measurement-graphic .measure-line{stroke:#75e3f5;stroke-width:1.7;fill:none}.measurement-graphic .measure-edge{stroke:#75e3f5;stroke-width:2;fill:none;stroke-dasharray:5 3}.measurement-graphic .measure-fill{stroke:#75e3f5;stroke-opacity:.75;fill:none}.measurement-graphic svg text{fill:#d4f8ff;font:12px -apple-system,BlinkMacSystemFont,sans-serif}.measurement-hint{margin:0 0 16px;font-size:12px}.measurement-graphic h3{min-height:45px}.measurement-values{min-height:39px}#measurement-focus-description{min-height:212px}@media(max-width:700px){.measurement-link{grid-template-columns:1fr}.measurement-graphic{position:static}.measurement-graphic svg{height:280px}.measurement-table{max-height:440px}}
+</style>
+<main>
+<!-- Throwaway exploration: three elapsed-ring segment treatments, switchable via ?segments=. -->
+<section class="panel" id="segmentation-prototype">
+ <div class="section-head"><h2>Elapsed ring segmentation</h2><small>Throwaway prototype · app unchanged</small></div>
+ <p>Compare a continuous elapsed ring with segments for each hour or day in a quota window. The elapsed portion can end partway through a segment; the usage ring stays continuous.</p>
+ <div class="toolbar" style="margin-top:0">
+  <div class="controls"><input type="checkbox" id="segments-enabled" checked><label for="segments-enabled">Show segments</label></div>
+  <div class="controls"><label for="segment-style">Treatment</label><select id="segment-style"><option value="fine">Fine gaps</option><option value="wide">Wider gaps</option><option value="ticks">Boundary ticks</option></select></div>
+  <div class="controls"><label for="segment-elapsed">Elapsed</label><input id="segment-elapsed" type="range" min="0" max="100" value="63"><output id="segment-elapsed-value">63%</output></div>
+ </div>
+ <div id="segmentation-examples" style="display:flex;gap:22px;flex-wrap:wrap"></div>
+ <p class="footnote">Each segment represents one hour or day. Monthly examples show both 30- and 31-day windows; the actual count would follow the window. At menu-bar size, dense daily divisions may be subtle.</p>
+</section>
+<header><div><div class="eyebrow">QuotAI / throwaway prototype / 14 November 2026</div><h1>Ring dimensions · segmentation copy</h1><p>A faithful reference for the current menu-bar dials and a thicker elapsed-time ring. Every dimension is in macOS points. A is the original pre-change snapshot; B starts with the selected 21.2 pt geometry. Adjust B below to explore.</p></div><span class="badge">App unchanged</span></header>
+<div class="toolbar">
+ <div class="controls"><label>Zoom</label><button data-zoom="1">1×</button><button data-zoom="2">2×</button><button data-zoom="4">4×</button><button data-zoom="8">8×</button></div>
+ <div class="controls"><label for="render">Rendering</label><select id="render"><option value="smooth">Native · high resolution</option><option value="pixels">Pixels · magnified Retina @2×</option></select></div>
+ <div class="controls"><label for="background">Background</label><select id="background"><option value="purple">Screenshot purple (approx.)</option><option value="dark">Dark</option><option value="light">Light / white ink</option></select></div>
+ <div class="controls"><label for="bar-height">Bar height (pt)</label><input id="bar-height" type="number" value="24" min="22" max="48" step="0.5" style="width:65px;background:#252a35;color:inherit;border:1px solid #414858;border-radius:6px;padding:8px"></div>
+ <div class="controls"><label for="outer-stroke">Elapsed stroke (pt)</label><input id="outer-stroke" type="number" value="1.6" min="0.1" max="5" step="0.1"></div>
+ <div class="controls"><label for="usage-stroke">Usage stroke (pt)</label><input id="usage-stroke" type="number" value="3.2" min="0.1" max="6" step="0.1"></div>
+ <div class="controls"><label for="ring-gap">Ring gap (pt)</label><input id="ring-gap" type="number" value="0.8" min="0" max="4" step="0.05"></div>
+ <div class="controls"><label for="opening">Center opening Ø (pt)</label><input id="opening" type="number" value="10" min="0.2" max="18" step="0.1"></div>
+ <div class="controls"><label for="dial-slot">Dial slot (pt)</label><input id="dial-slot" type="number" value="21" min="5" max="40" step="0.1"></div>
+ <button id="reset-dimensions" type="button">Reset dimensions</button>
+ <div class="controls"><input type="checkbox" id="guides" checked><label for="guides">Layout dimensions</label></div>
+</div>
+<section class="panel"><div class="section-head"><h2>Ring-center icon and nested rings</h2><small>Live SVG geometry preview</small></div><div class="toolbar" style="margin-top:0"><div class="controls"><label>Presets</label><button type="button" data-preset="over">Over</button><button type="button" data-preset="under">Under</button><button type="button" data-preset="exhausted">Exhausted</button><button type="button" data-preset="example">Example</button></div><div class="controls"><label for="center-opacity">Center icon opacity</label><input id="center-opacity" type="range" min="0" max="100" value="50" step="5"><output id="center-opacity-value">50%</output></div><div class="controls"><label for="center-icon">Center icon</label><select id="center-icon"><option value="cursor">Cursor</option><option value="grok">Grok</option><option value="codex" selected>OpenAI / Codex</option><option value="perplexity">Perplexity (preview)</option></select></div><div class="controls"><label for="icon-gap-cursor">Cursor gap (pt)</label><input id="icon-gap-cursor" type="number" min="0" max="3" step="0.05" value="0.55"></div><div class="controls"><label for="icon-gap-grok">Grok gap (pt)</label><input id="icon-gap-grok" type="number" min="0" max="3" step="0.05" value="0.6"></div><div class="controls"><label for="icon-gap-codex">OpenAI gap (pt)</label><input id="icon-gap-codex" type="number" min="0" max="3" step="0.05" value="0.7"></div><div class="controls"><label for="icon-gap-perplexity">Perplexity gap (pt)</label><input id="icon-gap-perplexity" type="number" min="0" max="3" step="0.05" value="1"></div><div class="controls"><label for="usage-color">Usage ring color</label><input id="usage-color" type="color" value="#ff9e08"><button type="button" id="reset-usage-color">White</button></div><div class="controls"><label for="nested-mode">Dial</label><select id="nested-mode"><option value="single">Two rings · elapsed + usage</option><option value="nested">Three rings · elapsed + two usage</option></select></div></div><div class="scroll"><div id="center-preview" style="display:flex;gap:28px;align-items:end;flex-wrap:wrap"></div></div><p class="footnote" id="center-preview-note"></p><p class="footnote">Cursor and Grok use the same source masks as the app; Codex uses the supplied OpenAI mark. Perplexity is a preview only. This live SVG approximates AppKit rasterization; the native app uses the same calculated ring geometry. Each icon has its own gap, retained while this page is open; gap is measured per side. Opacity affects the icon only. The nested option shows one elapsed ring and two independent usage rings, as in the app’s nested style. The existing measurements below describe the two-ring configuration.</p></section>
+<section class="panel"><h2>Actual size · 1×</h2><div class="comparison" id="comparison"></div><p class="footnote">Bar content height: 24 pt by default, inferred from the supplied screenshot; its bottom separator adds 0.5 pt. The 22 pt icon image is vertically centered, with 1 pt above and below at that default. The blue area is desktop context outside the bar. 1 pt = 1 CSS px at browser zoom 100%. On a Retina display, 1 pt usually occupies 2 physical pixels. Native dimensions are independent of the browser or display scaling.</p></section>
+<section class="panel"><div class="section-head"><h2 id="zoom-title"></h2><small id="scale-caption"></small></div><div class="scroll"><div class="layout-stage"><div id="enlarged" class="layout"></div></div></div><p class="footnote" id="row-caption"></p></section>
+<section class="panel"><div class="section-head"><h2 id="measurement-title">Code vs measured rendering</h2><small>macOS points · independent PNG scan</small></div><p class="measurement-hint">Point to a row, select its numbered label, or focus it with Tab. The matching feature lights up in cyan on the native icon. Numbers connect the table and drawing.</p><div class="measurement-link"><aside class="measurement-graphic" aria-label="Selected dimension on the icon"><h3 id="measurement-focus-title"></h3><div id="measurement-focus-drawing"></div><p class="measurement-values" id="measurement-focus-values"></p><p id="measurement-focus-description"></p><small>Native preset or live SVG + geometry overlay</small></aside><div class="scroll measurement-table"><table><thead><tr><th>Dimension</th><th>From code (pt)</th><th>Measured (pt)</th><th>Difference (pt)</th><th style="text-align:left">Code expression</th></tr></thead><tbody id="measurement-rows"></tbody></table></div></div><p class="footnote" id="measurement-method"></p><p class="footnote">Measurement method: scan the native 16× PNG through its horizontal center, identify the four separate stroke bands, and interpolate each edge at half that band’s peak opacity. The scan receives no ring radii or stroke widths. Values are estimates with a conservative ±0.063 pt raster resolution; anti-aliasing can produce small differences. Canvas dimensions come from PNG pixel counts; fractional source sizes are rounded up to whole pixels. The two menu-bar gap rows combine the screenshot-derived bar height with the code diameter or measured raster diameter; they do not measure the live OS bar. The bottom gap ends at the separator’s top edge; add 0.5 pt to reach its outside edge.</p><details open><summary>Constants actually used in the drawing code</summary><div class="scroll"><table><thead><tr><th>Constant</th><th>A · Production (pt)</th><th>B · Adjusted (pt)</th><th style="text-align:left">Production source</th></tr></thead><tbody id="code-constants"></tbody></table></div></details><p class="footnote">Screenshot cross-check, approximate: current visible circle ≈38 raster px → ≈19 pt, compared with 19.2 pt from code; bar content ≈48 raster px → ≈24 pt, assuming a 2× Retina crop. These are visual estimates from the attached screenshot, separate from the independent PNG measurements above. Menu-bar height is controlled by macOS, not RingIcon.swift; the prototype’s 24 pt default is screenshot-derived.</p></section>
+<section class="panel"><div class="section-head"><h2 id="drawing-title">Dimensioned dial</h2><small>Dimensions report native pt at every zoom</small></div><div class="dimensions"><div class="diagram" id="diagram"></div><div><table><thead><tr><th>Dimension (pt)</th><th>A · Original snapshot</th><th>B · Adjusted</th></tr></thead><tbody id="metrics"></tbody></table><p class="footnote">The controls change the proposed ring. Elapsed stroke grows outward from the usage ring and the selected air gap; the center opening, usage stroke, and allocated slot can be adjusted independently.</p></div></div></section>
+<section class="panel radial"><h2>Radial section · center → outside</h2><small>One radius, enlarged 32× for legibility</small><div class="scroll" style="padding-bottom:42px"><div id="section" class="strip"></div></div><p class="footnote">This section follows the filled arcs. Track and filled arc share the same stroke geometry. The original presets use native rendering; adjusted dimensions use a live SVG approximation.</p></section>
+<section class="panel"><h2>Color & typography reference</h2><div class="legend"><span><i class="swatch" id="warning"></i>Usage · over pace</span><span><i class="swatch" style="background:#fff"></i>Neutral usage / labels · white</span><span>Elapsed fill · white 92%</span><span>Elapsed track · white 22%</span><span>Usage track · white 18%</span></div><p class="footnote">Native SF monospaced digits · 10 pt · regular. Tracking −1 pt per character; label line centers are 9 pt apart. Usage is the top value; elapsed time is below at 72% opacity. The Example preset matches the screenshot labels; Over, Under and Exhausted use representative values and the app’s sRGB-converted pace colors. Blink is held on for comparison.</p><p class="footnote">Geometry, fonts, tracking, opacity, and the over-pace color use the current source. The screenshot’s purple wallpaper/translucency and original fractional percentages are unavailable here; the background is an approximation and the arcs use the shown whole percentages. Rasterization can vary with macOS, display color profile, and pixel alignment. This is a faithful source-based reference, not a claim of pixel identity to the attached crop.</p></section>
+<details class="source"><summary>Source & reproduction</summary><p>Generated from <code>QuotAI/RingIcon.swift</code>, <code>QuotAI/BarIcon.swift</code>, and core ring/percentage logic. B begins as a temporary native copy; edits render an SVG approximation without regenerating native assets. No app source is edited.</p><pre id="provenance"></pre><p>Run: <code>python3 .scratch/quotai/prototype/ring-dimensions/run.py</code><br>Open this HTML directly after generation; no server is needed.</p></details>
+</main>
+<nav class="switcher" aria-label="Prototype variant"><button id="prev" aria-label="Previous variant">←</button><span id="variant-name"></span><button id="next" aria-label="Next variant">→</button></nav>
+<script src="assets/data.js"></script>
+<script>
+// Deliberately two geometry variants as requested; no alternative product layouts.
+const D=window.REFERENCE, M=D.metrics, params=new URLSearchParams(location.search);
+let variant=params.get('variant')==='A'?'A':'B', zoom=[1,2,4,8].includes(+params.get('zoom'))?+params.get('zoom'):4;
+const $=id=>document.getElementById(id), fmt=n=>Number(n.toFixed(3)).toString();
+// Screenshot-derived content height: ~48 raster px / 2. Ring Ø19.2 pt spans ~38 px.
+// NSStatusBar.thickness reports a generic 22 pt without a screen connection here.
+// Use the supplied screenshot, with an editable height, rather than claim a live OS measurement.
+const barInset=16, separator=0.5;
+let barHeight=24;
+// Live AppKit reading on this Mac (1680 × 1050 @2×): NSScreen frame.maxY − visibleFrame.maxY = 25 pt. NSStatusBar.system.thickness = 22 pt on the same machine.
+const liveMenuBarHeight=25;
+function bar(v,z){return `<div class="menu" style="height:${barHeight*z}px;padding:0 ${barInset*z}px;border-bottom-width:${separator*z}px">${img(v,'row',z)}</div>`}
+const defaults={outer:1.6,usage:3.2,gap:0.8,opening:10,slot:21};
+const nativePreset={outer:1.6,usage:3.2,gap:0.55,opening:10.1,slot:21.6};
+// sRGB equivalents of QuotAIApp.tintColor's calibrated AppKit colors.
+const presets={example:{used:[91,99,36],elapsed:[84,84,37],color:'#ff9e08'},over:{used:[91,91,91],elapsed:[60,60,60],color:'#ff9e08'},under:{used:[30,30,30],elapsed:[65,65,65],color:'#55c5ff'},exhausted:{used:[100,100,100],elapsed:[84,84,84],color:'#ff5a5e'}};
+let selectedPreset='example';
+let custom={...defaults};
+const isCustom=()=>Object.keys(nativePreset).some(k=>Math.abs(custom[k]-nativePreset[k])>0.0001) || $('usage-color').value.toLowerCase()!=='#ff9e08' || selectedPreset!=='example';
+const usageStroke=v=>v==='B'?custom.usage:M.quotaStroke*2;
+const hole=v=>v==='B'?custom.opening/2:(M.outerR-M.timelineStroke/2-M.ringGapStroke-M.quotaStroke*2);
+const usageEdge=v=>hole(v)+usageStroke(v);
+const usageR=v=>hole(v)+usageStroke(v)/2;
+const gap=v=>v==='B'?custom.gap:M.ringGapStroke;
+const stroke=v=>v==='B'?custom.outer:M.timelineStroke;
+const radius=v=>usageEdge(v)+gap(v)+stroke(v)/2;
+const slot=v=>v==='B'?custom.slot:M.ringD;
+const edge=v=>radius(v)+stroke(v)/2;
+const rowWidth=v=>D['A-row'].width+3*(slot(v)-M.ringD);
+const rows=[['Elapsed ring thickness',v=>stroke(v)],['Visible outer diameter',v=>edge(v)*2],['Elapsed centerline diameter',v=>radius(v)*2],['Elapsed inner diameter',v=>(usageEdge(v)+gap(v))*2],['Air gap between rings',v=>gap(v)],['Usage ring thickness',v=>usageStroke(v)],['Usage outer diameter',v=>usageEdge(v)*2],['Usage centerline diameter',v=>usageR(v)*2],['Center opening diameter',v=>hole(v)*2],['Allocated dial width',v=>slot(v)],['Clearance within icon image',v=>(M.height-edge(v)*2)/2],['Menu-bar content height',()=>barHeight],['Image inset within bar / side',()=>(barHeight-M.height)/2],['Circle clearance within bar / side',v=>(barHeight-edge(v)*2)/2],['Dial slot → label',()=>M.metricGap],['Label → next dial slot',()=>M.ringGap],['Outer image padding / side',()=>2],['Text column width',v=>(rowWidth(v)-4-2*M.ringGap-3*(slot(v)+M.metricGap))/3]];
+
+$('warning').style.background=`rgb(${D.warningSRGB.map(n=>n*255).join(',')})`;
+$('provenance').textContent=`RingIcon.swift SHA-256: ${D.sourceSHA256}\nProduction: outerR = 9.2; timelineStroke = 0.8; ringD = 20\nProposed:   outerR = 9.6; timelineStroke = 1.6; ringD = 21.6\nFixed: quota stroke = 3.2; quota radius = 6.65; gap = 0.55; height = 22`;
+function customSVG(type){
+ const height=M.height,width=type==='row'?rowWidth('B'):slot('B'), count=type==='row'?3:1;
+ const textWidth=(rowWidth('B')-4-2*M.ringGap-3*(slot('B')+M.metricGap))/3;
+ let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+ for(let i=0;i<count;i++){
+  const x=type==='row'?2+i*(slot('B')+M.metricGap+textWidth+M.ringGap)+slot('B')/2:width/2, y=11;
+  const circle=(r,w,color,opacity,percent)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${color}" stroke-opacity="${opacity}" stroke-width="${w}"${percent==null?'':` stroke-dasharray="${2*Math.PI*r*percent/100} ${2*Math.PI*r}" transform="rotate(-90 ${x} ${y})"`}/>`;
+  out+=circle(radius('B'),stroke('B'),'white',.22,null)+circle(radius('B'),stroke('B'),'white',.92,presets[selectedPreset].elapsed[i]);
+  out+=circle(usageR('B'),usageStroke('B'),'white',.18,null)+circle(usageR('B'),usageStroke('B'),i===2&&selectedPreset==='example'?'white':$('usage-color').value,1,presets[selectedPreset].used[i]);
+  if(type==='row'){let tx=x+slot('B')/2+M.metricGap;out+=`<text x="${tx}" y="10" fill="white" font-family="monospace" font-size="10">${presets[selectedPreset].used[i]}%</text><text x="${tx}" y="19" fill="white" opacity=".72" font-family="monospace" font-size="10">${presets[selectedPreset].elapsed[i]}%</text>`;}
+ }
+ return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(out+'</svg>');
+}
+function imageSource(v,type,backing){return v==='B'&&isCustom()?customSVG(type):`assets/${v}-${type}@${backing}x.png`}
+function img(v,type,z){let size=v==='B'&&isCustom()?{width:type==='row'?rowWidth(v):slot(v),height:M.height}:D[v+'-'+type],pixels=$('render').value==='pixels', backing=pixels?2:Math.min(16,Math.max(2,z*2));return `<span style="display:block;flex-shrink:0;overflow:hidden;width:${size.width*z}px;height:${size.height*z}px"><img alt="${v==='A'?'Original snapshot':'Proposed'} ${type==='row'?'three dials':'dial'}" class="${pixels?'pixels':''}" src="${imageSource(v,type,backing)}" style="width:${Math.ceil(size.width*backing)/backing*z}px;height:${size.height*z}px;max-width:none"></span>`}
+const textColumnWidth=(D['A-row'].width-4-2*M.ringGap-3*(M.ringD+M.metricGap))/3;
+const comparisons=[
+ ['Elapsed stroke thickness','timelineStroke',v=>stroke(v),'timelineStroke'],
+ ['Visible outer diameter','outerDiameter',v=>edge(v)*2,'2 × outerR + timelineStroke'],
+ ['Elapsed centerline diameter','timelineCenterDiameter',v=>radius(v)*2,'2 × outerR'],
+ ['Elapsed inner diameter','timelineInnerDiameter',v=>2*radius(v)-stroke(v),'2 × outerR − timelineStroke'],
+ ['Gap between rings','ringGap',v=>gap(v),'ringGapStroke'],
+ ['Usage stroke thickness','usageStroke',v=>usageStroke(v),'singleStroke = quotaStroke × 2'],
+ ['Usage outer diameter','usageOuterDiameter',v=>usageEdge(v)*2,'2 × (outerR − timelineStroke/2 − ringGapStroke)'],
+ ['Usage centerline diameter','usageCenterDiameter',v=>usageR(v)*2,'2 × usedRadiusTimeline(index: 0)'],
+ ['Center opening diameter','openingDiameter',v=>hole(v)*2,'2 × usedRadiusTimeline − singleStroke'],
+ ['Bar height (real)','liveBarHeight',()=>barHeight,'barHeight (default 24 pt) vs live AppKit menu-bar height'],
+ ['Circle → menu-bar top edge','barTopGap',v=>barHeight/2-edge(v),'barHeight/2 − (outerR + timelineStroke/2)'],
+ ['Circle → menu-bar bottom edge','barBottomGap',v=>barHeight/2-edge(v),'barHeight/2 − (outerR + timelineStroke/2)']
+];
+let activeMeasurement=10;
+const measurementDescriptions=[
+ 'Thickness of the outer elapsed-time ring, from its inside edge to its outside edge. The cyan band marks that stroke.',
+ 'The full visible dial, from the leftmost outer edge to the rightmost outer edge. This includes the elapsed ring’s thickness.',
+ 'Diameter along the middle of the elapsed stroke. The dashed circle runs through the center of that ring, not along an edge.',
+ 'Diameter of the inside edge of the elapsed ring. It surrounds both the air gap and the usage ring.',
+ 'Clear radial space between the usage ring’s outside edge and the elapsed ring’s inside edge. The cyan band occupies only that gap.',
+ 'Thickness of the usage ring, from the center opening to the usage ring’s outside edge.',
+ 'Diameter across the usage ring’s outside edges. The elapsed ring and air gap sit outside this circle.',
+ 'Diameter through the middle of the usage stroke. The dashed circle follows the usage ring’s centerline.',
+ 'Diameter across the empty center opening, bounded by the inside edge of the usage ring.',
+ 'Live menu-bar height on this Mac, read from AppKit as the strip between the top of the screen and the top of the visible desktop (frame minus visibleFrame). The code value is the prototype’s bar height, 24 pt by default from the screenshot. NSStatusBar.system.thickness reports 22 pt on the same machine; that is a generic status-item value, not the drawn bar height.',
+ 'Vertical clear space from the very top of the outer elapsed ring to the top menu-bar edge. Uses the screenshot-derived bar height with the image centered. The raster-derived value uses the measured circle diameter, not a measurement of the live macOS bar.',
+ 'Vertical clear space from the very bottom of the outer elapsed ring to the bottom of the bar content, where the separator begins. The outer edge of the separator is another 0.5 pt below. Uses the screenshot-derived bar height and measured circle diameter; the live macOS bar is not measured.'
+];
+function measuredDimension(key,v){
+ const measured=D[v+'-measured'],raster=D[v+'-raster'];
+ if(key==='liveBarHeight')return liveMenuBarHeight;
+ if(key==='canvasWidth')return raster.width;
+ if(key==='canvasHeight')return raster.height;
+ if(key==='barTopGap'||key==='barBottomGap')return (barHeight-measured.outerDiameter)/2;
+ return measured[key];
+}
+function selectMeasurement(index){
+ activeMeasurement=index;
+ document.querySelectorAll('#measurement-rows tr').forEach((row,i)=>{row.classList.toggle('active',i===index);row.querySelector('button').setAttribute('aria-pressed',String(i===index))});
+ const [name,key,getCode]=comparisons[index], code=getCode(variant), measured=D[variant+'-measured'], raster=D[variant+'-raster'];
+ const actual=variant==='B'&&isCustom()?null:measuredDimension(key,variant);
+ $('measurement-focus-title').innerHTML=`<span class="measure-number">${index+1}</span> ${name}`;
+ $('measurement-focus-values').textContent=`${key.startsWith('bar')?'Code + bar model':'Code'} ${fmt(code)} pt · ${key.startsWith('bar')?'Raster-derived':'Measured'} ${actual===null?'not measured':fmt(actual)+' pt'}`;
+ $('measurement-focus-description').textContent=measurementDescriptions[index];
+ const S=11,CX=180,CY=180,iconW=(variant==='B'&&isCustom()?slot(variant):measured.pngWidth/16)*S,iconH=M.height*S;
+ const isLive=key==='liveBarHeight';
+ const barTop=CY-barHeight*S/2,barBottom=CY+barHeight*S/2;
+ const shownTop=isLive?CY-liveMenuBarHeight*S/2:barTop,shownBottom=isLive?CY+liveMenuBarHeight*S/2:barBottom;
+ const circleTop=CY-edge(variant)*S,circleBottom=CY+edge(variant)*S;
+ let svg=`<svg viewBox="0 0 360 360" role="img" aria-label="${index+1}. ${name} highlighted on the ${variant==='A'?'current':'proposed'} icon"><defs><marker id="focus-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M10 0L0 5L10 10" fill="#75e3f5"/></marker></defs>`;
+ function line(x1,y1,x2,y2){return `<path class="measure-line" marker-start="url(#focus-arrow)" marker-end="url(#focus-arrow)" d="M${x1} ${y1}L${x2} ${y2}"/>`}
+ // One shared frame for every row: same scale, bar, separator and icon position, so the icon never resizes between rows.
+ svg+=`<rect x="12" y="${shownTop}" width="336" height="${shownBottom-shownTop}" fill="#7875d1"/><rect x="12" y="${shownBottom}" width="336" height="${separator*S}" fill="#383955"/><image href="${imageSource(variant,'dial',16)}" x="${CX-iconW/2}" y="${CY-iconH/2}" width="${iconW}" height="${iconH}"/>`;
+ let caption;
+ if(key==='barTopGap'||key==='barBottomGap'){
+  const top=key==='barTopGap';
+  svg+=`<path class="measure-edge" d="M12 ${top?barTop:barBottom}H348"/><path class="measure-line" d="M${CX} ${top?circleTop:circleBottom}H332"/>`+line(332,top?barTop:circleBottom,332,top?circleTop:barBottom);
+  caption=`${index+1} · ${fmt(code)} pt ${top?'above':'below'} the circle`;
+ }else if(isLive){
+  svg+=`<path class="measure-edge" d="M12 ${barTop}H348M12 ${barBottom}H348"/>`+line(332,shownTop,332,shownBottom);
+  caption=`${index+1} · ${fmt(code)} pt code (dashed) · ${fmt(liveMenuBarHeight)} pt live`;
+ }else if(['timelineStroke','ringGap','usageStroke'].includes(key)){
+  const inside=key==='timelineStroke'?radius(variant)-stroke(variant)/2:key==='ringGap'?usageEdge(variant):hole(variant);
+  const outside=key==='timelineStroke'?edge(variant):key==='ringGap'?radius(variant)-stroke(variant)/2:usageEdge(variant);
+  svg+=`<circle class="measure-fill" cx="${CX}" cy="${CY}" r="${(inside+outside)/2*S}" stroke-width="${(outside-inside)*S}"/>`;
+  svg+=line(CX+inside*S,CY,CX+outside*S,CY)+`<path class="measure-line" d="M${CX+(inside+outside)/2*S} ${CY}L315 255H340"/>`;
+  caption=`${index+1} · radial thickness ${fmt(code)} pt`;
+ }else{
+  const r=code/2*S;
+  svg+=`<circle class="measure-edge" cx="${CX}" cy="${CY}" r="${r}"/>`+line(CX-r,CY,CX+r,CY)+`<circle cx="${CX}" cy="${CY}" r="2.5" fill="#75e3f5"/>`;
+  caption=`${index+1} · diameter ${fmt(code)} pt`;
+ }
+ const topCaption=isLive?`${fmt(liveMenuBarHeight)} pt live bar · dashed ${fmt(barHeight)} pt code`:`${fmt(barHeight)} pt bar · ${M.height} pt icon centered`;
+ svg+=`<text x="180" y="26" text-anchor="middle">${topCaption}</text><text x="180" y="346" text-anchor="middle">${caption}</text>`;
+ $('measurement-focus-drawing').innerHTML=svg+'</svg>';
+}
+function measurementTable(){
+ const measured=D[variant+'-measured'], raster=D[variant+'-raster'];
+ $('measurement-title').textContent=`${variant} · Code vs measured rendering${variant==='B'?' (prototype code)':''}`;
+ $('measurement-rows').innerHTML=comparisons.map(([name,key,getCode,expression])=>{let code=getCode(variant),actual=variant==='B'&&isCustom()?null:measuredDimension(key,variant),delta=actual===null?null:actual-code;return `<tr data-measurement="${key}"><td><button type="button" class="measurement-select" aria-pressed="false"><span class="measure-number">${comparisons.findIndex(item=>item[1]===key)+1}</span><span>${name}</span></button></td><td>${fmt(code)}</td><td>${actual===null?'—':fmt(actual)}</td><td>${delta===null?'—':Math.abs(delta)<0.0005?'0':(delta>0?'+':'')+fmt(delta)}</td><td style="text-align:left;white-space:normal"><code>${expression}</code></td></tr>`}).join('');
+ document.querySelectorAll('#measurement-rows tr').forEach((row,index)=>{row.onmouseenter=()=>selectMeasurement(index);const button=row.querySelector('button');button.onclick=()=>selectMeasurement(index);button.onfocus=()=>selectMeasurement(index)});
+ selectMeasurement(activeMeasurement);
+ $('measurement-method').textContent=variant==='B'&&isCustom()?'The adjusted preview is a live SVG approximation; independent native raster measurements apply to the original snapshot.':`Measured asset: ${variant}-dial@16x.png (${measured.pngWidth} × ${measured.pngHeight} px); full row: ${raster.pixelsWide} × ${raster.pixelsHigh} px. Divide raster distances by 16 to recover points. Code values come from the production constants and drawing formulas${variant==='B'?', with the three explicit prototype metric changes':''}.`;
+ $('code-constants').innerHTML=Object.entries(D.sourceDefinitions).map(([name,source])=>{let a=M[name],b=name==='outerR'?radius('B'):name==='timelineStroke'?stroke('B'):name==='ringD'?slot('B'):name==='quotaStroke'?usageStroke('B')/2:name==='ringGapStroke'?gap('B'):a;return `<tr><td><code>${name}</code></td><td>${fmt(a)}</td><td class="${a!==b?'changed':''}">${fmt(b)}</td><td style="text-align:left"><code>RingIcon.swift:${source.line} · ${source.definition}</code></td></tr>`}).join('');
+}
+function segmentationPreview(){
+ const enabled=$('segments-enabled').checked, style=$('segment-style').value, elapsed=Number($('segment-elapsed').value)/100;
+ $('segment-elapsed-value').textContent=Math.round(elapsed*100)+'%';
+ const examples=[['Cursor · 30 days',30,'icons/cursor.png'],['Cursor · 31 days',31,'icons/cursor.png'],['Grok · 7 days',7,'icons/grok.png'],['Grok · 3 days',3,'icons/grok.png'],['Codex · 5 hours',5,'../../../../../QuotAI/Assets.xcassets/CodexAvatar.imageset/codex.svg'],['Codex · 7 days',7,'../../../../../QuotAI/Assets.xcassets/CodexAvatar.imageset/codex.svg']];
+ function dial(count,logo,scale){
+  const cx=14,cy=12,r=9.4,w=1.6,circ=2*Math.PI*r, unit=circ/count, gap=style==='wide'?Math.min(.65,unit*.3):Math.min(.3,unit*.17);
+  const circle=(radius,width,color,opacity,dash='',extra='')=>`<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${color}" stroke-opacity="${opacity}" stroke-width="${width}" ${dash} ${extra}/>`;
+  let svg=`<svg width="${28*scale}" height="${24*scale}" viewBox="0 0 28 24" role="img" aria-label="${count} ${enabled?'segments':'continuous ring'}, ${Math.round(elapsed*100)} percent elapsed">`;
+  // Individual arcs make the progress boundary accurate, including partial segments.
+  if(enabled && style!=='ticks'){
+   for(let i=0;i<count;i++){
+    const start=i*unit+gap/2, length=unit-gap, filled=Math.max(0,Math.min(length,elapsed*circ-start));
+    const attrs=`stroke-dasharray="${length} ${circ-length}" stroke-dashoffset="${-start}" transform="rotate(-90 ${cx} ${cy})"`;
+    svg+=circle(r,w,'white',.22,attrs);
+    if(filled>0)svg+=circle(r,w,'white',.95,`stroke-dasharray="${filled} ${circ-filled}" stroke-dashoffset="${-start}" transform="rotate(-90 ${cx} ${cy})"`);
+   }
+  }else{
+   svg+=circle(r,w,'white',.22)+circle(r,w,'white',.95,`stroke-dasharray="${elapsed*circ} ${circ}" transform="rotate(-90 ${cx} ${cy})"`);
+   if(enabled)for(let i=0;i<count;i++){
+    const a=2*Math.PI*i/count-Math.PI/2, x1=cx+(r-w/2)*Math.cos(a),y1=cy+(r-w/2)*Math.sin(a),x2=cx+(r+w/2)*Math.cos(a),y2=cy+(r+w/2)*Math.sin(a);
+    svg+=`<path d="M${x1} ${y1}L${x2} ${y2}" stroke="#6665a8" stroke-width=".35"/>`;
+   }
+  }
+  svg+=circle(6.2,3.2,'white',.18)+circle(6.2,3.2,'#ff9e08',1,`stroke-dasharray="${2*Math.PI*6.2*.78} ${2*Math.PI*6.2}" transform="rotate(-90 ${cx} ${cy})"`);
+  svg+=`<image href="${logo}" x="${cx-3.8}" y="${cy-3.8}" width="7.6" height="7.6" opacity=".5" style="filter:invert(1)"/></svg>`;
+  return svg;
+ }
+ $('segmentation-examples').innerHTML=examples.map(([label,count,logo])=>`<div style="min-width:160px"><div class="caption"><strong>${label}</strong></div><div style="background:#7875d1;width:max-content;padding:8px;display:flex;align-items:center;gap:18px">${dial(count,logo,1)}${dial(count,logo,5)}</div><p class="footnote">${count} ${count===1?'segment':'segments'} · 1× and 5×</p></div>`).join('');
+ const url=new URL(location.href);url.searchParams.set('segments',style);history.replaceState(null,'',url);
+}
+['segments-enabled','segment-style','segment-elapsed'].forEach(id=>$(id).addEventListener('input',segmentationPreview));
+const segmentParam=new URLSearchParams(location.search).get('segments');
+if(['fine','wide','ticks'].includes(segmentParam))$('segment-style').value=segmentParam;
+function centerPreview(){
+ const v=variant, nested=$('nested-mode').value==='nested', alpha=Number($('center-opacity').value)/100;
+ const count=nested?2:1, q=nested?usageStroke(v)/2:usageStroke(v), outer=radius(v)-stroke(v)/2-gap(v)-q/2;
+ const chosen=$('center-icon').value;
+ const inner=outer-(count-1)*(q+gap(v)), opening=Math.max(0,(inner-q/2)*2), requestedGap=Math.max(0,Math.min(3,Number($('icon-gap-'+chosen).value)||0)), inset=Math.min(requestedGap,opening/2), size=Math.max(0,opening-2*inset);
+ const colors=[$('usage-color').value,selectedPreset==='example'?'#ffffff':$('usage-color').value], percentages=selectedPreset==='example'?[91,62]:[presets[selectedPreset].used[0],presets[selectedPreset].used[0]];
+ const logos={cursor:'icons/cursor.png',grok:'icons/grok.png',codex:'../../../../../QuotAI/Assets.xcassets/CodexAvatar.imageset/codex.svg',perplexity:'icons/perplexity.svg'}, logo=logos[chosen];
+ function sample(scale){
+  const width=slot(v)+8,height=barHeight, cx=width/2,cy=height/2;
+  const circle=(r,w,color,opacity,pct)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-opacity="${opacity}" stroke-width="${w}"${pct==null?'':` stroke-dasharray="${2*Math.PI*r*pct/100} ${2*Math.PI*r}" transform="rotate(-90 ${cx} ${cy})"`}/>`;
+  let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width*scale}" height="${height*scale}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${nested?'Three':'Two'} rings and center logo at ${Math.round(alpha*100)} percent opacity">`;
+  svg+=circle(radius(v),stroke(v),'white',.22,null)+circle(radius(v),stroke(v),'white',.92,presets[selectedPreset].elapsed[0]);
+  for(let i=0;i<count;i++){const r=outer-i*(q+gap(v));svg+=circle(r,q,'white',.18,null)+circle(r,q,colors[i],1,percentages[i]);}
+  svg+=`<image href="${logo}" x="${cx-size/2}" y="${cy-size/2}" width="${size}" height="${size}" opacity="${alpha}" style="filter:invert(1)"/></svg>`;
+  return `<div><div class="caption"><strong>${scale}×</strong></div><div style="background:var(--menu);width:max-content">${svg}</div></div>`;
+ }
+ $('center-opacity-value').textContent=`${Math.round(alpha*100)}%`;
+ document.querySelectorAll('[data-preset]').forEach(b=>{b.classList.toggle('active',b.dataset.preset===selectedPreset);b.setAttribute('aria-pressed',String(b.dataset.preset===selectedPreset))});
+ $('center-preview').innerHTML=sample(1)+sample(zoom);
+ $('center-preview-note').textContent=`${selectedPreset[0].toUpperCase()+selectedPreset.slice(1)} · used ${presets[selectedPreset].used[0]}% / elapsed ${presets[selectedPreset].elapsed[0]}% · ${nested?'Three rings: elapsed + two usage':'Two rings: elapsed + one usage'} · usage stroke ${fmt(q)} pt · inner opening Ø ${fmt(opening)} pt · icon box ${fmt(size)} pt · icon gap ${fmt(inset)} pt per side · ${Math.round(alpha*100)}% opacity. Zoom and the A/B geometry selection apply here.`;
+}
+function draw(){
+ segmentationPreview();
+ centerPreview();
+ measurementTable();
+ $('metrics').innerHTML=rows.map(([name,f])=>`<tr><td>${name}</td><td>${fmt(f('A'))}</td><td class="${f('A')!==f('B')?'changed':''}">${fmt(f('B'))}</td></tr>`).join('');
+ params.set('segments',$('segment-style').value);params.set('variant',variant);params.set('zoom',zoom);history.replaceState(null,'','?'+params);
+ document.querySelectorAll('[data-zoom]').forEach(b=>b.classList.toggle('active',+b.dataset.zoom===zoom));
+ const bg={purple:'linear-gradient(110deg,#827bd7,#696dc5)',dark:'#282b32',light:'#d2d4da'}[$('background').value];document.documentElement.style.setProperty('--menu',bg);
+ $('comparison').innerHTML=['A','B'].map(v=>`<div><div class="caption"><strong>${v} · ${v==='A'?'Original snapshot':'Adjusted'}</strong><span>Ø ${fmt(edge(v)*2)} pt · stroke ${fmt(stroke(v))} pt</span></div><div class="bar-viewport">${bar(v,1)}<div class="bar-context" style="width:${(v==='B'&&isCustom()?rowWidth(v):D[v+'-row'].width)+2*barInset}px"></div></div></div>`).join('');
+ $('variant-name').textContent=variant==='A'?'A — Current':`B — Elapsed ${fmt(stroke('B'))} pt`;
+ $('zoom-title').textContent=`${variant==='A'?'Original snapshot':'Adjusted'} · ${zoom}×`;
+ $('scale-caption').textContent=$('render').value==='pixels'?'Fixed @2× raster · no smoothing':'Native AppKit · redrawn at high resolution';
+ const w=variant==='B'&&isCustom()?rowWidth(variant):D[variant+'-row'].width, z=zoom, sw=slot(variant), tw=(w-4-2*M.ringGap-3*(sw+M.metricGap))/3;
+ const iy=(barHeight-M.height)/2, barW=w+2*barInset, barH=barHeight+separator;
+ let guides=`<rect x="${barInset*z}" y="${iy*z}" width="${w*z}" height="${M.height*z}" stroke-dasharray="3 3"/>`;
+ function dim(x1,y1,x2,y2,label){return `<line x1="${x1*z}" y1="${y1*z}" x2="${x2*z}" y2="${y2*z}"/><text x="${(x1+x2)*z/2}" y="${y1*z-7}" text-anchor="middle">${label}</text>`}
+ guides+=dim(barInset,-4,barInset+w,-4,`${fmt(w)} pt image width`);
+ guides+=`<line x1="${barW*z+12}" y1="0" x2="${barW*z+12}" y2="${barHeight*z}"/><line x1="${barW*z+7}" y1="0" x2="${barW*z+17}" y2="0"/><line x1="${barW*z+7}" y1="${barHeight*z}" x2="${barW*z+17}" y2="${barHeight*z}"/><text x="${barW*z+23}" y="${barHeight*z/2}">${fmt(barHeight)} pt bar</text><text x="${barW*z+23}" y="${barHeight*z/2+16}">+ 0.5 pt separator</text>`;
+ for(let i=0;i<3;i++){let x=barInset+2+i*(sw+2+tw+3);guides+=`<rect x="${x*z}" y="${iy*z}" width="${sw*z}" height="${M.height*z}" stroke-dasharray="2 3"/>`;if(z>=2){guides+=dim(x,barH+18/z,x+sw,barH+18/z,`${fmt(sw)} pt slot`);guides+=dim(x+sw+2,barH+34/z,x+sw+2+tw,barH+34/z,`${fmt(tw)} pt text`);}}
+ $('enlarged').innerHTML=bar(variant,z)+($('guides').checked?`<svg aria-label="Layout measurements" width="${barW*z}" height="${barH*z}">${guides}</svg>`:'');
+ $('row-caption').textContent=`${fmt(barHeight)} pt bar content + 0.5 pt bottom separator · 22 pt image, centered with ${fmt(iy)} pt above and below · circle-to-bar clearance ${fmt(barHeight/2-edge(variant))} pt at top and bottom (before separator) · visible circle Ø ${fmt(edge(variant)*2)} pt (${fmt(edge(variant)*2/barHeight*100)}% of bar height). Bar and contents scale together: ${fmt(barHeight*z)} px bar / ${fmt(edge(variant)*2*z)} px circle at ${z}×. The 16 pt side margins are crop context, not a measured status-item inset; full menu-bar width follows the display. Measurement labels sit outside the bar.`;
+ $('drawing-title').textContent=`${variant} · Dimensioned dial (enlarged)`;
+ const scale=16,cx=210,cy=230,ra=edge(variant)*scale, rInner=(radius(variant)-stroke(variant)/2)*scale, dialWidth=variant==='B'&&isCustom()?slot(variant):D[variant+'-dial'].width;
+ let svg=`<svg viewBox="0 0 570 480" role="img" aria-label="Measured ring diameters and radii"><defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 10 0 L 0 5 L 10 10" fill="#a4b8f2"/></marker></defs><rect x="${cx-dialWidth*scale/2}" y="${cy-11*scale}" width="${dialWidth*scale}" height="${22*scale}" fill="${$('background').value==='dark'?'#282b32':$('background').value==='light'?'#d2d4da':'#7875d1'}"/><image href="${imageSource(variant,'dial',16)}" x="${cx-dialWidth*scale/2}" y="${cy-11*scale}" width="${Math.ceil(dialWidth*scale)}" height="${22*scale}"/><path class="guide" d="M${cx-180} ${cy}H${cx+180} M${cx} ${cy-180}V${cy+180}"/>`;
+ function hdim(y,r,label){svg+=`<path class="guide" d="M${cx-r} ${cy}V${y} M${cx+r} ${cy}V${y}"/><path class="dim" marker-start="url(#arrow)" marker-end="url(#arrow)" d="M${cx-r} ${y}H${cx+r}"/><text x="${cx}" y="${y-9}" text-anchor="middle">${label}</text>`}
+ hdim(31,ra,`Visible Ø ${fmt(edge(variant)*2)} pt`);hdim(435,usageEdge(variant)*scale,`Usage outer Ø ${fmt(usageEdge(variant)*2)} pt`);hdim(405,hole(variant)*scale,`Opening Ø ${fmt(hole(variant)*2)} pt`);
+ const callouts=[[cy-70,ra,`Elapsed stroke ${fmt(stroke(variant))} pt`],[cy-25,rInner,`Elapsed inner Ø ${fmt(rInner/scale*2)} pt`],[cy+32,(radius(variant)-stroke(variant)/2+usageEdge(variant))/2*scale,`Air gap ${fmt(gap(variant))} pt`],[cy+82,usageR(variant)*scale,`Usage stroke ${fmt(usageStroke(variant))} pt`]];
+ callouts.forEach(([y,r,label],i)=>{let a=(-35+i*24)*Math.PI/180,x=cx+Math.cos(a)*r,yy=cy+Math.sin(a)*r;svg+=`<path class="dim" d="M${x} ${yy}L398 ${y}H560"/><circle cx="${x}" cy="${yy}" r="2" fill="#b7c8ff"/><text x="403" y="${y-6}">${label}</text>`});
+ svg+=`<text x="18" y="470">0% at 12 o’clock · clockwise · flat arc ends</text></svg>`;$('diagram').innerHTML=svg;
+ const segments=[[hole(variant),'#343e55','Opening',hole(variant)],[usageStroke(variant),`rgb(${D.warningSRGB.map(n=>n*255).join(',')})`,'Usage',usageStroke(variant)],[gap(variant),'#111318','Gap',gap(variant)],[stroke(variant),'#e7e9f6','Elapsed',stroke(variant)]];
+ $('section').style.width=`${edge(variant)*32}px`;$('section').innerHTML=segments.map(([width,color,label,val])=>`<div style="width:${width*32}px;background:${color}"><span style="top:${label==='Gap'?82:58}px">${label} ${fmt(val)} pt</span></div>`).join('');
+}
+document.querySelectorAll('[data-zoom]').forEach(b=>b.onclick=()=>{zoom=+b.dataset.zoom;draw()});
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{selectedPreset=b.dataset.preset;$('usage-color').value=presets[selectedPreset].color;variant='B';draw()});
+['background','render','guides','nested-mode','center-icon'].forEach(id=>$(id).onchange=draw);
+['cursor','grok','codex','perplexity'].forEach(icon=>{$('icon-gap-'+icon).oninput=centerPreview});
+$('usage-color').oninput=()=>{variant='B';draw()};
+$('reset-usage-color').onclick=()=>{$('usage-color').value='#ffffff';variant='B';draw()};
+$('center-opacity').oninput=centerPreview;
+[['outer-stroke','outer'],['usage-stroke','usage'],['ring-gap','gap'],['opening','opening'],['dial-slot','slot']].forEach(([id,key])=>{
+ $(id).addEventListener('input',()=>{const el=$(id),n=el.valueAsNumber;if(!Number.isFinite(n))return;custom[key]=Math.min(+el.max,Math.max(+el.min,n));variant='B';draw()});
+ $(id).addEventListener('change',()=>{$(id).value=custom[key]});
+});
+$('reset-dimensions').onclick=()=>{custom={...defaults};[['outer-stroke','outer'],['usage-stroke','usage'],['ring-gap','gap'],['opening','opening'],['dial-slot','slot']].forEach(([id,key])=>$(id).value=custom[key]);variant='B';draw()};
+$('bar-height').oninput=()=>{barHeight=Math.min(48,Math.max(22,+$('bar-height').value||24));$('bar-height').value=barHeight;draw()};
+function toggle(){variant=variant==='A'?'B':'A';draw()};$('prev').onclick=toggle;$('next').onclick=toggle;
+document.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)||e.target.isContentEditable)return;if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();toggle()}});
+draw();
+</script>
+</html>

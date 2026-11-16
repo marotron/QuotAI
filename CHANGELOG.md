@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.23.0 — 2026-11-16
+
+### Added
+
+- Display can segment menu-bar elapsed rings into hours or days for each quota window.
+
+![Segmented elapsed rings in the menu bar](https://raw.githubusercontent.com/marotron/QuotAI/v0.23.0/docs/screenshots/segmented-elapsed-rings.png)
+
 ## 0.22.0 — 2026-11-16
 
 ### Fixed

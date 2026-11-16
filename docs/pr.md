@@ -6,7 +6,7 @@ Last updated: 2026-11-14
 
 **0.21.0** implements optional direct-native Codex subscription quotas. The [Codex quota contract](codex-quota.md) records confirmed scope, credentials, per-window display, refresh rules and outstanding running-app verification.
 
-Locked target 2026-11-15: optional segmented menu-bar elapsed rings use the wider-gap prototype treatment. See the [segmented elapsed ring contract](segmented-elapsed-ring.md) for scope, open details and pending acceptance; implementation has not been verified.
+Locked target 2026-11-15: optional segmented menu-bar elapsed rings use the wider-gap prototype treatment. See the [segmented elapsed ring contract](segmented-elapsed-ring.md) for scope, open details and pending acceptance; implemented for 0.23.0; the supplied menu-bar appearance was approved, with remaining acceptance checks pending.
 
 ## Authority and status
 

@@ -10,7 +10,7 @@ Last updated: 2026-11-14
 
 **0.21.0** adds `CodexNativeClient`, `CodexQuotaStore`, shared matrix presentation and core `CodexQuota` parsing/rules. Native browser OAuth and URLSession quota reads use a separate `codex-oauth` Keychain item; no CLI/helper is required. Codex joins `QuotaStore`'s one-shot timer independently of the two existing Connect families. See [the Codex contract](codex-quota.md) for exact source boundaries, secret handling, behavior and pending acceptance.
 
-Locked target 2026-11-15: optional segmented menu-bar elapsed rings use the wider-gap prototype treatment. See the [segmented elapsed ring contract](segmented-elapsed-ring.md) for scope, open details and pending acceptance; implementation has not been verified.
+Locked target 2026-11-15: optional segmented menu-bar elapsed rings use the wider-gap prototype treatment. See the [segmented elapsed ring contract](segmented-elapsed-ring.md) for scope, open details and pending acceptance; implemented for 0.23.0; the supplied menu-bar appearance was approved, with remaining acceptance checks pending.
 
 ## Authority and status
 
