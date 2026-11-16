@@ -36,12 +36,15 @@ public enum PaceHistorySeriesColor: String, CaseIterable, Sendable {
     case models
     case other
     case grok
+    case codex, codexSecondary
 
     public var hex: String {
         switch self {
         case .models: return "#8b5cf6"
         case .other: return "#d946ef"
         case .grok: return "#c084fc"
+        case .codex: return "#14b8a6"
+        case .codexSecondary: return "#38bdf8"
         }
     }
 
@@ -50,6 +53,7 @@ public enum PaceHistorySeriesColor: String, CaseIterable, Sendable {
         case .models: return "Cursor"
         case .other: return "Other"
         case .grok: return "Grok"
+        case .codex, .codexSecondary: return "Codex"
         }
     }
 }

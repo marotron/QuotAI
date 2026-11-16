@@ -32,3 +32,15 @@ A baseline is an implementation reference, not a frozen promise that old behavio
 ## Current experiment
 
 `experiments/codex-matrix/index.html?matrix=1` proposes adding Codex windows to the existing used ÷ elapsed = pace · status → reset matrix. `?matrix=0` shows the current separate block. The user approved variant B on 2026-11-15. The frozen copy is `locked/codex-matrix-2026-11-15/`; native light/dark preview comparison was completed and the dropdown baseline updated for rc.10; further state acceptance remains pending. It adds no live chart data or notifications. Preset status symbols are illustrative rather than a port of the full corridor evaluator. The original chart prototype supplies historical chart chrome, with seeded trajectories adjusted to the screenshot readings.
+
+
+## Current studies (2026-11-15)
+
+- `experiments/codex-pace-history/`: seeded Codex 5h/7d chart lines and per-meter filtering, checked against the native preview. Candidate implementation is in 0.22.0-rc.1; live account acceptance remains pending. The dropdown baseline includes the verified seeded lines.
+- `experiments/refresh-badge-motion/`: the user approved downward transitions and a static hover icon, with rotation during refresh, including Refresh All. The locked reference is `locked/refresh-badge-motion-2026-11-15/`; candidate implementation passed a seeded native simulated-refresh preview; live and Reduce Motion acceptance remain pending.
+
+- `experiments/refresh-smooth-tail/`: requested one-second finish and gentler return, implemented in candidate 0.22.0-rc.4; seeded native busy, finishing and rest states checked. The dropdown baseline follows this revision; live failure and Reduce Motion checks remain pending.
+
+- `experiments/refresh-render-thread/`: copied baseline for the rc.5 responsiveness investigation; visual contract unchanged. Native seeded Cursor-only and Refresh All rendering checked; live profiling remains pending.
+
+- `experiments/codex-block-message/`: A/B study of the previous notice placement and requested conditional notice below the chart. Approved for release on 2026-11-16; `make test` passed and the seeded native preview showed blocked and exhausted states. The dropdown baseline reflects the change; live account verification remains pending.

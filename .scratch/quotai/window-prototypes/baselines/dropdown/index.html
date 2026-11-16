@@ -2256,10 +2256,10 @@
 .refresh-all{display:inline-grid;place-items:center;flex-shrink:0;margin-left:-3.5px;width:18px;height:18px;padding:0;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--secondary);cursor:pointer;transition:background .18s,color .18s,border-color .18s}
 .refresh-all svg{transition:transform .18s}
 .refresh-all:is(:hover,:focus-visible,.is-refreshing){color:#fff;background:var(--menu-hover);border-color:var(--menu-hover)}
-.refresh-all:hover svg{transform:rotate(20deg)}
+.refresh-all:hover svg{transform:none}
 .refresh-all:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .refresh-all:disabled{cursor:progress}
-.refresh-all.is-refreshing svg{animation:badge-spin .8s linear infinite}
+.refresh-all.is-refreshing .all-action svg{animation:badge-spin .8s linear infinite}
 #variant-D .panel-window .matrix-header .app-ver{position:relative;margin-right:-5px;padding:1px 5px;border-radius:4px;transition:background .18s,color .18s,opacity .18s}
 #variant-D .panel-window .matrix-header .app-ver::before{content:"";position:absolute;left:-5px;top:50%;transform:translateY(-50%);width:1px;height:12px;background:var(--divider)}
 #variant-D .panel-window .matrix-header .app-ver:hover{background:var(--menu-hover);color:#fff;opacity:1}
@@ -2280,14 +2280,46 @@
 .proto-feedback{font-size:11px;color:var(--secondary);min-height:17px;margin:0}
 @keyframes badge-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.badge-age,.badge-action,.refresh-provider .ago-badge,.refresh-all,.refresh-all svg{transition:none!important}.ago-badge.is-refreshing .badge-action svg,.refresh-all.is-refreshing svg{animation:none}}
+
+.chart-host .series.codex5 {stroke:#14b8a6}.chart-host .series.codex7 {stroke:#38bdf8}
+.chart-host .dot.codex5,.chart-host .hover-dot.codex5 {fill:#14b8a6}.chart-host .dot.codex7,.chart-host .hover-dot.codex7 {fill:#38bdf8}
+#variant-D .chart-host .anno.codex5 {fill:#14b8a6} #variant-D .chart-host .anno.codex7 {fill:#38bdf8}
+#variant-D .meters .chart-avatar {appearance:none;border:0;background:none;padding:0;width:14px;height:14px;cursor:pointer;display:grid;place-items:center}
+#variant-D .meters .chart-avatar[data-cycle="dim"],#variant-D .meters .chart-avatar[data-cycle="hide"]{opacity:.32}
+
+/* Approved motion: slide down, stay still on hover, spin only during refresh. */
+#variant-D .panel-window .refresh-provider .ago-badge{overflow:hidden}
+#variant-D .badge-age,#variant-D .badge-action{transition:transform .25s ease,opacity .2s ease}
+#variant-D .badge-action{opacity:0;transform:translateY(-12px)}
+#variant-D .ago-badge:is(:hover,:focus-visible,.is-refreshing) .badge-age{opacity:0;transform:translateY(12px)}
+#variant-D .ago-badge:is(:hover,:focus-visible,.is-refreshing) .badge-action{opacity:1;transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){#variant-D .badge-age,#variant-D .badge-action{transition:none!important}}
+
+/* Refresh All uses the same downward replacement while retaining its icon at rest. */
+.refresh-all {overflow:hidden}
+.refresh-all .all-idle,.refresh-all .all-action {grid-area:1/1;transition:transform .25s ease,opacity .2s ease}
+.refresh-all .all-action {opacity:0;transform:translateY(-16px)}
+.refresh-all:is(:hover,:focus-visible,.is-refreshing) .all-idle {opacity:0;transform:translateY(16px)}
+.refresh-all:is(:hover,:focus-visible,.is-refreshing) .all-action {opacity:1;transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){.refresh-all .all-idle,.refresh-all .all-action{transition:none!important}.refresh-all.is-refreshing .all-action svg{animation:none!important}}
+
+/* Smooth refresh preview: a simulated 900 ms request plus a 1 s visual tail. */
+#variant-D .badge-age,#variant-D .badge-action{transition:transform .5s ease,opacity .5s ease}
+.refresh-all .all-idle{opacity:1!important;transform:none!important}
+.refresh-all .all-action{display:none}
+.refresh-all.is-refreshing .all-idle svg{animation:badge-spin .8s linear infinite}
+@media(prefers-reduced-motion:reduce){.refresh-all.is-refreshing .all-idle svg{animation:none!important}}
+#variant-D .ago-badge.just-finished .badge-age{opacity:1!important;transform:translateY(0)!important}
+#variant-D .ago-badge.just-finished .badge-action{opacity:0!important;transform:translateY(-12px)!important}
+#variant-D .panel-window .refresh-provider .ago-badge.just-finished{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--secondary)}
 </style>
 <script>
 (()=>{
 const experiment=false, params=new URLSearchParams(location.search);let proposed=true;
 const panel=document.querySelector('#variant-D .panel-window'), grid=panel.querySelector('.meters');
-document.querySelector('h1').textContent=experiment?'Dropdown · Codex meter matrix':'Dropdown · current baseline';
+document.querySelector('h1').textContent='Dropdown · current baseline';
 document.querySelector('.question').textContent='Copied from the existing pace-history dropdown prototype and updated for release 0.21.0; native panel layout checked in light and dark. 470 pt content width; browser material and glyph rendering approximate AppKit. Seeded data only.';
-document.querySelector('.proto-banner').textContent=experiment?'Approved target · 15 Nov 2026':'Baseline · release 0.21.0 reference';
+document.querySelector('.proto-banner').textContent='Baseline · candidate 0.22.0-rc.7 reference';
 const refreshLine=panel.querySelector('.status-line'), currentRefresh='Last refresh: Cursor 12:44<span class="ago-badge">2m ago</span> · Grok 12:24<span class="ago-badge">23m ago</span>';
 const refreshSvg='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.7 5.5A5.1 5.1 0 1 0 13 10M10 5.5h3.5V2"/></svg>';
 const refreshed={};let refreshingAll=false;
@@ -2298,8 +2330,10 @@ function refreshProvider(key,name,time,age,stale=false){
 }
 function renderRefresh(state){
  refreshLine.classList.toggle('compact-refresh',proposed);refreshLine.closest('.row').classList.toggle('matrix-header',proposed);refreshLine.setAttribute('aria-label','Last refresh');
- refreshLine.innerHTML=proposed?`<button type="button" class="refresh-all" data-refresh-all aria-label="Refresh all quotas" title="Refresh all quotas · prototype">${refreshSvg}</button><span class="refresh-all-separator" aria-hidden="true"></span>`+[refreshProvider('cursor','Cursor','12:44','2m'),refreshProvider('grok','Grok','12:24','23m'),refreshProvider('codex','Codex','12:46',state==='stale'?'stale':'now',state==='stale')].join('<span class="refresh-divider" aria-hidden="true">·</span>'):currentRefresh;updateRefreshAll();
+ refreshLine.innerHTML=proposed?`<button type="button" class="refresh-all" data-refresh-all aria-label="Refresh all quotas" title="Refresh all quotas · prototype"><span class="all-idle">${refreshSvg}</span><span class="all-action">${refreshSvg}</span></button><span class="refresh-all-separator" aria-hidden="true"></span>`+[refreshProvider('cursor','Cursor','12:44','2m'),refreshProvider('grok','Grok','12:24','23m'),refreshProvider('codex','Codex','12:46',state==='stale'?'stale':'now',state==='stale')].join('<span class="refresh-divider" aria-hidden="true">·</span>'):currentRefresh;updateRefreshAll();
 }
+function settleArrow(svg){if(!svg||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const matrix=new DOMMatrixReadOnly(getComputedStyle(svg).transform);const angle=(Math.atan2(matrix.b,matrix.a)*180/Math.PI+360)%360;svg.animate([{transform:`rotate(${angle}deg)`},{transform:'rotate(360deg)'}],{duration:350,easing:'cubic-bezier(.33,1,.68,1)'});}
+refreshLine.addEventListener('pointerleave',e=>{if(e.target.matches('.ago-badge'))e.target.classList.remove('just-finished')},true);refreshLine.addEventListener('focusout',e=>{if(e.target.matches('.ago-badge'))e.target.classList.remove('just-finished')});
 refreshLine.addEventListener('click',e=>{
  const clicked=e.target.closest('button');if(!clicked||clicked.disabled)return;
  const all=clicked.hasAttribute('data-refresh-all');
@@ -2308,39 +2342,40 @@ refreshLine.addEventListener('click',e=>{
  buttons.forEach(button=>{
   const key=button.dataset.refresh;
   refreshed[key]={busy:true,time:button.closest('.refresh-provider').querySelector('time').textContent};
-  button.disabled=true;button.setAttribute('aria-busy','true');button.classList.add('is-refreshing');
+  button.disabled=true;button.classList.remove('just-finished');button.setAttribute('aria-busy','true');button.classList.add('is-refreshing');
  });updateRefreshAll();
  const name=all?'All quotas':clicked.dataset.provider;
  document.querySelector('#refresh-feedback').textContent=`${name} · refreshing sample…`;
  setTimeout(()=>{
   buttons.forEach(button=>{
    refreshed[button.dataset.refresh]={busy:false,time:'12:47'};
-   if(button.isConnected){button.disabled=false;button.removeAttribute('aria-busy');button.classList.remove('is-refreshing','stale');button.querySelector('.badge-age').textContent='now';button.closest('.refresh-provider').querySelector('time').textContent='12:47';button.closest('.refresh-provider').title=`${button.dataset.provider}: last refresh 12:47`;button.title=`Refresh ${button.dataset.provider} · just now · prototype`}
-  });if(all)refreshingAll=false;updateRefreshAll();
+   if(button.isConnected){settleArrow(button.querySelector('.badge-action svg'));button.disabled=false;button.removeAttribute('aria-busy');button.classList.remove('is-refreshing','stale');button.classList.add('just-finished');button.querySelector('.badge-age').textContent='now';button.closest('.refresh-provider').querySelector('time').textContent='12:47';button.closest('.refresh-provider').title=`${button.dataset.provider}: last refresh 12:47`;button.title=`Refresh ${button.dataset.provider} · just now · prototype`}
+  });if(all){settleArrow(refreshLine.querySelector('.refresh-all .all-idle svg'));refreshingAll=false;}updateRefreshAll();
   document.querySelector('#refresh-feedback').textContent=`${name} · sample refreshed at 12:47`;
- },900);
+ },1900);
 });
-panel.querySelector('.app-ver').textContent='v0.21.0';
-let controls=document.createElement('div');controls.className='proto-controls';controls.innerHTML='<label>Codex sample <select id="codex-state"><option value="normal">Current · 5h and 7d</option><option value="over">Over</option><option value="exhausted">Exhausted</option><option value="missing">Missing duration / reset</option><option value="stale">Stale read</option></select></label><label>Appearance <select id="appearance"><option value="light">Light</option><option value="dark">Dark</option></select></label><span>← / → compare layouts</span>';document.querySelector('h1').after(controls);let feedback=document.createElement('p');feedback.id='refresh-feedback';feedback.className='proto-feedback';feedback.setAttribute('role','status');feedback.textContent='Use the separated refresh button to refresh all, or an age badge for one provider. Refreshes are simulated;';controls.after(feedback);
+panel.querySelector('.app-ver').textContent='v0.22.0';
+let controls=document.createElement('div');controls.className='proto-controls';controls.innerHTML='<label>Codex sample <select id="codex-state"><option value="normal">Current · 5h and 7d</option><option value="over">Over</option><option value="exhausted">Exhausted</option><option value="missing">Missing duration / reset</option><option value="stale">Stale read</option></select></label><label><input type="checkbox" id="blocked-state"> Included usage blocked</label><label>Appearance <select id="appearance"><option value="light">Light</option><option value="dark">Dark</option></select></label><span>← / → compare layouts</span>';document.querySelector('h1').after(controls);let feedback=document.createElement('p');feedback.id='refresh-feedback';feedback.className='proto-feedback';feedback.setAttribute('role','status');feedback.textContent='Use the separated refresh button to refresh all, or an age badge for one provider. Refreshes are simulated; spin includes a one-second finish.';controls.after(feedback);
 let current=document.createElement('div');current.className='codex-current';current.innerHTML='<div class="codex-head"><span style="display:flex;align-items:center;gap:7px"><img class="codex-mark" src="avatars/codex.svg" alt="">Codex</span><small>Updated 12:46 ↻</small></div><div class="codex-simple"><span>Codex · 5h</span><span>23% used　↻ 3h 46m</span></div><div class="codex-simple"><span>Codex · 7d</span><span>37% used　↻ 5d 22h</span></div>';grid.after(current);
 const facts=[['cursor','Cursor Models',91,86,105,'over','4d 6h left'],['other','Other Models',100,86,116,'over','4d 6h left'],['grok','Grok Bot',39,45,86,'quiet','3d 20h left']];
 const icon=key=>key==='codex'?'<img class="codex-mark" src="avatars/codex.svg" alt="">':`<span class="m-avatar-tone series-${key}"></span>`;
-function row(key,name,used,elapsed,pace,status,reset){return `${icon(key)}<span class="m-name">${name}</span><span class="fact"><span class="sf used"></span> ${used===null?'—':used+'%'}</span><span class="op">÷</span><span class="fact"><span class="sf elapsed"></span> ${elapsed===null?'—':Math.round(elapsed)+'%'}</span><span class="op">=</span><span class="fact pace-fact"><span class="sf pace"></span> ${pace===null?'—':pace+'%'}</span><span class="status ${status}" title="${status==='missing'?'Pace unavailable':status==='exhausted'?'Exhausted':status==='over'?'Over pace':'Within corridor'}">${status==='missing'?'—':status==='exhausted'?'⊗':'<svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.7" fill="none" stroke="currentColor"/>'+ (status==='over'?'<path d="M7 10V4m-3 3 3-3 3 3"':'<path d="m4 7 2 2 4-4"')+' fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>'}</span><span class="op">→</span><span class="fact"><span class="sf reset"></span> ${reset}</span>`}
+function row(key,name,used,elapsed,pace,status,reset){const chartKey=key==='codex'?(name.endsWith('5h')?'codex5':'codex7'):key;return `<button type="button" class="chart-avatar" data-series="${chartKey}" aria-label="${name} chart filter">${icon(key)}</button><span class="m-name">${name}</span><span class="fact"><span class="sf used"></span> ${used===null?'—':used+'%'}</span><span class="op">÷</span><span class="fact"><span class="sf elapsed"></span> ${elapsed===null?'—':Math.round(elapsed)+'%'}</span><span class="op">=</span><span class="fact pace-fact"><span class="sf pace"></span> ${pace===null?'—':pace+'%'}</span><span class="status ${status}" title="${status==='missing'?'Pace unavailable':status==='exhausted'?'Exhausted':status==='over'?'Over pace':'Within corridor'}">${status==='missing'?'—':status==='exhausted'?'⊗':'<svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.7" fill="none" stroke="currentColor"/>'+ (status==='over'?'<path d="M7 10V4m-3 3 3-3 3 3"':'<path d="m4 7 2 2 4-4"')+' fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>'}</span><span class="op">→</span><span class="fact"><span class="sf reset"></span> ${reset}</span>`}
 const note=document.createElement('p');note.className='proto-note';document.querySelector('.stage-wrap').after(note);
-function render(){let state=document.querySelector('#codex-state').value;
+const blockedNotice=document.createElement('div'); blockedNotice.textContent='Included usage is currently blocked by Codex.'; blockedNotice.style.cssText='padding:0 5px 6px;color:var(--secondary);font-size:11px'; panel.querySelector('.disc-warning').after(blockedNotice);
+function render(){let state=document.querySelector('#codex-state').value; blockedNotice.hidden=!document.querySelector('#blocked-state').checked || state==='exhausted';
  let codex=[['codex','Codex · 5h',23,24.67,Math.round(23/24.67*100),'quiet','3h 46m left'],['codex','Codex · 7d',37,15.48,Math.round(37/15.48*100),'quiet','5d 22h left']];
  if(state==='over')codex=codex.map(r=>[r[0],r[1],91,60,152,'over',r[6]]);
  if(state==='exhausted')codex=codex.map(r=>[r[0],r[1],100,r[3],null,'exhausted',r[6]]);
  if(state==='missing')codex=codex.map(r=>[r[0],r[1],r[2],null,null,'missing','—']);
  grid.innerHTML=facts.map(r=>row(...r)).join('')+(proposed?codex.map(r=>row(...r)).join(''):'');
- current.hidden=proposed;renderRefresh(state);[...grid.children].slice(30).forEach(el=>el.style.opacity=state==='stale'?'.5':'1');
+ current.hidden=proposed;renderRefresh(state);[...grid.children].slice(30).forEach(el=>el.style.opacity=state==='stale'?'.5':'1');applySeriesFilter();
  current.querySelectorAll('.codex-simple').forEach((el,i)=>el.innerHTML=`<span>${codex[i][1]}</span><span>${codex[i][2]}% used　↻ ${codex[i][6].replace(' left','')}</span>`);
- note.textContent=proposed?'Candidate reference: Provider icons, timestamps and age badges share the top refresh line, including Codex. A separated refresh button refreshes all three provider samples. Age badges animate into refresh controls on hover or keyboard focus; clicking simulates a refresh. Codex occupies the same used ÷ elapsed = pace · status → reset columns. Elapsed derives from each reported duration/reset; pace uses the unrounded elapsed value. Status symbols are illustrative. No Codex history series or notification behavior is added. The current preset has 37% weekly usage at ~15% elapsed, giving a pace of about 239%.':'Current: Codex remains a separate quota/reset block. This baseline reflects the current candidate, not an approved matrix redesign.';
+ note.textContent=proposed?'Candidate reference: Provider icons, timestamps and age badges share the top refresh line, including Codex. A separated refresh button refreshes all three provider samples. Age badges animate into refresh controls on hover or keyboard focus; clicking simulates a refresh. Codex occupies the same used ÷ elapsed = pace · status → reset columns. Elapsed derives from each reported duration/reset; pace uses the unrounded elapsed value. Status symbols are illustrative. Seeded Codex history is shown; notification behavior is unchanged. The current preset has 37% weekly usage at ~15% elapsed, giving a pace of about 239%.':'Current: Codex remains a separate quota/reset block. This baseline reflects the current candidate, not an approved matrix redesign.';
  if(experiment){document.querySelector('#layout-label').textContent=proposed?'B · Codex matrix':'A · Current baseline';params.delete('variant');params.set('matrix',proposed?'1':'0');history.replaceState(null,'','?'+params)}
 }
 if(experiment){let nav=document.createElement('nav');nav.className='compare-nav';nav.innerHTML='<button aria-label="Previous layout">←</button><span id="layout-label"></span><button aria-label="Next layout">→</button>';document.body.append(nav);nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{proposed=!proposed;render()});document.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;if(['ArrowLeft','ArrowRight'].includes(e.key)){e.stopImmediatePropagation();proposed=!proposed;render()}},true)}
-document.querySelector('#codex-state').onchange=render;document.documentElement.dataset.theme='light';document.querySelector('#appearance').onchange=e=>{document.documentElement.dataset.theme=e.target.value;document.body.dataset.theme=e.target.value};
-SERIES.cursor=[[0,0],[20,22],[40,38],[60,61],[75,78],[86,91]];SERIES.other=[[0,0],[20,40],[40,45],[60,71],[75,88],[86,100]];SERIES.grok=[[0,0],[15,18],[30,30],[45,39]];document.querySelectorAll('#variant-D .chart-host').forEach(el=>el.dataset.annotate='0');paintCharts();showVariant('D');document.querySelector('#prev').disabled=true;document.querySelector('#next').disabled=true;render();
+grid.addEventListener('click', e=>{const button=e.target.closest('.chart-avatar');if(!button)return;cycleSeriesFilter(button.dataset.series);grid.querySelectorAll('.chart-avatar').forEach(b=>{const focus=ui.seriesFilter.key,mode=ui.seriesFilter.mode;b.dataset.cycle=mode==='solo'&&focus!==b.dataset.series?'dim':mode==='hide'&&focus===b.dataset.series?'hide':'all'})});document.querySelector('#codex-state').onchange=render;document.querySelector('#blocked-state').onchange=render;document.documentElement.dataset.theme='light';document.querySelector('#appearance').onchange=e=>{document.documentElement.dataset.theme=e.target.value;document.body.dataset.theme=e.target.value};
+SERIES_KEYS.push('codex5','codex7'); SERIES.codex5=[[0,0],[8,8],[16,15],[24.67,23]]; SERIES.codex7=[[0,0],[5,12],[10,25],[15.48,37]]; LABELS.codex5='Codex · 5h'; LABELS.codex7='Codex · 7d'; SERIES.cursor=[[0,0],[20,22],[40,38],[60,61],[75,78],[86,91]];SERIES.other=[[0,0],[20,40],[40,45],[60,71],[75,88],[86,100]];SERIES.grok=[[0,0],[15,18],[30,30],[45,39]];document.querySelectorAll('#variant-D .chart-host').forEach(el=>el.dataset.annotate='0');paintCharts();showVariant('D');document.querySelector('#prev').disabled=true;document.querySelector('#next').disabled=true;render();
 })();
 </script>
 </body>

@@ -66,6 +66,8 @@ final class CodexQuotaStore: ObservableObject {
     @Published private(set) var rules: [String: CodexRefreshRule] = [:]
 
     var onScheduleChange: (() -> Void)?
+    var onHistoryReset: (() throws -> Void)?
+    var onHistorySample: (([CodexQuotaWindow], Date) -> Void)?
     private let defaults: UserDefaults
     private let preview: Bool
     private let client = CodexNativeClient()
@@ -102,6 +104,12 @@ final class CodexQuotaStore: ObservableObject {
         """.data(using: .utf8)!
         windows = (try? CodexQuotaSnapshot.parse(data, expectedAccount: "preview").windows) ?? []
     }
+
+    func setPanelPreviewBlock(_ state: String) {
+        ordinaryUsageAllowed = state == "Normal" ? nil : false
+        guard !windows.isEmpty else { return }
+        windows[0].usedPercent = state == "Exhausted" ? 100 : 23
+    }
     #endif
 
     private func loadCredentials() {
@@ -132,6 +140,7 @@ final class CodexQuotaStore: ObservableObject {
                 let newCredentials = try await self.client.signIn()
                 try Task.checkCancellation()
                 guard self.enabled, self.generation == attempt else { return }
+                try self.onHistoryReset?()
                 try CodexCredentialStore.save(newCredentials)
                 // A new account starts with no old readings, freshness or trigger state.
                 self.credentials = newCredentials
@@ -164,7 +173,7 @@ final class CodexQuotaStore: ObservableObject {
 
     func disconnect() {
         cancelSignIn()
-        do { try CodexCredentialStore.clear() }
+        do { try onHistoryReset?(); try CodexCredentialStore.clear() }
         catch { self.error = message(for: error); return }
         credentials = nil
         email = nil
@@ -181,6 +190,15 @@ final class CodexQuotaStore: ObservableObject {
     }
 
     func refresh(automatic: Bool = false) async {
+        #if PANEL_PREVIEW
+        if preview {
+            guard !isRefreshing else { return }
+            isRefreshing = true
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            isRefreshing = false
+            return
+        }
+        #endif
         guard !preview, enabled, !requiresSignIn, !isSigningIn, !isRefreshing,
               var active = credentials else { return }
         if automatic, let retryAfter, retryAfter > Date() { return }
@@ -212,6 +230,7 @@ final class CodexQuotaStore: ObservableObject {
             windows = snapshot.windows
             ordinaryUsageAllowed = snapshot.ordinaryUsageAllowed
             lastRefreshed = Date()
+            if let stamp = lastRefreshed { onHistorySample?(snapshot.windows, stamp) }
             error = nil
             retryAfter = nil
             refreshState.update(windows: windows, rules: rules, fetchedAt: lastRefreshed, now: Date())

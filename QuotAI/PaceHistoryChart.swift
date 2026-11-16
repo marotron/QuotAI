@@ -10,6 +10,7 @@ struct PaceHistoryChart: View {
     var showOtherModels: Bool
     /// Precomputed discrepancy clusters for soft grey bands + advanced strip.
     var discrepancyClusters: [CursorDiscrepancyCluster] = []
+    var seriesNames: [PaceHistoryMeterId: String] = [:]
     /// Meter-avatar filter from the panel (solo / hide / all).
     var seriesFilter: PaceHistorySeriesFilter = .all
     /// X (elapsed %) domain. Held by the panel so remounts via `.id(paceHistoryEpoch)` keep zoom.
@@ -577,7 +578,7 @@ struct PaceHistoryChart: View {
                         // Other has no dedicated avatar asset — reuse the Cursor
                         // avatar inked in the Other fuchsia, matching the meter row.
                         Image(nsImage: BarIcon.tintedAvatar(
-                            end.meterId == .grok ? .grok : .cursor,
+                            avatar(for: end.meterId),
                             ink: nsColor(for: end.meterId),
                             pointSize: 10
                         ))
@@ -1076,6 +1077,7 @@ struct PaceHistoryChart: View {
     private var plottedMeterIds: [PaceHistoryMeterId] {
         var ids: [PaceHistoryMeterId] = [.cursor, .grok]
         if showOtherModels { ids.insert(.other, at: 1) }
+        ids += series.keys.filter { if case .codex = $0 { return true }; return false }.sorted { $0.rawValue < $1.rawValue }
         return ids.filter { !(series[$0] ?? []).isEmpty && seriesFilter.isVisible($0) }
     }
 
@@ -1162,6 +1164,7 @@ struct PaceHistoryChart: View {
         case .cursor: return Self.cursorColor
         case .other: return Self.otherColor
         case .grok: return Self.grokColor
+        case .codex: return Color(nsColor: nsColor(for: meterId))
         }
     }
 
@@ -1459,9 +1462,16 @@ struct PaceHistoryChart: View {
 
     @ViewBuilder
     private func tipAvatar(_ id: PaceHistoryMeterId) -> some View {
-        let avatar: BarIcon.Avatar = id == .grok ? .grok : .cursor
-        Image(nsImage: BarIcon.tintedAvatar(avatar, ink: nsColor(for: id), pointSize: 12))
+        Image(nsImage: BarIcon.tintedAvatar(avatar(for: id), ink: nsColor(for: id), pointSize: 12))
             .frame(width: 12, height: 12)
+    }
+
+    private func avatar(for id: PaceHistoryMeterId) -> BarIcon.Avatar {
+        switch id {
+        case .cursor, .other: return .cursor
+        case .grok: return .grok
+        case .codex: return .codex
+        }
     }
 
     private func nsColor(for id: PaceHistoryMeterId) -> NSColor {
@@ -1472,6 +1482,10 @@ struct PaceHistoryChart: View {
             return NSColor(calibratedRed: 0xd9 / 255, green: 0x46 / 255, blue: 0xef / 255, alpha: 1)
         case .grok:
             return NSColor(calibratedRed: 0xc0 / 255, green: 0x84 / 255, blue: 0xfc / 255, alpha: 1)
+        case .codex(let id):
+            return id.hasSuffix(".primary")
+                ? NSColor(calibratedRed: 0x14 / 255, green: 0xb8 / 255, blue: 0xa6 / 255, alpha: 1)
+                : NSColor(calibratedRed: 0x38 / 255, green: 0xbd / 255, blue: 0xf8 / 255, alpha: 1)
         }
     }
 
@@ -1480,6 +1494,7 @@ struct PaceHistoryChart: View {
         case .cursor: return PaceHistorySeriesColor.models.endLabel
         case .other: return PaceHistorySeriesColor.other.endLabel
         case .grok: return PaceHistorySeriesColor.grok.endLabel
+        case .codex: return seriesNames[id] ?? "Codex"
         }
     }
 
@@ -1492,7 +1507,7 @@ struct PaceHistoryChart: View {
         switch id {
         case .cursor: return -6
         case .other: return 6
-        case .grok: return 0
+        case .grok, .codex: return 0
         }
     }
 
@@ -1521,6 +1536,7 @@ struct PaceHistoryChart: View {
         let ago = PaceHistoryTipPresentation.relativeAgo(from: reading.at, to: Date())
         let body = "\(date) · \(ago)"
         if let family = reading.family {
+            if case .codex(let id) = family { return "\(seriesNames[.codex(id)] ?? "Codex") \(body)" }
             return "\(family.tipPrefix) \(body)"
         }
         return body
@@ -1535,6 +1551,7 @@ struct PaceHistoryChart: View {
         case .cursor: return "Cursor"
         case .other: return "Other"
         case .grok: return "Grok"
+        case .codex: return seriesNames[id] ?? "Codex"
         }
     }
 

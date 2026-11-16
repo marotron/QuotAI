@@ -1,6 +1,28 @@
 # Changelog
 
-## [Unreleased]
+## 0.22.0 — 2026-11-16
+
+### Fixed
+
+- Refresh icons preserve their natural proportions when rotating.
+
+- Cursor credential access no longer blocks the UI during refresh; refresh indicators rotate independently of SwiftUI updates.
+
+- Refresh badge animations stop when the refresh completes.
+
+### Changed
+
+- The Codex blocked-usage notice moves below the chart and is hidden when an exhausted Codex meter already indicates the limit.
+
+- Refresh controls use the circular arrow from the approved dropdown prototype.
+
+- Refresh indicators rotate smoothly through the request and for one second afterward, then settle; provider badges transition gently back to their age.
+
+- Refresh badges slide down to a stationary icon on hover; provider and Refresh All icons rotate only during the corresponding refresh.
+
+### Added
+
+- Plot Codex quota windows in the dropdown pace-history chart, with per-window filtering and reset-aware history.
 
 ## 0.21.0 — 2026-11-15
 

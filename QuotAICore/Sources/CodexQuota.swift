@@ -16,12 +16,28 @@ public struct CodexQuotaWindow: Equatable, Identifiable, Sendable {
     }
 
     public var title: String { "\(bucketName) · \(durationLabel)" }
+
+    /// A successful reading produces a chart point only while its known period is active.
+    public func paceHistorySample(at stamp: Date) -> PaceHistorySample? {
+        guard let usedPercent, let duration, duration > 0, duration.isFinite,
+              usedPercent.isFinite, (0...100).contains(usedPercent),
+              let resetsAt, resetsAt > stamp else { return nil }
+        let start = resetsAt.addingTimeInterval(-duration)
+        let elapsed = min(max(stamp.timeIntervalSince(start) / duration, 0), 1) * 100
+        return PaceHistorySample(meterId: .codex(id), usedPct: usedPercent,
+            elapsedPct: elapsed, timestamp: stamp, periodStart: start)
+    }
 }
 
 public struct CodexQuotaSnapshot: Equatable, Sendable {
     public var accountID: String?
     public var ordinaryUsageAllowed: Bool?
     public var windows: [CodexQuotaWindow]
+
+    /// The ordinary-usage block is redundant when an ordinary Codex window is exhausted.
+    public static func shouldShowBlockedNotice(allowed: Bool?, windows: [CodexQuotaWindow]) -> Bool {
+        allowed == false && !windows.contains { $0.id.hasPrefix("codex.") && ($0.usedPercent ?? 0) >= 100 }
+    }
 
     public static func parse(_ data: Data, expectedAccount: String) throws -> Self {
         struct Window: Decodable {

@@ -4,6 +4,18 @@ import XCTest
 final class CodexQuotaTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 2_000_000_000)
 
+    func testBlockedNoticeOnlyWhenOrdinaryBlockIsNotAlreadyShownByAnExhaustedWindow() {
+        let available = window("primary", used: 99.9, reset: 300)
+        let exhausted = window("secondary", used: 100, reset: 300)
+        var otherBucket = exhausted
+        otherBucket.id = "other.primary"
+        XCTAssertFalse(CodexQuotaSnapshot.shouldShowBlockedNotice(allowed: nil, windows: []))
+        XCTAssertFalse(CodexQuotaSnapshot.shouldShowBlockedNotice(allowed: true, windows: [exhausted]))
+        XCTAssertTrue(CodexQuotaSnapshot.shouldShowBlockedNotice(allowed: false, windows: []))
+        XCTAssertTrue(CodexQuotaSnapshot.shouldShowBlockedNotice(allowed: false, windows: [available, otherBucket]))
+        XCTAssertFalse(CodexQuotaSnapshot.shouldShowBlockedNotice(allowed: false, windows: [available, exhausted]))
+    }
+
     func testIndependentWindowsAndAdditionalBucketsKeepZeroAndUnknownDistinct() throws {
         let data = Data("""
         {"account_id":"account","rate_limit":{"allowed":false,

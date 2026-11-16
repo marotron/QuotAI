@@ -123,3 +123,19 @@ Update product/technical/detail contracts in the same change set as behavior cha
 Decision 2026-11-15: the dropdown renders Codex windows in the shared meter matrix and routes header refresh controls through existing provider stores; see [Codex quota contract](codex-quota.md). Seeded native light/dark previews were checked; live refresh and edge-state acceptance remains pending.
 
 Decision 2026-11-15: provider-specific high-usage rule bindings share the Settings → Refresh section and control layout; Codex retains its per-window state and scheduling. See [automatic refresh](automatic-refresh.md).
+
+Decision 2026-11-15: Codex window IDs extend the pace-history sample store and chart filter while preserving existing serialized Cursor/Grok IDs. New sign-in and disconnect clear Codex history; see [Codex quota contract](codex-quota.md). Candidate 0.22.0 passed core tests and a seeded native chart preview; live acceptance remains pending.
+
+Decision 2026-11-15: compact freshness and Refresh All animation reflect the corresponding refresh state, honor Reduce Motion, and do not spin solely on hover; see [automatic refresh](automatic-refresh.md).
+
+Decision 2026-11-15: refresh-button rotation is limited to the corresponding active request and must stop at completion, without repeating its slide transition; see [automatic refresh](automatic-refresh.md). Candidate rc.3 passed Cursor-only and Refresh All seeded native preview checks; live failure and Reduce Motion acceptance remain pending.
+
+Decision 2026-11-15: refresh indicators continue rotating for one second after completion and settle; provider badges return gently to age text and Refresh All rotates in place. This revises the earlier immediate-stop decision; see [automatic refresh](automatic-refresh.md). Seeded native busy, finishing and rest states were checked; live and Reduce Motion acceptance remains pending.
+
+Candidate rc.5 (2026-11-15) moves Cursor refresh credential resolution and save off MainActor and drives refresh-arrow rotation with Core Animation. See [automatic refresh](automatic-refresh.md) for evidence and remaining profiling work.
+
+Refresh-arrow rasterization preserves the SF Symbol aspect ratio inside the 11 pt square Core Animation layer (rc.6, 2026-11-15), avoiding non-uniform scaling. See [automatic refresh](automatic-refresh.md).
+
+Decision 2026-11-16: native refresh arrows use the prototype SVG geometry rendered in the existing Core Animation layer; see [automatic refresh](automatic-refresh.md).
+
+Decision 2026-11-16: the Codex blocked-usage notice is suppressed when an ordinary Codex window is exhausted; otherwise it appears below the chart after any discrepancy notice. See [Codex quota contract](codex-quota.md). Seeded native notice states verified 2026-11-16; live account acceptance pending.
