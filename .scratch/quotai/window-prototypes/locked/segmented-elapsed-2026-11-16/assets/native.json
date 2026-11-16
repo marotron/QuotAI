@@ -1,0 +1,99 @@
+{
+  "A-dial" : {
+    "height" : 22,
+    "width" : 24
+  },
+  "A-measured" : {
+    "openingDiameter" : 10.104057019798113,
+    "outerDiameter" : 19.214709230686811,
+    "pngHeight" : 352,
+    "pngWidth" : 384,
+    "ringGap" : 0.55237015871785711,
+    "scale" : 16,
+    "scanBandsPt" : [
+      [
+        2.3927254098360655,
+        3.1980917366946779
+      ],
+      [
+        3.7504348906560638,
+        6.9478622715404699
+      ],
+      [
+        17.051919291338582,
+        20.249627976190474
+      ],
+      [
+        20.802025139664803,
+        21.607434640522875
+      ]
+    ],
+    "timelineCenterDiameter" : 18.409321316828468,
+    "timelineInnerDiameter" : 17.603933402970128,
+    "timelineStroke" : 0.80538791385834241,
+    "usageCenterDiameter" : 13.301625052666262,
+    "usageOuterDiameter" : 16.499193085534412,
+    "usageStroke" : 3.1975680328681495
+  },
+  "A-raster" : {
+    "height" : 22,
+    "pixelsHigh" : 352,
+    "pixelsWide" : 2176,
+    "width" : 136
+  },
+  "A-row" : {
+    "height" : 22,
+    "width" : 136
+  },
+  "B-dial" : {
+    "height" : 22,
+    "width" : 25.600000000000001
+  },
+  "B-measured" : {
+    "openingDiameter" : 10.090964560896595,
+    "outerDiameter" : 20.793247717199765,
+    "pngHeight" : 352,
+    "pngWidth" : 410,
+    "ringGap" : 0.54475948074014147,
+    "scale" : 16,
+    "scanBandsPt" : [
+      [
+        2.3927254098360655,
+        4.0005996801705761
+      ],
+      [
+        4.5516985488126647,
+        7.7486702127659575
+      ],
+      [
+        17.839634773662553,
+        21.04266826923077
+      ],
+      [
+        21.581088362068964,
+        23.18597312703583
+      ]
+    ],
+    "timelineCenterDiameter" : 19.186868199549078,
+    "timelineInnerDiameter" : 17.580488681898391,
+    "timelineStroke" : 1.6063795176506879,
+    "usageCenterDiameter" : 13.290967140657353,
+    "usageOuterDiameter" : 16.490969720418107,
+    "usageStroke" : 3.200002579760755
+  },
+  "B-raster" : {
+    "height" : 22,
+    "pixelsHigh" : 352,
+    "pixelsWide" : 2253,
+    "width" : 140.8125
+  },
+  "B-row" : {
+    "height" : 22,
+    "width" : 140.80000000000001
+  },
+  "warningSRGB" : [
+    1,
+    0.62028986215591431,
+    0.029906976968050003
+  ]
+}

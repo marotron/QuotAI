@@ -4,7 +4,7 @@ macOS menu-bar app for Cursor, Grok Bot, and optional Codex subscription quotas.
 
 ## Install
 
-**[Download QuotAI-0.22.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.22.0/QuotAI-0.22.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.23.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.23.0/QuotAI-0.23.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image (install steps are on the window background).
 2. Drag **QuotAI** → **Applications**, then double-click **Open QuotAI** (or open it from Applications). It lives in the menu bar.
@@ -37,7 +37,7 @@ Settings → Menu pins which rows stay on the menu, including Open Cursor Spendi
 - **Window panel** in the menu bar: meters (used ÷ elapsed = pace · corridor alert → reset), pace history chart, and actions (Refresh / Settings / About / Quit). Click the header version for the in-app changelog.
 - **Pace history** plots Cursor, Grok and individual Codex windows, with per-meter filters, and shows two-decimal hover readings and translucent markers; zoomed lines track the underlying readings and hover values.
 - **Optional Cursor discrepancy detection** compares local activity with quota changes and selectively checks detailed billing records for unmatched activity, excluding confirmed Free and custom-key requests. Billing lookups are bounded, cached, and run in the background.
-- **Rings** for used % and time to reset: one meter each, nested Cursor (Models + Other), or pace segments. Codex follows the same Display settings, and center icons are dimmed with provider-specific spacing.
+- **Rings** for used % and time to reset: one meter each, nested Cursor (Models + Other), or pace segments. Codex follows the same Display settings, and center icons are dimmed with provider-specific spacing. Optionally divide elapsed rings into hourly or daily segments in Settings → Display.
 - **Nested Cursor** blinks between Models and Other. A corridor alert blinks the quota ring that crossed the band; under paints blue and over paints orange ([pace chrome order](docs/pace-chrome.md)).
 - **Automatic refresh** supports optional quiet hours, a wake refresh switch, and configurable high-usage rules for Cursor, Grok Bot and each Codex window. Manual refresh and opening a stale panel remain available during quiet hours.
 - **Dynamic refresh** applies one shared schedule independently to Cursor, Grok Bot and enabled Codex from their reset times. The panel header provides per-provider refresh badges and a refresh-all control, with smooth refresh progress animations.

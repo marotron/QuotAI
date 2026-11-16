@@ -17,6 +17,8 @@ enum RingIcon {
         var avatarColor: NSColor? = nil
         /// 0–100 period elapsed; nil → no timeline (and no beside elapsed %).
         var elapsedPct: Double?
+        /// Nil keeps the elapsed ring continuous.
+        var segmentCount: Int? = nil
         var remaining: String?
         /// Which `usedPcts` index drives the beside used % (B Models ↔ Other blink).
         var displayedUsedIndex: Int
@@ -249,7 +251,7 @@ enum RingIcon {
         let hasTimeline = !isPace && dial.elapsedPct != nil
 
         if hasTimeline, let elapsed = dial.elapsedPct {
-            drawTimelineTrack(at: center, elapsedPct: elapsed, ink: ink, metrics: m)
+            drawTimelineTrack(at: center, elapsedPct: elapsed, segmentCount: dial.segmentCount, ink: ink, metrics: m)
         }
 
         for (index, used) in useds.enumerated() {
@@ -388,7 +390,15 @@ enum RingIcon {
         return r
     }
 
-    private static func drawTimelineTrack(at c: CGPoint, elapsedPct: Double, ink: NSColor, metrics m: Metrics) {
+    private static func drawTimelineTrack(at c: CGPoint, elapsedPct: Double, segmentCount: Int?, ink: NSColor, metrics m: Metrics) {
+        if let segmentCount {
+            let t = min(100, max(0, elapsedPct))
+            for span in ElapsedRingSegmentation.spans(count: segmentCount, radius: Double(m.outerR)) {
+                strokePctArc(at: c, radius: m.outerR, fromPct: span.start, toPct: span.end, color: ink.withAlphaComponent(0.22), width: m.timelineStroke)
+                strokePctArc(at: c, radius: m.outerR, fromPct: span.start, toPct: min(t, span.end), color: ink.withAlphaComponent(0.92), width: m.timelineStroke)
+            }
+            return
+        }
         let track = ink.withAlphaComponent(0.22)
         strokeFullCircle(at: c, radius: m.outerR, color: track, width: m.timelineStroke)
         let t = min(100, max(0, elapsedPct))

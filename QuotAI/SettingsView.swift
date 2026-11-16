@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("showElapsedPercent") private var showElapsedPercent = true
     @AppStorage("alternateElapsedRemaining") private var alternateElapsedRemaining = false
     @AppStorage("showAvatars") private var showAvatars = true
+    @AppStorage("segmentElapsedRing") private var segmentElapsedRing = false
     @AppStorage("ringCenterContent") private var ringCenterContent: RingCenterContent = .remaining
     @AppStorage("showOtherModels") private var showOtherModels = false
     @AppStorage("blinkSignificantPace") private var blinkSignificantPace = false
@@ -220,6 +221,14 @@ struct SettingsView: View {
             }
 
             if iconLook != .bars {
+                if iconLook != .ringsPace {
+                    Section {
+                        Toggle("Segment elapsed ring", isOn: $segmentElapsedRing)
+                        SettingsNotes(lines: ["Show one segment per hour or day in the quota window."])
+                    } header: {
+                        Text("Elapsed ring")
+                    }
+                }
                 Section {
                     VStack(alignment: .leading, spacing: 0) {
                         menuPicker("Center", selection: $ringCenterContent) {

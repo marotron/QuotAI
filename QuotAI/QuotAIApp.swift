@@ -15,6 +15,7 @@ struct QuotAIApp: App {
     /// Nested and by-pace rings: one beside slot blinks elapsed % ↔ time to reset.
     @AppStorage("alternateElapsedRemaining") private var alternateElapsedRemaining = false
     @AppStorage("showAvatars") private var showAvatars = true
+    @AppStorage("segmentElapsedRing") private var segmentElapsedRing = false
     @AppStorage("ringCenterContent") private var ringCenterContent: RingCenterContent = .remaining
     @AppStorage("showOtherModels") private var showOtherModels = false
     @AppStorage("blinkSignificantPace") private var blinkSignificantPace = false
@@ -87,6 +88,7 @@ struct QuotAIApp: App {
                 showElapsedPercent: showElapsedPercent,
                 alternateElapsedRemaining: alternateElapsedRemaining,
                 showAvatars: showAvatars,
+                segmentElapsedRing: segmentElapsedRing,
                 ringCenterContent: ringCenterContent,
                 showOtherModels: showOtherModels,
                 blinkSignificantPace: blinkSignificantPace,
@@ -369,6 +371,7 @@ private struct MenuBarIconLabel: View {
     let showElapsedPercent: Bool
     let alternateElapsedRemaining: Bool
     let showAvatars: Bool
+    let segmentElapsedRing: Bool
     let ringCenterContent: RingCenterContent
     let showOtherModels: Bool
     let blinkSignificantPace: Bool
@@ -523,7 +526,7 @@ private struct MenuBarIconLabel: View {
                     showAvatars: showAvatars, showPercent: showUsedPercent, showRemaining: showRemaining, foreground: .white)
             }
             let dial = RingIcon.Dial(avatar: .codex, showAvatar: true, usedPcts: [window.usedPercent],
-                brandColors: [color], avatarColor: lightAvatarColor(from: [color]), elapsedPct: elapsed,
+                brandColors: [color], avatarColor: lightAvatarColor(from: [color]), elapsedPct: elapsed, segmentCount: segmentElapsedRing ? ElapsedRingSegmentation.count(duration: window.duration) : nil,
                 remaining: remaining, displayedUsedIndex: 0, smartSignificant: [meterIsSmartSignificant(meter)],
                 blinkOff: [quotaBlinkOff(meter)])
             return RingIcon.image(look: iconLook, dials: [dial], showAvatarsBeside: showAvatars,
@@ -637,6 +640,12 @@ private struct MenuBarIconLabel: View {
         let grok = store.grokBot
         let cursorElapsed = cursor.periodElapsedPercent(now: clock) ?? other.periodElapsedPercent(now: clock)
         let grokElapsed = grok.periodElapsedPercent(now: clock)
+        func segments(_ meter: QuotaMeter) -> Int? {
+            guard segmentElapsedRing, let start = meter.periodStart, let end = meter.periodEnd else { return nil }
+            return ElapsedRingSegmentation.count(duration: end.timeIntervalSince(start))
+        }
+        let cursorSegments = segments(cursor) ?? segments(other)
+        let grokSegments = segments(grok)
         let cursorRemaining = sharedRemaining(cursor, other)
         let grokRemaining = liveRemaining(grok)
 
@@ -665,6 +674,7 @@ private struct MenuBarIconLabel: View {
                     brandColors: [paceBarColor(cursor)],
                     avatarColor: cursorAvatarColor,
                     elapsedPct: cursorElapsed,
+                    segmentCount: cursorSegments,
                     remaining: cursorRemaining,
                     displayedUsedIndex: 0,
                     smartSignificant: [meterIsSmartSignificant(cursor)],
@@ -679,6 +689,7 @@ private struct MenuBarIconLabel: View {
                     brandColors: [paceBarColor(other)],
                     avatarColor: lightAvatarColor(from: [paceBarColor(other)]),
                     elapsedPct: cursorElapsed,
+                    segmentCount: cursorSegments,
                     remaining: cursorRemaining,
                     displayedUsedIndex: 0,
                     smartSignificant: [meterIsSmartSignificant(other)],
@@ -692,6 +703,7 @@ private struct MenuBarIconLabel: View {
                 brandColors: [paceBarColor(grok)],
                 avatarColor: grokAvatarColor,
                 elapsedPct: grokElapsed,
+                segmentCount: grokSegments,
                 remaining: grokRemaining,
                 displayedUsedIndex: 0,
                 smartSignificant: [meterIsSmartSignificant(grok)],
@@ -725,6 +737,7 @@ private struct MenuBarIconLabel: View {
                     brandColors: fills,
                     avatarColor: cursorAvatarColor,
                     elapsedPct: cursorElapsed,
+                    segmentCount: cursorSegments,
                     remaining: cursorRemaining,
                     displayedUsedIndex: showOtherPhase ? 1 : 0,
                     smartSignificant: cursorSmart,
@@ -737,6 +750,7 @@ private struct MenuBarIconLabel: View {
                     brandColors: [paceBarColor(grok)],
                     avatarColor: grokAvatarColor,
                     elapsedPct: grokElapsed,
+                    segmentCount: grokSegments,
                     remaining: grokRemaining,
                     displayedUsedIndex: 0,
                     smartSignificant: [meterIsSmartSignificant(grok)],
