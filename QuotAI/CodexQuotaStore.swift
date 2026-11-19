@@ -55,6 +55,15 @@ final class CodexQuotaStore: ObservableObject {
     @Published var showInMenuBar: Bool {
         didSet { if !preview { defaults.set(showInMenuBar, forKey: "codexShowInMenuBar") } }
     }
+    /// Experimental: record closed 5h periods for a 7d ratio estimate. Off by default; history is never pruned.
+    @Published var trackFiveHourWeeklyRatio: Bool {
+        didSet {
+            guard !preview else { return }
+            defaults.set(trackFiveHourWeeklyRatio, forKey: Self.trackFiveHourWeeklyRatioKey)
+            changed()
+        }
+    }
+    static let trackFiveHourWeeklyRatioKey = "codexTrackFiveHourWeeklyRatio"
     @Published private(set) var windows: [CodexQuotaWindow] = []
     @Published private(set) var lastRefreshed: Date?
     @Published private(set) var error: String?
@@ -67,7 +76,7 @@ final class CodexQuotaStore: ObservableObject {
 
     var onScheduleChange: (() -> Void)?
     var onHistoryReset: (() throws -> Void)?
-    var onHistorySample: (([CodexQuotaWindow], Date) -> Void)?
+    var onHistorySample: (([CodexQuotaWindow], String?, Date) -> Void)?
     private let defaults: UserDefaults
     private let preview: Bool
     private let client = CodexNativeClient()
@@ -83,6 +92,7 @@ final class CodexQuotaStore: ObservableObject {
         self.defaults = defaults
         enabled = !preview && defaults.bool(forKey: "codexEnabled")
         showInMenuBar = !preview && defaults.bool(forKey: "codexShowInMenuBar")
+        trackFiveHourWeeklyRatio = !preview && defaults.bool(forKey: Self.trackFiveHourWeeklyRatioKey)
         if !preview {
             if let data = defaults.data(forKey: "codexRefreshRules"),
                let decoded = try? JSONDecoder().decode([String: CodexRefreshRule].self, from: data) {
@@ -230,7 +240,9 @@ final class CodexQuotaStore: ObservableObject {
             windows = snapshot.windows
             ordinaryUsageAllowed = snapshot.ordinaryUsageAllowed
             lastRefreshed = Date()
-            if let stamp = lastRefreshed { onHistorySample?(snapshot.windows, stamp) }
+            if let stamp = lastRefreshed {
+                onHistorySample?(snapshot.windows, snapshot.accountID, stamp)
+            }
             error = nil
             retryAfter = nil
             refreshState.update(windows: windows, rules: rules, fetchedAt: lastRefreshed, now: Date())

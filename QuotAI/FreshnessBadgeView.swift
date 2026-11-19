@@ -11,6 +11,8 @@ struct FreshnessBadgeView: View {
     let isSpinning: Bool
     let accessibilityName: String
     var compact: Bool = false
+    /// Last refresh attempt failed — compact badge uses amber warning chrome.
+    var refreshFailed: Bool = false
     let action: () -> Void
 
     @State private var hovering = false
@@ -55,9 +57,11 @@ struct FreshnessBadgeView: View {
             }
             .frame(width: 27, height: 16)
             .clipped()
-            .foregroundStyle(showRefresh ? Color.white : Color.secondary)
+            .foregroundStyle(showRefresh ? Color.white : (refreshFailed ? Self.warningAmber(colorScheme) : Color.secondary))
             .background(RoundedRectangle(cornerRadius: 4).fill(
-                showRefresh ? Color(red: 0x0a / 255, green: 0x82 / 255, blue: 1) : Color.primary.opacity(0.08)))
+                showRefresh
+                    ? Color(red: 0x0a / 255, green: 0x82 / 255, blue: 1)
+                    : (refreshFailed ? Self.warningFill : Color.primary.opacity(0.08))))
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.5), value: showRefresh)
         }
         .buttonStyle(.plain)
@@ -70,9 +74,23 @@ struct FreshnessBadgeView: View {
             if active { suppressHoverAfterRefresh = false }
         }
         .task(id: isSpinning) { await updateVisualSpin() }
-        .help("Refresh \(accessibilityName)")
-        .accessibilityLabel("Refresh \(accessibilityName), \(MenuBarWindowPanel.relativeAgo(from: lastAt, to: now))")
+        .help(refreshFailed
+              ? "Refresh \(accessibilityName) · last attempt failed · check connection"
+              : "Refresh \(accessibilityName)")
+        .accessibilityLabel(refreshFailed
+            ? "Refresh \(accessibilityName), refresh failed"
+            : "Refresh \(accessibilityName), \(MenuBarWindowPanel.relativeAgo(from: lastAt, to: now))")
         .accessibilityHint(isSpinning ? "Refresh in progress" : "Refresh this provider")
+    }
+
+    static func warningAmber(_ scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 0xff / 255, green: 0xc2 / 255, blue: 0x5c / 255)
+            : Color(red: 0xa5 / 255, green: 0x6b / 255, blue: 0)
+    }
+
+    static var warningFill: Color {
+        Color(red: 0xff / 255, green: 0x9f / 255, blue: 0x0a / 255).opacity(0.133)
     }
 
     @MainActor

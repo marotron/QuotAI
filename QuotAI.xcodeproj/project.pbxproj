@@ -9,10 +9,12 @@
 /* Begin PBXBuildFile section */
 		00C117EFAB41BF4BB5016213 /* RefreshScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C2B193AFD31A76A03414C6 /* RefreshScheduleTests.swift */; };
 		024577DA90225EFD45F3BC7E /* MenuBarWindowPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177F1B250D9995BAEA6FE038 /* MenuBarWindowPanel.swift */; };
+		075221BD6A8C5297047A7954 /* PaceHistoryEndAnnotationLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD3F62A5BB0643384236D5A4 /* PaceHistoryEndAnnotationLayout.swift */; };
 		077A1A93F8999F6383564291 /* CursorUsageBillingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F43A78453AA0F885BD24195 /* CursorUsageBillingTests.swift */; };
 		0892FE50EFCD8B19A5562708 /* PaceCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */; };
 		08BA30F747B787595A93DAA4 /* CursorLogActivityReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90ECA3EB3FB1C69788FC4FE /* CursorLogActivityReader.swift */; };
 		0DD4034FD56032D78BD35816 /* CursorLogActivityReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BBD103A6918C171AC3F5AA1 /* CursorLogActivityReaderTests.swift */; };
+		0E3D42A7BCF280F24C9C010F /* CodexFiveHourWeeklyRatio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117E51496A95C084A598D9BF /* CodexFiveHourWeeklyRatio.swift */; };
 		0E66D145B86BE8C6A6ADB4F1 /* CursorSafeStorageKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C63BBC52053CDA4BE6AEBD /* CursorSafeStorageKey.swift */; };
 		0E7FFAD2282D5608EF41F69A /* CursorAuthActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42221A63599893EAE95BCF0C /* CursorAuthActions.swift */; };
 		10F40A01C619D3725F202EB4 /* PaceHistoryChartDownsample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 960B3E9ED195EEAA918969F4 /* PaceHistoryChartDownsample.swift */; };
@@ -20,6 +22,7 @@
 		14F8A41E7E0F4214973DBC75 /* PreviewApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DD824683EB5A25350088F4 /* PreviewApp.swift */; };
 		158342EFCE61917EEA75EBAD /* BarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A474AF98F62D2275255057D5 /* BarIcon.swift */; };
 		1662147F4652E067D89B275A /* QuotAIAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E364CC587B574EDA89401BE2 /* QuotAIAboutView.swift */; };
+		179AAA6BCBA62E1477C208CA /* RefreshFailureNoticeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E90CF0C8B3E7CD410D93BA /* RefreshFailureNoticeTests.swift */; };
 		1A39A9441305B1E909CC233F /* CursorSealedTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5738338B3AFDC10195F8BF3 /* CursorSealedTokenTests.swift */; };
 		1B8661FD4F037A083FB94E1E /* PaceAlertCooldown.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0372F0AA05AB178D5EA1251 /* PaceAlertCooldown.swift */; };
 		2339AA01937831D9F5D072E1 /* RingIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F68F209DE9B284DFAE003A /* RingIcon.swift */; };
@@ -58,6 +61,7 @@
 		5C0F500364002FA7EA6D1D97 /* PaceAlertBandChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9B5C18F7FD59A13F5BEE6E /* PaceAlertBandChart.swift */; };
 		5C3685E0B0936DF76FF1D4F1 /* CursorActivityParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A634315FCD00056AC526ACA4 /* CursorActivityParserTests.swift */; };
 		5E77B6A9C260CEA75C67ED15 /* QuotAICore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */; };
+		5EB5EF9201C5790C4356E779 /* RefreshFailureNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D12E0FD43CAE5C54319070 /* RefreshFailureNotice.swift */; };
 		61B41F97E9FD3001E1BE1196 /* EmailAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C43130568DD9233B80DB58F /* EmailAlertService.swift */; };
 		639B803DE74B65CC85EE141D /* PaceAlertFamily.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8257F1DD6FE08B50A3B613CE /* PaceAlertFamily.swift */; };
 		63AA708F3665F43AAA25719F /* CodexQuota.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D935CB1C5167B544F029C4 /* CodexQuota.swift */; };
@@ -121,8 +125,10 @@
 		CE0E75E26DFF4B981A9F4018 /* CursorUsageBilling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA1F5FC67F8B32D80B3D8AB /* CursorUsageBilling.swift */; };
 		CE2DE693EF9F9710A517D305 /* PaceHistorySeriesFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */; };
 		CE7A9064D2EA35C569483CE2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172E517E55BB1919952F6374 /* SettingsView.swift */; };
+		CF4C697A01BD9B777448BAE2 /* PaceHistoryEndAnnotationLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA01CD09E90010D58199A5B /* PaceHistoryEndAnnotationLayoutTests.swift */; };
 		D0A82923EF1EA1BFA9361ED0 /* MenuPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0248EF36AED12752B7A8D9 /* MenuPresentation.swift */; };
 		D3170FE07F5DD7F1B5FD9E03 /* PaceHistorySampleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */; };
+		D68BAB72F17466F60F061E85 /* CodexFiveHourWeeklyRatioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F195EF361A37B0497C52D295 /* CodexFiveHourWeeklyRatioTests.swift */; };
 		D83D8CB5C694C04497BDF2AC /* CursorConnectClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE812ED1CB4BE4CF91A26E25 /* CursorConnectClient.swift */; };
 		DB2DAB346A324BB7F169F99F /* CodexQuotaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99B9B2D0938BD8FD58328909 /* CodexQuotaStore.swift */; };
 		DC5676AEC84F8C26CB786FAB /* RemainingTimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F0F40FD1FE615DF92CCF71 /* RemainingTimeTests.swift */; };
@@ -221,6 +227,7 @@
 		02286B806D675393484B4815 /* QuotAIPanelPreview.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotAIPanelPreview.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		02D07303DB72FBD8BEC5E9DF /* MenuOptionTitles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuOptionTitles.swift; sourceTree = "<group>"; };
 		02D935CB1C5167B544F029C4 /* CodexQuota.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexQuota.swift; sourceTree = "<group>"; };
+		03D12E0FD43CAE5C54319070 /* RefreshFailureNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshFailureNotice.swift; sourceTree = "<group>"; };
 		0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryTipPresentationTests.swift; sourceTree = "<group>"; };
 		05D8D7ECE698C38261DD59F1 /* PaceAlertThresholdStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertThresholdStoreTests.swift; sourceTree = "<group>"; };
 		09A98BF53179A39771BBE07A /* RingDialSegments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingDialSegments.swift; sourceTree = "<group>"; };
@@ -228,6 +235,7 @@
 		0C377C78FBBBB551CB294212 /* MenuPinsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPinsView.swift; sourceTree = "<group>"; };
 		100900970A7EB9E28EF6C831 /* RemainingTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingTime.swift; sourceTree = "<group>"; };
 		1062DFE11728E70FD2CC677F /* ElapsedRingSegmentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElapsedRingSegmentation.swift; sourceTree = "<group>"; };
+		117E51496A95C084A598D9BF /* CodexFiveHourWeeklyRatio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexFiveHourWeeklyRatio.swift; sourceTree = "<group>"; };
 		143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySampleStore.swift; sourceTree = "<group>"; };
 		172E517E55BB1919952F6374 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		177F1B250D9995BAEA6FE038 /* MenuBarWindowPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarWindowPanel.swift; sourceTree = "<group>"; };
@@ -281,6 +289,7 @@
 		7C32FF53DBE2300A57A24E9C /* PaceAlertCooldownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertCooldownTests.swift; sourceTree = "<group>"; };
 		81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistorySeriesFilter.swift; sourceTree = "<group>"; };
 		8257F1DD6FE08B50A3B613CE /* PaceAlertFamily.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertFamily.swift; sourceTree = "<group>"; };
+		85E90CF0C8B3E7CD410D93BA /* RefreshFailureNoticeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshFailureNoticeTests.swift; sourceTree = "<group>"; };
 		861FE140E53230AB948959DB /* ElapsedRingSegmentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElapsedRingSegmentationTests.swift; sourceTree = "<group>"; };
 		8A84478A2DFA344FC905215F /* QuotAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotAIApp.swift; sourceTree = "<group>"; };
 		8B82BD7D534AE4ADB054F06B /* QuotAICore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = QuotAICore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -304,7 +313,9 @@
 		BB305BE65819B58250DECEB2 /* PaceChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceChrome.swift; sourceTree = "<group>"; };
 		BBF747F505C53CE0286EBF6D /* FreshnessBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreshnessBadgeView.swift; sourceTree = "<group>"; };
 		BCFAFB3DC2E71B999995F431 /* PeriodDurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeriodDurationTests.swift; sourceTree = "<group>"; };
+		BD3F62A5BB0643384236D5A4 /* PaceHistoryEndAnnotationLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryEndAnnotationLayout.swift; sourceTree = "<group>"; };
 		BD54EF9FAB7890CB1EC1A309 /* IconLookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconLookTests.swift; sourceTree = "<group>"; };
+		BDA01CD09E90010D58199A5B /* PaceHistoryEndAnnotationLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceHistoryEndAnnotationLayoutTests.swift; sourceTree = "<group>"; };
 		BE79ED45E16F062344B5FD08 /* MenuPinLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPinLayoutTests.swift; sourceTree = "<group>"; };
 		C0447CCB4161A89612D76A3F /* LastRefreshStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastRefreshStatusTests.swift; sourceTree = "<group>"; };
 		C448DFACE39AFD7142268F45 /* CursorVscdbImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorVscdbImporter.swift; sourceTree = "<group>"; };
@@ -328,6 +339,7 @@
 		E90DC0C50BD11F31674EFB3D /* PaceCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceCalculator.swift; sourceTree = "<group>"; };
 		ED059FAF2EB6CB721F3B6981 /* ReleaseVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseVersion.swift; sourceTree = "<group>"; };
 		F0372F0AA05AB178D5EA1251 /* PaceAlertCooldown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceAlertCooldown.swift; sourceTree = "<group>"; };
+		F195EF361A37B0497C52D295 /* CodexFiveHourWeeklyRatioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexFiveHourWeeklyRatioTests.swift; sourceTree = "<group>"; };
 		F272F972D2BC5C3F78315A28 /* NativeDragNumberField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDragNumberField.swift; sourceTree = "<group>"; };
 		F6DD824683EB5A25350088F4 /* PreviewApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -390,6 +402,7 @@
 				4E43043E693935CE5D71BAB9 /* AlertMessageBuilderTests.swift */,
 				4F4ECCC6D4DCE359FDF368FE /* AutomaticRefreshPolicyTests.swift */,
 				E479756FEDB5131AA3048CDB /* ChangelogParserTests.swift */,
+				F195EF361A37B0497C52D295 /* CodexFiveHourWeeklyRatioTests.swift */,
 				3338927993D8BD6C2B57E910 /* CodexPaceHistoryTests.swift */,
 				B34A03C6BA0A10BA7E122993 /* CodexQuotaTests.swift */,
 				A634315FCD00056AC526ACA4 /* CursorActivityParserTests.swift */,
@@ -416,6 +429,7 @@
 				A17414D5B95FCA174737FB00 /* PaceChromeTests.swift */,
 				E61D2DB2B198A5D64C4B934B /* PaceHistoryChartDownsampleTests.swift */,
 				4C4F4D22979B55C7E8491E85 /* PaceHistoryChartModelTests.swift */,
+				BDA01CD09E90010D58199A5B /* PaceHistoryEndAnnotationLayoutTests.swift */,
 				27E0A7B06B02F11B41DAD919 /* PaceHistorySampleStoreTests.swift */,
 				59AAAE5EDF7EA2DA84B33E25 /* PaceHistorySeriesFilterTests.swift */,
 				0411899CEC1730BF0407B284 /* PaceHistoryTipPresentationTests.swift */,
@@ -423,6 +437,7 @@
 				BCFAFB3DC2E71B999995F431 /* PeriodDurationTests.swift */,
 				7474014C63248896CEBB40C6 /* QuotaPercentTests.swift */,
 				782374CC9AB8A09991BE9E98 /* QuotaResponseParserTests.swift */,
+				85E90CF0C8B3E7CD410D93BA /* RefreshFailureNoticeTests.swift */,
 				DD4358AC58989BD9B67A58DB /* RefreshFreshnessTests.swift */,
 				8CECF6449BA30923428C5B11 /* RefreshPlannerTests.swift */,
 				38C2B193AFD31A76A03414C6 /* RefreshScheduleTests.swift */,
@@ -484,6 +499,7 @@
 				41246CF6E708CBB9C7E79255 /* AlertMessageBuilder.swift */,
 				3F2E72A02215DA3FB72A5EB7 /* AutomaticRefreshPolicy.swift */,
 				B131DB8CC45D74DB94B929E5 /* ChangelogParser.swift */,
+				117E51496A95C084A598D9BF /* CodexFiveHourWeeklyRatio.swift */,
 				02D935CB1C5167B544F029C4 /* CodexQuota.swift */,
 				630916A2AD68FC1DCB2AC5A4 /* CursorActivity.swift */,
 				E03348913E147E1A98D87B3E /* CursorSealedToken.swift */,
@@ -502,6 +518,7 @@
 				960B3E9ED195EEAA918969F4 /* PaceHistoryChartDownsample.swift */,
 				442F33986FCB2D359079BCF4 /* PaceHistoryChartModel.swift */,
 				25443308466C84E30F29B30D /* PaceHistoryChartZoom.swift */,
+				BD3F62A5BB0643384236D5A4 /* PaceHistoryEndAnnotationLayout.swift */,
 				143C23748BE9F6DE06F5A737 /* PaceHistorySampleStore.swift */,
 				81358494051FF8514B0D7EFB /* PaceHistorySeriesFilter.swift */,
 				3B2202564AF01C5E6670DC28 /* PaceHistoryTipPresentation.swift */,
@@ -510,6 +527,7 @@
 				A1B666266F381CBC367A25A8 /* QuotAIKeychain.swift */,
 				65831D21C9C2B6C291737D22 /* QuotaPercent.swift */,
 				B4D5560D8CAD91D26D28FC1C /* QuotaResponseParser.swift */,
+				03D12E0FD43CAE5C54319070 /* RefreshFailureNotice.swift */,
 				1A3B27473A43C29FD29082B0 /* RefreshFreshness.swift */,
 				192A550779A20E36529262CD /* RefreshPlanner.swift */,
 				5FF0DC0A78E85C1F26339810 /* RefreshSchedule.swift */,
@@ -728,6 +746,7 @@
 				9340A0320269F6E161D02A93 /* AlertMessageBuilder.swift in Sources */,
 				E1BA392C1E49FADA6E2A3711 /* AutomaticRefreshPolicy.swift in Sources */,
 				E393E83A82F30644CA12D231 /* ChangelogParser.swift in Sources */,
+				0E3D42A7BCF280F24C9C010F /* CodexFiveHourWeeklyRatio.swift in Sources */,
 				63AA708F3665F43AAA25719F /* CodexQuota.swift in Sources */,
 				6D50B528A8A98709232433AA /* CursorActivity.swift in Sources */,
 				5A9FB09FB6C1FC94462D0F2D /* CursorSealedToken.swift in Sources */,
@@ -746,6 +765,7 @@
 				10F40A01C619D3725F202EB4 /* PaceHistoryChartDownsample.swift in Sources */,
 				2984654BBD4D766F7C6150E5 /* PaceHistoryChartModel.swift in Sources */,
 				94D3BF51129072B418C4217E /* PaceHistoryChartZoom.swift in Sources */,
+				075221BD6A8C5297047A7954 /* PaceHistoryEndAnnotationLayout.swift in Sources */,
 				743C92E109E1CC3BE7E83E12 /* PaceHistorySampleStore.swift in Sources */,
 				CE2DE693EF9F9710A517D305 /* PaceHistorySeriesFilter.swift in Sources */,
 				E64A5BAF9FE516C09322F46B /* PaceHistoryTipPresentation.swift in Sources */,
@@ -754,6 +774,7 @@
 				DCE51FCCEA2E00D48A69D5DF /* QuotAIKeychain.swift in Sources */,
 				3CDEDC3BF8C6941996D701C7 /* QuotaPercent.swift in Sources */,
 				FD24C4805DBDBBB0AFC5BA3F /* QuotaResponseParser.swift in Sources */,
+				5EB5EF9201C5790C4356E779 /* RefreshFailureNotice.swift in Sources */,
 				7FD87EDBD96AF33B31D9458B /* RefreshFreshness.swift in Sources */,
 				A487EB3BC1A47752B67FC828 /* RefreshPlanner.swift in Sources */,
 				91F028BEA1164B660833678A /* RefreshSchedule.swift in Sources */,
@@ -806,6 +827,7 @@
 				6BE89DE482D0BC87A8FB7BDA /* AlertMessageBuilderTests.swift in Sources */,
 				C5F75CA1046D89A4447660DF /* AutomaticRefreshPolicyTests.swift in Sources */,
 				F28AD5664ACC9393705BEB82 /* ChangelogParserTests.swift in Sources */,
+				D68BAB72F17466F60F061E85 /* CodexFiveHourWeeklyRatioTests.swift in Sources */,
 				E12C881EFC61FF79357CBEC7 /* CodexPaceHistoryTests.swift in Sources */,
 				DC7BF54DC1BAD0C37B100C1C /* CodexQuotaTests.swift in Sources */,
 				5C3685E0B0936DF76FF1D4F1 /* CursorActivityParserTests.swift in Sources */,
@@ -834,6 +856,7 @@
 				9068D6720D88199A9B6C838E /* PaceChromeTests.swift in Sources */,
 				A9088611056BC0F2DBAAD7BD /* PaceHistoryChartDownsampleTests.swift in Sources */,
 				EBE0E039627341EE7BC52CD5 /* PaceHistoryChartModelTests.swift in Sources */,
+				CF4C697A01BD9B777448BAE2 /* PaceHistoryEndAnnotationLayoutTests.swift in Sources */,
 				D3170FE07F5DD7F1B5FD9E03 /* PaceHistorySampleStoreTests.swift in Sources */,
 				3C54887A5448A2E1E20B2112 /* PaceHistorySeriesFilterTests.swift in Sources */,
 				C6448794FDF1AD2A9FA7942D /* PaceHistoryTipPresentationTests.swift in Sources */,
@@ -841,6 +864,7 @@
 				12F58430BB0560A459A372D6 /* PeriodDurationTests.swift in Sources */,
 				258406DDBA6376123299D5BF /* QuotaPercentTests.swift in Sources */,
 				8F53C68CC8303EDA7842DF5B /* QuotaResponseParserTests.swift in Sources */,
+				179AAA6BCBA62E1477C208CA /* RefreshFailureNoticeTests.swift in Sources */,
 				C66146299548948984B4AA28 /* RefreshFreshnessTests.swift in Sources */,
 				8300A6A914B59BA2F7ECEE61 /* RefreshPlannerTests.swift in Sources */,
 				00C117EFAB41BF4BB5016213 /* RefreshScheduleTests.swift in Sources */,
@@ -1053,19 +1077,19 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 90;
+				CURRENT_PROJECT_VERSION = 97;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = QuotAI;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_QuotAIReleaseCandidate = 0;
+				INFOPLIST_KEY_QuotAIReleaseCandidate = 7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.23.0;
+				MARKETING_VERSION = 0.24.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};
@@ -1093,19 +1117,19 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 90;
+				CURRENT_PROJECT_VERSION = 97;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = QuotAI;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_QuotAIReleaseCandidate = 0;
+				INFOPLIST_KEY_QuotAIReleaseCandidate = 7;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.23.0;
+				MARKETING_VERSION = 0.24.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.marotron.QuotAI;
 				SDKROOT = macosx;
 			};

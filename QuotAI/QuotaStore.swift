@@ -31,10 +31,14 @@ final class QuotaStore: ObservableObject {
     /// Bumps when pace-history samples are written so the window panel can redraw.
     @Published private(set) var paceHistoryEpoch = 0
     @Published private(set) var codexHistoryError: String?
+    /// Closed Codex 5h→7d ratio records (newest last); never cleared on disconnect.
+    @Published private(set) var fiveHourWeeklyRatioRecords: [CodexFiveHourWeeklyRatioRecord] = []
     /// Current billing-period detector events, published for the panel.
     @Published private(set) var cursorDiscrepancyEvents: [CursorDiscrepancyEvent] = []
 
     let paceHistoryStore: PaceHistorySampleStore
+    let fiveHourWeeklyRatioStore: CodexFiveHourWeeklyRatioStore
+    private let fiveHourWeeklyRatioTracker = CodexFiveHourWeeklyRatioTracker()
     let codex: CodexQuotaStore
     private var codexChanges: AnyCancellable?
     let cursorActivityStore: CursorActivityStore
@@ -265,6 +269,9 @@ final class QuotaStore: ObservableObject {
             isPreview = false
         #endif
         paceHistoryStore = PaceHistorySampleStore()
+        fiveHourWeeklyRatioStore = CodexFiveHourWeeklyRatioStore()
+        _ = try? fiveHourWeeklyRatioStore.purgePeakZeroArtifacts()
+        fiveHourWeeklyRatioRecords = fiveHourWeeklyRatioStore.records
         cursorActivityStore = CursorActivityStore()
         cursorLogActivityReader = CursorLogActivityReader()
         let stored = UserDefaults.standard.integer(forKey: Self.pollIntervalKey)
@@ -288,7 +295,9 @@ final class QuotaStore: ObservableObject {
             try self.paceHistoryStore.removeCodexHistory()
             self.paceHistoryEpoch &+= 1
         }
-        codex.onHistorySample = { [weak self] windows, stamp in self?.recordCodexHistory(windows, at: stamp) }
+        codex.onHistorySample = { [weak self] windows, accountID, stamp in
+            self?.recordCodexHistory(windows, accountID: accountID, at: stamp)
+        }
         startPolling(refreshNow: true)
         startDisplayClock()
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -309,6 +318,12 @@ final class QuotaStore: ObservableObject {
             codex = CodexQuotaStore(preview: true)
             isPreview = true
             paceHistoryStore = PaceHistorySampleStore(fileURL: previewHistoryFileURL)
+            fiveHourWeeklyRatioStore = CodexFiveHourWeeklyRatioStore(
+                fileURL: previewHistoryFileURL.deletingLastPathComponent()
+                    .appendingPathComponent("codex-5h-weekly-ratio.json")
+            )
+            _ = try? fiveHourWeeklyRatioStore.purgePeakZeroArtifacts()
+            fiveHourWeeklyRatioRecords = fiveHourWeeklyRatioStore.records
             cursorActivityStore = CursorActivityStore(
                 fileURL: previewHistoryFileURL.deletingLastPathComponent().appendingPathComponent("cursor-activity.json")
             )
@@ -766,11 +781,29 @@ final class QuotaStore: ObservableObject {
         )
     }
 
-    private func recordCodexHistory(_ windows: [CodexQuotaWindow], at stamp: Date) {
+    private func recordCodexHistory(_ windows: [CodexQuotaWindow], accountID: String?, at stamp: Date) {
         let samples = windows.compactMap { $0.paceHistorySample(at: stamp) }
-        guard !samples.isEmpty else { return }
-        do { try paceHistoryStore.append(contentsOf: samples); codexHistoryError = nil; paceHistoryEpoch &+= 1 }
-        catch { codexHistoryError = "Could not save Codex history." }
+        if !samples.isEmpty {
+            do {
+                try paceHistoryStore.append(contentsOf: samples)
+                codexHistoryError = nil
+                paceHistoryEpoch &+= 1
+            } catch {
+                codexHistoryError = "Could not save Codex history."
+            }
+        }
+        guard codex.trackFiveHourWeeklyRatio else {
+            fiveHourWeeklyRatioTracker.abandonOpenPeriod()
+            return
+        }
+        if let record = fiveHourWeeklyRatioTracker.observe(windows: windows, accountID: accountID, at: stamp) {
+            do {
+                try fiveHourWeeklyRatioStore.append(record)
+                fiveHourWeeklyRatioRecords = fiveHourWeeklyRatioStore.records
+            } catch {
+                codexHistoryError = "Could not save Codex 5h→7d ratio history."
+            }
+        }
     }
 
     /// Sample for a successful meter update when used %, elapsed %, and period start are present.

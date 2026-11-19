@@ -56,7 +56,7 @@ Read with [product requirements](pr.md). The [Cursor discrepancy contract](curso
 | Per-meter refresh planner | pure | `RefreshPlanner` due families + next fire from shared schedule/fixed minutes and dual last-fetch times |
 | Automatic refresh policy | pure + app scheduling | 0.20.0 quiet-hours and shared Cursor/separate Grok threshold rules; choose `min(normal interval, active usage interval)` per family, reevaluated as reset approaches; see [automatic refresh](automatic-refresh.md) for boundaries and verification |
 | Last refresh status line | pure | `LastRefreshStatus.line` — `Last refresh: Cursor {HH:mm} · Grok Bot {HH:mm}` (24-hour; `—` when nil) |
-| History / chart model / filtering / downsampling / zoom / tips | pure + persistence | Preserve source samples independently of rendering; period rollover, series filtering, session zoom math and hover content |
+| History / chart model / filtering / downsampling / zoom / tips / end-annotation layout | pure + persistence | Preserve source samples independently of rendering; period rollover, series filtering, session zoom math and hover content; `PaceHistoryEndAnnotationLayout` vertically staggers end Icons/Labels by plot proximity (tip dots stay on data) |
 | Cursor activity parser | pure | Runtime records → UUID/start/model, conversation/routing evidence and latest observed activity (`endedAt`); evidence survives incremental merges |
 | Cursor log reader | filesystem | Test real incremental byte offsets, continuation after relaunch, incomplete lines, and truncation; app reader compiled into core test target |
 | Cursor discrepancy reconciler | pure | Five-minute grace, 15-minute plateau lookback and 20-minute unattributed lookback; interval matching, observation coverage and verified billing exclusions |
@@ -91,7 +91,7 @@ The panel header positions the version button so its text, excluding the button'
 
 Default dynamic schedule: reset strictly under 1 h → every 1 min; under 3 h → 5 min; under 6 h → 10 min; under 12 h → 15 min; under 24 h → 30 min; otherwise 60 min. Invalid stored schedules revert to defaults.
 
-History/diagnostic files are `~/Library/Application Support/dev.marotron.QuotAI/pace-history.json` and `cursor-activity.json`. `PaceHistorySampleStore` stores meter ID, raw used/elapsed %, observation timestamp, and period start. A changed period start clears that meter's old series. Activity state retains only the active Cursor period; log offsets and completed format migrations survive rollover. Credentials remain in Keychain and settings in UserDefaults.
+History/diagnostic files are `~/Library/Application Support/dev.marotron.QuotAI/pace-history.json` and `cursor-activity.json`. Optional experimental Codex closed-period ratios use `codex-5h-weekly-ratio.json` (genuine samples append-only; idle peak-zero artifacts purged on load; see [codex-quota](codex-quota.md)). `PaceHistorySampleStore` stores meter ID, raw used/elapsed %, observation timestamp, and period start. A changed period start clears that meter's old series. Activity state retains only the active Cursor period; log offsets and completed format migrations survive rollover. Credentials remain in Keychain and settings in UserDefaults.
 
 `PaceCalculator` computes `(used / 100) / t`; elapsed duration has an early clamp of `periodDuration / (24 × 30)` and the fraction is capped at 1. Used ≥100 is exhausted; invalid period data yields unavailable pace. Panel ratio text is neutral. Corridor geometry separately drives significance; Cursor/Other share one profile and Grok another.
 
@@ -139,3 +139,5 @@ Refresh-arrow rasterization preserves the SF Symbol aspect ratio inside the 11 p
 Decision 2026-11-16: native refresh arrows use the prototype SVG geometry rendered in the existing Core Animation layer; see [automatic refresh](automatic-refresh.md).
 
 Decision 2026-11-16: the Codex blocked-usage notice is suppressed when an ordinary Codex window is exhausted; otherwise it appears below the chart after any discrepancy notice. See [Codex quota contract](codex-quota.md). Seeded native notice states verified 2026-11-16; live account acceptance pending.
+
+Decision 2026-11-17: panel refresh failures use one below-chart discrepancy-style notice that names failed providers; failed meters dim and only those age badges (plus Refresh all) use amber warning chrome. Blocked-usage uses the same notice chrome. See [Codex quota contract](codex-quota.md). Candidate implementation; live offline acceptance pending.
