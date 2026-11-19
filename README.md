@@ -4,7 +4,7 @@ macOS menu-bar app for Cursor, Grok Bot, and optional Codex subscription quotas.
 
 ## Install
 
-**[Download QuotAI-0.23.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.23.0/QuotAI-0.23.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.24.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.24.0/QuotAI-0.24.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image (install steps are on the window background).
 2. Drag **QuotAI** → **Applications**, then double-click **Open QuotAI** (or open it from Applications). It lives in the menu bar.
@@ -34,8 +34,9 @@ Settings → Menu pins which rows stay on the menu, including Open Cursor Spendi
 ## Features
 
 - **Optional Codex quotas** use browser sign-in and a separate Keychain credential; no Codex installation or helper is required. Each reported quota window appears in the panel and can have its own menu-bar indicator. The direct quota endpoint is unofficial; availability can vary by account or provider changes.
-- **Window panel** in the menu bar: meters (used ÷ elapsed = pace · corridor alert → reset), pace history chart, and actions (Refresh / Settings / About / Quit). Click the header version for the in-app changelog.
-- **Pace history** plots Cursor, Grok and individual Codex windows, with per-meter filters, and shows two-decimal hover readings and translucent markers; zoomed lines track the underlying readings and hover values.
+- **Experimental Codex 5h→7d ratio** (opt-in under Settings → Account → Codex) records closed ≈5-hour periods and lists them under chart Advanced → Codex 5h→7d; clicking a row can highlight that slice on the live ≈7d pace chart.
+- **Window panel** in the menu bar: meters (used ÷ elapsed = pace · corridor alert → reset), pace history chart, and actions (Refresh / Settings / About / Quit). Click the header version for the in-app changelog. Offline and refresh failures show one notice under the chart that names who failed; failed meters dim and their age badges use amber warning chrome.
+- **Pace history** plots Cursor, Grok and individual Codex windows, with per-meter filters, and shows two-decimal hover readings and translucent markers; zoomed lines track the underlying readings and hover values. End Icons and Labels stagger when tips sit close so series markers do not stack.
 - **Optional Cursor discrepancy detection** compares local activity with quota changes and selectively checks detailed billing records for unmatched activity, excluding confirmed Free and custom-key requests. Billing lookups are bounded, cached, and run in the background.
 - **Rings** for used % and time to reset: one meter each, nested Cursor (Models + Other), or pace segments. Codex follows the same Display settings, and center icons are dimmed with provider-specific spacing. Optionally divide elapsed rings into hourly or daily segments in Settings → Display.
 - **Nested Cursor** blinks between Models and Other. A corridor alert blinks the quota ring that crossed the band; under paints blue and over paints orange ([pace chrome order](docs/pace-chrome.md)).

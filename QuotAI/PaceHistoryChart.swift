@@ -10,6 +10,13 @@ struct PaceHistoryChart: View {
     var showOtherModels: Bool
     /// Precomputed discrepancy clusters for soft grey bands + advanced strip.
     var discrepancyClusters: [CursorDiscrepancyCluster] = []
+    /// Closed Codex 5h→7d ratio records (append order); Advanced → Codex tab.
+    var fiveHourWeeklyRatioRecords: [CodexFiveHourWeeklyRatioRecord] = []
+    /// Settings toggle; drives empty copy when the Codex Advanced tab has no rows.
+    var fiveHourWeeklyRatioTrackingEnabled: Bool = false
+    /// Live Codex ≈7d window for mapping a selected 5h slice onto chart X.
+    var fiveHourWeeklyRatioPeriodStart: Date? = nil
+    var fiveHourWeeklyRatioPeriodEnd: Date? = nil
     var seriesNames: [PaceHistoryMeterId: String] = [:]
     /// Meter-avatar filter from the panel (solo / hide / all).
     var seriesFilter: PaceHistorySeriesFilter = .all
@@ -27,8 +34,17 @@ struct PaceHistoryChart: View {
     @State private var brush: BrushSelection?
     /// Advanced disclosure only — not persisted across launches / chart remounts.
     @State private var advancedOpen = false
+    @State private var advancedTab: AdvancedTab = .discrepancies
     @State private var stripBodyOpen = false
     @State private var selectedClusterID: String?
+    @State private var selectedRatioID: UUID?
+    /// Hover-expanding legend chip title (Over / Under / Ideal / Discrepancies).
+    @State private var hoveredLegendChip: String?
+
+    private enum AdvancedTab: String, Hashable {
+        case discrepancies
+        case ratio
+    }
     /// Zoom badge hover — "Reset" turns blue while the pointer is over the capsule.
     @State private var zoomBadgeHovered = false
     @Environment(\.colorScheme) private var colorScheme
@@ -81,13 +97,16 @@ struct PaceHistoryChart: View {
     private static let tertiary = Color(red: 0x8e / 255, green: 0x8e / 255, blue: 0x93 / 255)
     /// Discrepancy band / chip grey (proto `--disc`).
     private static let discColor = Color(red: 0x8e / 255, green: 0x8e / 255, blue: 0x93 / 255)
-    /// Burn swatch colors from the over/under burn drawings.
-    private static let burnOverField = Color(red: 0xed / 255, green: 0xe2 / 255, blue: 0xd0 / 255)
-    private static let burnOverBand = Color(red: 0xf0 / 255, green: 0xaa / 255, blue: 0x55 / 255)
-    private static let burnUnderField = Color(red: 0xcf / 255, green: 0xdc / 255, blue: 0xee / 255)
-    private static let burnUnderBand = Color(red: 0x5b / 255, green: 0x94 / 255, blue: 0xf5 / 255)
+    /// Codex / ratio highlight teal (matches Codex · primary series).
+    private static let ratioBandColor = Color(red: 0x14 / 255, green: 0xb8 / 255, blue: 0xa6 / 255)
     /// ~1.5pt min band width in elapsed-% space at `plotW`.
     private var discMinElapsedSpan: Double { Double(1.5 / plotW * 100) }
+
+    private enum ChipTitleVisibility {
+        case always
+        case never
+        case onHover
+    }
 
     /// Plot box hairline — mirrors `MenuBarWindowPanel.divider` (card border).
     private var chartBoxBorder: Color {
@@ -118,6 +137,7 @@ struct PaceHistoryChart: View {
     private var chartBody: some View {
         Chart {
             discBandMarks
+            ratioBandMarks
             overMarks
             underMarks
             evenMarks
@@ -423,6 +443,19 @@ struct PaceHistoryChart: View {
     }
 
     @ChartContentBuilder
+    private var ratioBandMarks: some ChartContent {
+        if let span = selectedRatioPaintedSpan {
+            RectangleMark(
+                xStart: .value("RatioStart", span.lo),
+                xEnd: .value("RatioEnd", span.hi),
+                yStart: .value("Bottom", 0.0),
+                yEnd: .value("Top", 100.0)
+            )
+            .foregroundStyle(Self.ratioBandColor.opacity(0.26))
+        }
+    }
+
+    @ChartContentBuilder
     private var overMarks: some ChartContent {
         if visibleLayers.contains(.over) {
             if showCursorCorridor {
@@ -591,7 +624,7 @@ struct PaceHistoryChart: View {
                             .shadow(color: Color(nsColor: .windowBackgroundColor).opacity(0.7), radius: 1.2)
                     }
                 }
-                .offset(y: nameNudgeY(for: end.meterId))
+                .offset(y: endAnnotationOffsetsY[end.meterId] ?? 0)
             }
         }
     }
@@ -647,11 +680,18 @@ struct PaceHistoryChart: View {
     }
 
     private var corridorGroup: some View {
+        HStack(spacing: 8) {
+            burnChipGroup
+            discChipGroup
+        }
+    }
+
+    private var burnChipGroup: some View {
         chipGroup {
             familyCorridorChip(
                 title: "Cursor",
                 isOn: showCursorCorridor,
-                showsTitle: false,
+                titleVisibility: .never,
                 toggle: { showCursorCorridor.toggle() }
             ) {
                 Image(nsImage: BarIcon.tintedAvatar(
@@ -665,7 +705,7 @@ struct PaceHistoryChart: View {
             familyCorridorChip(
                 title: "Grok",
                 isOn: showGrokCorridor,
-                showsTitle: false,
+                titleVisibility: .never,
                 toggle: { showGrokCorridor.toggle() }
             ) {
                 Image(nsImage: BarIcon.tintedAvatar(
@@ -676,15 +716,15 @@ struct PaceHistoryChart: View {
                 .frame(width: 10, height: 10)
             }
             chipDivider
-            legendChip(.over, title: "Over burn") {
+            legendChip(.over, title: "Over burn", titleVisibility: .onHover) {
                 burnSwatch(over: true)
             }
             chipDivider
-            legendChip(.under, title: "Under burn") {
+            legendChip(.under, title: "Under burn", titleVisibility: .onHover) {
                 burnSwatch(over: false)
             }
             chipDivider
-            legendChip(.even, title: "Ideal pace") {
+            legendChip(.even, title: "Ideal pace", titleVisibility: .onHover) {
                 // Discrete capsules match Over/Under swatches — stroked dashes alias badly at 1pt.
                 HStack(spacing: 1.5) {
                     Capsule().fill(Self.evenColor).frame(width: 2.5, height: 1.5)
@@ -696,15 +736,29 @@ struct PaceHistoryChart: View {
         }
     }
 
+    private var discChipGroup: some View {
+        chipGroup {
+            legendChip(.disc, title: "Discrepancies", titleVisibility: .onHover) {
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(Self.discColor.opacity(0.28))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 1)
+                            .strokeBorder(Self.discColor.opacity(0.55), lineWidth: 0.5)
+                    )
+                    .frame(width: 8, height: 10)
+            }
+        }
+    }
+
     private var visibilityGroup: some View {
         chipGroup {
-            legendChip(.names, title: "Labels", showsTitle: false) {
+            legendChip(.names, title: "Labels", titleVisibility: .never) {
                 Image(systemName: "textformat")
                     .font(.system(size: 10, weight: .medium))
                     .frame(width: 12, height: 10)
             }
             chipDivider
-            legendChip(.icons, title: "Icons", showsTitle: false) {
+            legendChip(.icons, title: "Icons", titleVisibility: .never) {
                 Image(systemName: "photo")
                     .font(.system(size: 10, weight: .medium))
                     .frame(width: 12, height: 10)
@@ -713,7 +767,8 @@ struct PaceHistoryChart: View {
     }
 
     private var advancedToggle: some View {
-        let count = discrepancyClusters.reduce(0) { $0 + $1.events.count }
+        let discCount = discrepancyEventCount
+        let ratioCount = fiveHourWeeklyRatioRecords.count
         return Button {
             setAdvancedOpen(!advancedOpen)
         } label: {
@@ -729,31 +784,45 @@ struct PaceHistoryChart: View {
         .help(advancedOpen ? "Hide advanced" : "Advanced")
         .accessibilityLabel(
             advancedOpen
-                ? "Advanced, \(count) discrepancies"
-                : "Show advanced, \(count) discrepancies"
+                ? "Advanced, \(discCount) discrepancies, \(ratioCount) Codex 5h to 7d records"
+                : "Show advanced, \(discCount) discrepancies, \(ratioCount) Codex 5h to 7d records"
         )
         .accessibilityAddTraits(advancedOpen ? .isSelected : [])
         .popover(isPresented: $advancedOpen, arrowEdge: .bottom) {
             advancedPopover
         }
+        .onChange(of: advancedOpen) { _, open in
+            if !open {
+                stripBodyOpen = false
+                selectedRatioID = nil
+            } else if selectedClusterID == nil {
+                selectedClusterID = discrepancyClusters.first?.id
+            }
+        }
+    }
+
+    private var discrepancyEventCount: Int {
+        discrepancyClusters.reduce(0) { $0 + $1.events.count }
     }
 
     private var advancedPopover: some View {
         VStack(alignment: .leading, spacing: 8) {
-            chipGroup {
-                legendChip(.disc, title: "Discrepancies") {
-                    RoundedRectangle(cornerRadius: 1)
-                        .fill(Self.discColor.opacity(0.28))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 1)
-                                .strokeBorder(Self.discColor.opacity(0.55), lineWidth: 0.5)
-                        )
-                        .frame(width: 8, height: 10)
+            advancedTabBar
+            Group {
+                switch advancedTab {
+                case .discrepancies:
+                    if discrepancyClusters.isEmpty {
+                        Text("No discrepancies")
+                            .foregroundStyle(Self.tertiary)
+                            .padding(.vertical, 4)
+                    } else {
+                        discrepancyStrip
+                            .onHover { if $0 { hoverElapsed = nil } }
+                    }
+                case .ratio:
+                    fiveHourWeeklyRatioStrip
                 }
             }
-
-            discrepancyStrip
-                .onHover { if $0 { hoverElapsed = nil } }
         }
         .font(.system(size: 11))
         .foregroundStyle(.secondary)
@@ -763,12 +832,169 @@ struct PaceHistoryChart: View {
         .padding(12)
     }
 
-    /// Mini bar for the burn chips: tinted field with a band along the bottom (over) or top (under) edge.
+    private var advancedTabBar: some View {
+        HStack(spacing: 0) {
+            advancedTabButton(
+                .discrepancies,
+                title: "Discrepancies",
+                count: discrepancyEventCount
+            )
+            advancedTabButton(
+                .ratio,
+                title: "Codex 5h→7d",
+                count: fiveHourWeeklyRatioRecords.count
+            )
+        }
+        .padding(2)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.primary.opacity(0.035))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(Color.secondary.opacity(0.25), lineWidth: 0.5)
+                )
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Advanced")
+    }
+
+    private func advancedTabButton(_ tab: AdvancedTab, title: String, count: Int) -> some View {
+        let selected = advancedTab == tab
+        return Button {
+            if tab != .ratio {
+                selectedRatioID = nil
+            }
+            advancedTab = tab
+        } label: {
+            HStack(spacing: 4) {
+                Text(title)
+                Text("\(count)")
+                    .font(.system(size: 10, weight: .semibold).monospacedDigit())
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(
+                        Capsule().fill(
+                            selected
+                                ? Color(red: 0x14 / 255, green: 0xb8 / 255, blue: 0xa6 / 255).opacity(0.22)
+                                : Color.primary.opacity(0.08)
+                        )
+                    )
+            }
+            .padding(.horizontal, 9)
+            .padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(selected ? Color.primary.opacity(0.10) : Color.clear)
+            )
+            .fontWeight(selected ? .semibold : .regular)
+            .foregroundStyle(selected ? Color.primary : Color.secondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
+        .accessibilityLabel("\(title), \(count)")
+    }
+
+    private var fiveHourWeeklyRatioStrip: some View {
+        Group {
+            if !fiveHourWeeklyRatioTrackingEnabled && fiveHourWeeklyRatioRecords.isEmpty {
+                Text("Tracking off")
+                    .foregroundStyle(Self.tertiary)
+                    .padding(.vertical, 4)
+            } else if fiveHourWeeklyRatioRecords.isEmpty {
+                Text("No closed 5h periods yet")
+                    .foregroundStyle(Self.tertiary)
+                    .padding(.vertical, 4)
+            } else {
+                let rows = Array(fiveHourWeeklyRatioRecords.reversed())
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { offset, record in
+                            if offset > 0 {
+                                Divider().opacity(0.35)
+                            }
+                            ratioRowButton(record)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(height: discEventListHeight(for: rows.count))
+            }
+        }
+        .padding(.horizontal, 2)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func ratioRowButton(_ record: CodexFiveHourWeeklyRatioRecord) -> some View {
+        let selected = record.id == selectedRatioID
+        return Button {
+            selectedRatioID = record.id
+        } label: {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(selected ? Self.ratioBandColor.opacity(0.85) : Color.secondary.opacity(0.45))
+                    .frame(width: 6, height: 6)
+                Text(ratioWhenLabel(record.closedAt))
+                    .fontWeight(selected ? .semibold : .regular)
+                    .foregroundStyle(selected ? Color.primary : Color.secondary)
+                    .lineLimit(1)
+                Text(ratioDetailLabel(record))
+                    .foregroundStyle(
+                        selected
+                            ? Color.secondary
+                            : (record.sampleComplete ? Color.secondary : Self.tertiary)
+                    )
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+            }
+            .font(.system(size: 11))
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityLabel("Codex 5h to 7d record \(ratioWhenLabel(record.closedAt))")
+    }
+
+    private func ratioWhenLabel(_ date: Date) -> String {
+        "\(date.formatted(.dateTime.day().month(.abbreviated))) \(date.formatted(.dateTime.hour().minute()))"
+    }
+
+    private func ratioDetailLabel(_ record: CodexFiveHourWeeklyRatioRecord) -> String {
+        if record.sampleComplete,
+           let delta = record.weeklyDelta,
+           let implied = record.impliedWeeklyPctForFull5h {
+            let peak = formatRatioPercent(record.peak5h)
+            let deltaText = formatSignedRatioPercent(delta)
+            let impliedText = formatRatioPercent(implied)
+            return "peak \(peak)% · Δ7d \(deltaText)% · ≈\(impliedText)% of 7d"
+        }
+        let reason: String
+        switch record.incompleteReason {
+        case .weeklyResetMidPeriod: reason = "7d reset mid-period"
+        case .peakZero: reason = "peak 0%"
+        case .missingUsage: reason = "missing usage"
+        case .none: reason = "incomplete"
+        }
+        return "incomplete · \(reason)"
+    }
+
+    private func formatRatioPercent(_ value: Double) -> String {
+        String(format: "%g", (value * 10).rounded() / 10)
+    }
+
+    private func formatSignedRatioPercent(_ value: Double) -> String {
+        let body = formatRatioPercent(abs(value))
+        if value > 0 { return "+\(body)" }
+        if value < 0 { return "−\(body)" }
+        return body
+    }
+
+    /// Mini bar for the burn chips: same 16% corridor fill as the plot, with a 3-block band.
     private func burnSwatch(over: Bool) -> some View {
         Canvas { context, size in
-            let field = over ? Self.burnOverField : Self.burnUnderField
-            let band = over ? Self.burnOverBand : Self.burnUnderBand
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(field))
+            let ink = over ? Self.overFill : Self.underFill
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(ink.opacity(0.16)))
             // Band thickness matches the exact-pace dashes (1.5pt).
             let bandH: CGFloat = 1.5
             let bandY = over ? size.height - bandH : 0
@@ -780,10 +1006,11 @@ struct PaceHistoryChart: View {
                     width: size.width * (x1 - x0),
                     height: bandH
                 )
-                context.fill(Path(rect), with: .color(band))
+                context.fill(Path(rect), with: .color(ink))
             }
         }
         .frame(width: 12, height: 8)
+        .clipShape(RoundedRectangle(cornerRadius: 1))
     }
 
     /// Hairline between chips inside a group; short (inset from the group edges) like toolbar separators.
@@ -812,13 +1039,13 @@ struct PaceHistoryChart: View {
     private func legendChip<Swatch: View>(
         _ layer: PaceHistoryChartLayer,
         title: String,
-        showsTitle: Bool = true,
+        titleVisibility: ChipTitleVisibility = .always,
         @ViewBuilder swatch: () -> Swatch
     ) -> some View {
         familyCorridorChip(
             title: title,
             isOn: visibleLayers.contains(layer),
-            showsTitle: showsTitle,
+            titleVisibility: titleVisibility,
             toggle: { toggleLayer(layer) },
             swatch: swatch
         )
@@ -827,28 +1054,50 @@ struct PaceHistoryChart: View {
     private func familyCorridorChip<Swatch: View>(
         title: String,
         isOn: Bool,
-        showsTitle: Bool = true,
+        titleVisibility: ChipTitleVisibility = .always,
         toggle: @escaping () -> Void,
         @ViewBuilder swatch: () -> Swatch
     ) -> some View {
-        Button(action: toggle) {
-            HStack(spacing: 4) {
-                swatch()
-                if showsTitle {
-                    Text(title)
-                        .strikethrough(!isOn)
-                }
+        let expanded: Bool = {
+            switch titleVisibility {
+            case .always: return true
+            case .never: return false
+            case .onHover: return hoveredLegendChip == title
             }
-            .padding(.leading, 5)
-            .padding(.trailing, showsTitle ? 7 : 5)
+        }()
+        return Button(action: toggle) {
+            HStack(spacing: expanded ? 5 : 0) {
+                swatch()
+                Text(title)
+                    .strikethrough(!isOn)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .opacity(expanded ? 1 : 0)
+                    // Collapse with width 0; when open, omit width so the label hugs
+                    // its text (SwiftUI maxWidth expands to the ceiling; CSS max-width does not).
+                    .frame(width: expanded ? nil : 0, alignment: .leading)
+                    .clipped()
+            }
+            .padding(.horizontal, 5)
             .padding(.vertical, 2)
             .opacity(isOn ? 1 : 0.38)
+            .fixedSize(horizontal: true, vertical: false)
         }
         .buttonStyle(.plain)
         .help(title)
         .accessibilityAddTraits(isOn ? .isSelected : [])
         .accessibilityLabel(title)
         .accessibilityValue(isOn ? "Shown" : "Hidden")
+        .onHover { hovering in
+            guard titleVisibility == .onHover else { return }
+            withAnimation(.easeInOut(duration: 0.16)) {
+                if hovering {
+                    hoveredLegendChip = title
+                } else if hoveredLegendChip == title {
+                    hoveredLegendChip = nil
+                }
+            }
+        }
     }
 
     // MARK: - Discrepancy strip
@@ -970,6 +1219,22 @@ struct PaceHistoryChart: View {
         return (lo, min(hi, 100))
     }
 
+    private var selectedRatioPaintedSpan: (lo: Double, hi: Double)? {
+        guard let selectedRatioID,
+              let record = fiveHourWeeklyRatioRecords.first(where: { $0.id == selectedRatioID }),
+              let periodStart = fiveHourWeeklyRatioPeriodStart,
+              let periodEnd = fiveHourWeeklyRatioPeriodEnd,
+              let span = CodexFiveHourWeeklyRatioChartSpan.elapsedPercentSpan(
+                record: record,
+                periodStart: periodStart,
+                periodEnd: periodEnd
+              )
+        else { return nil }
+        let lo = span.lo
+        let hi = max(span.hi, lo + discMinElapsedSpan)
+        return (lo, min(hi, 100))
+    }
+
     /// Advanced content lives in a separate content-sized popover, so this
     /// state change never resizes the MenuBarExtra panel.
     private func setAdvancedOpen(_ open: Bool) {
@@ -977,6 +1242,7 @@ struct PaceHistoryChart: View {
         advancedOpen = open
         if !open {
             stripBodyOpen = false
+            selectedRatioID = nil
         } else if selectedClusterID == nil {
             selectedClusterID = discrepancyClusters.first?.id
         }
@@ -986,6 +1252,7 @@ struct PaceHistoryChart: View {
         guard let cluster = hoverDiscCluster(at: elapsed) else { return }
         hoverElapsed = nil
         selectedClusterID = cluster.id
+        advancedTab = .discrepancies
         advancedOpen = true
         stripBodyOpen = true
     }
@@ -1498,17 +1765,23 @@ struct PaceHistoryChart: View {
         }
     }
 
-    /// Nudge Models/Other labels apart when they share nearly the same elapsed %.
-    private func nameNudgeY(for id: PaceHistoryMeterId) -> CGFloat {
-        guard id == .cursor || id == .other,
-              let cursorEnd = series[.cursor]?.last,
-              let otherEnd = series[.other]?.last,
-              abs(cursorEnd.elapsedPct - otherEnd.elapsedPct) < 1.5 else { return 0 }
-        switch id {
-        case .cursor: return -6
-        case .other: return 6
-        case .grok, .codex: return 0
+    /// Plot-proximity stagger for end Icons/Labels (tip dots stay on true data).
+    private var endAnnotationOffsetsY: [PaceHistoryMeterId: CGFloat] {
+        guard visibleLayers.contains(.icons) || visibleLayers.contains(.names) else { return [:] }
+        let ends = seriesEndPoints.map {
+            PaceHistoryEndAnnotationLayout.End(
+                id: $0.meterId,
+                elapsedPct: $0.elapsedPct,
+                usedPct: $0.usedPct
+            )
         }
+        let raw = PaceHistoryEndAnnotationLayout.offsetsY(
+            ends: ends,
+            plotWidth: Double(plotW),
+            plotHeight: Double(plotH),
+            xDomain: xDomain
+        )
+        return Dictionary(uniqueKeysWithValues: raw.map { ($0.key, CGFloat($0.value)) })
     }
 
     private func tipWhenReadings(atElapsed elapsed: Double) -> [PaceHistoryTipPresentation.WhenReading] {

@@ -32,14 +32,6 @@ struct MenuBarWindowPanel: View {
             statusRow
                 .padding(.horizontal, 5)
 
-            if let notice = store.authError ?? store.refreshError {
-                Text(notice)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 19)
-                    .padding(.vertical, 2)
-            }
-
             panelSeparator
 
             metersGrid
@@ -55,19 +47,8 @@ struct MenuBarWindowPanel: View {
                 .padding(.bottom, 6)
                 .padding(.horizontal, 14)
 
-            if store.discrepancyDetectionEnabled,
-               let event = store.cursorDiscrepancyEvents.last {
-                discrepancyWarning(event)
-                    .padding(.horizontal, 19)
-                    .padding(.bottom, 6)
-            }
-
-            if store.codex.enabled,
-               CodexQuotaSnapshot.shouldShowBlockedNotice(allowed: store.codex.ordinaryUsageAllowed,
-                                                           windows: store.codex.windows) {
-                Text("Included usage is currently blocked by Codex.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+            if showsNoticeStack {
+                noticeStack
                     .padding(.horizontal, 19)
                     .padding(.bottom, 6)
             }
@@ -106,6 +87,25 @@ struct MenuBarWindowPanel: View {
 
     // MARK: - Status
 
+    private var cursorGrokRefreshFailed: Bool {
+        store.authError != nil || store.refreshError != nil
+    }
+
+    private var codexRefreshFailed: Bool {
+        store.codex.enabled && store.codex.error != nil && !store.codex.requiresSignIn
+    }
+
+    private var anyRefreshFailed: Bool {
+        cursorGrokRefreshFailed || codexRefreshFailed
+    }
+
+    private var failedRefreshProviders: [RefreshFailureNotice.Provider] {
+        RefreshFailureNotice.providers(
+            cursorGrokFailed: cursorGrokRefreshFailed,
+            codexFailed: codexRefreshFailed
+        )
+    }
+
     private var statusRow: some View {
         HStack(spacing: 5) {
             Button {
@@ -113,11 +113,17 @@ struct MenuBarWindowPanel: View {
                 Task { await store.refresh(.all) }
             } label: {
                 RefreshArrow(isSpinning: refreshAllVisualSpinning,
-                             color: refreshAllHovered || refreshAllFocused || refreshAllVisualSpinning ? .white : secondaryText)
+                             color: refreshAllHovered || refreshAllFocused || refreshAllVisualSpinning
+                             ? .white
+                             : (anyRefreshFailed ? FreshnessBadgeView.warningAmber(colorScheme) : secondaryText))
                     .frame(width: 18, height: 18)
             }
-            .buttonStyle(PanelActionButtonStyle(isHovered: refreshAllHovered || refreshAllFocused, idleForeground: secondaryText,
-                                                highlightWhileDisabled: refreshAllVisualSpinning))
+            .buttonStyle(PanelActionButtonStyle(
+                isHovered: refreshAllHovered || refreshAllFocused,
+                idleForeground: anyRefreshFailed ? FreshnessBadgeView.warningAmber(colorScheme) : secondaryText,
+                highlightWhileDisabled: refreshAllVisualSpinning,
+                idleBackground: anyRefreshFailed ? FreshnessBadgeView.warningFill : .clear
+            ))
             .focused($refreshAllFocused)
             .task(id: store.isRefreshingAll) {
                 if store.isRefreshingAll {
@@ -130,8 +136,10 @@ struct MenuBarWindowPanel: View {
             }
             .onHover { refreshAllHovered = $0 }
             .disabled(!store.isRefreshingAll && (store.isRefreshing || store.codex.isRefreshing))
-            .help("Refresh all quotas")
-            .accessibilityLabel("Refresh all quotas")
+            .help(anyRefreshFailed
+                  ? "Refresh all quotas · \(RefreshFailureNotice.joinNames(failedRefreshProviders)) failed · check connection"
+                  : "Refresh all quotas")
+            .accessibilityLabel(anyRefreshFailed ? "Refresh all quotas, some refreshes failed" : "Refresh all quotas")
             .padding(.leading, -3.5)
             statusDivider
             TimelineView(.periodic(from: .now, by: 1)) { context in
@@ -147,7 +155,8 @@ struct MenuBarWindowPanel: View {
                         if let date = store.codex.lastRefreshed {
                             FreshnessBadgeView(lastAt: date, now: context.date,
                                 interval: store.codexPollIntervalSeconds(now: context.date),
-                                isSpinning: store.codex.isRefreshing, accessibilityName: "Codex", compact: true) {
+                                isSpinning: store.codex.isRefreshing, accessibilityName: "Codex", compact: true,
+                                refreshFailed: codexRefreshFailed) {
                                 Task { await store.codex.refresh() }
                             }
                         }
@@ -180,7 +189,8 @@ struct MenuBarWindowPanel: View {
                 FreshnessBadgeView(lastAt: date, now: now,
                     interval: store.pollIntervalSeconds(for: family, now: now),
                     isSpinning: store.isRefreshingFamily(family),
-                    accessibilityName: family == .cursor ? "Cursor" : "Grok", compact: true) {
+                    accessibilityName: family == .cursor ? "Cursor" : "Grok", compact: true,
+                    refreshFailed: cursorGrokRefreshFailed) {
                     Task { await store.refresh(family == .cursor ? .cursor : .grok) }
                 }
             }
@@ -199,6 +209,7 @@ struct MenuBarWindowPanel: View {
                 series: .models,
                 meterId: .cursor
             )
+            .opacity(cursorGrokRefreshFailed ? 0.48 : 1)
             if showOtherModels {
                 meterRow(
                     title: "Other Models",
@@ -207,6 +218,7 @@ struct MenuBarWindowPanel: View {
                     series: .other,
                     meterId: .other
                 )
+                .opacity(cursorGrokRefreshFailed ? 0.48 : 1)
             }
             meterRow(
                 title: "Grok Bot",
@@ -215,6 +227,7 @@ struct MenuBarWindowPanel: View {
                 series: .grok,
                 meterId: .grok
             )
+            .opacity(cursorGrokRefreshFailed ? 0.48 : 1)
             if store.codex.enabled {
                 ForEach(store.codex.windows) { window in
                     codexMeterRow(window)
@@ -299,7 +312,7 @@ struct MenuBarWindowPanel: View {
         return meterRow(title: window.title, meter: meter, avatar: .codex,
                         series: window.slot == "primary" ? .codex : .codexSecondary,
                         meterId: .codex(window.id), expired: window.resetsAt.map { $0 <= now } ?? false)
-            .opacity(store.codex.error == nil && !store.codex.requiresSignIn ? 1 : 0.55)
+            .opacity(store.codex.error == nil && !store.codex.requiresSignIn ? 1 : 0.48)
     }
 
     private static let pctColumnWidth: CGFloat = 46
@@ -430,6 +443,10 @@ struct MenuBarWindowPanel: View {
                 series: historySeries,
                 showOtherModels: showOtherModels,
                 discrepancyClusters: discrepancyClustersForChart,
+                fiveHourWeeklyRatioRecords: store.fiveHourWeeklyRatioRecords,
+                fiveHourWeeklyRatioTrackingEnabled: store.codex.trackFiveHourWeeklyRatio,
+                fiveHourWeeklyRatioPeriodStart: fiveHourWeeklyRatioLongPeriod?.start,
+                fiveHourWeeklyRatioPeriodEnd: fiveHourWeeklyRatioLongPeriod?.end,
                 seriesNames: Dictionary(uniqueKeysWithValues: store.codex.windows.map { (.codex($0.id), $0.title) }),
                 seriesFilter: seriesFilter,
                 xDomain: $paceChartXDomain
@@ -528,22 +545,88 @@ struct MenuBarWindowPanel: View {
         )
     }
 
-    private func discrepancyWarning(_ event: CursorDiscrepancyEvent) -> some View {
+    /// Live Codex ≈7d window for painting a selected 5h→7d ratio band on the chart.
+    private var fiveHourWeeklyRatioLongPeriod: (start: Date, end: Date)? {
+        guard let pair = CodexFiveHourWeeklyRatioWindows.selectPair(from: store.codex.windows),
+              let end = pair.long.resetsAt,
+              let duration = pair.long.duration,
+              duration > 0,
+              duration.isFinite
+        else { return nil }
+        return (end.addingTimeInterval(-duration), end)
+    }
+
+    private var showsBlockedNotice: Bool {
+        store.codex.enabled
+            && CodexQuotaSnapshot.shouldShowBlockedNotice(
+                allowed: store.codex.ordinaryUsageAllowed,
+                windows: store.codex.windows
+            )
+    }
+
+    private var showsDiscrepancyNotice: Bool {
+        store.discrepancyDetectionEnabled && store.cursorDiscrepancyEvents.last != nil
+    }
+
+    private var showsNoticeStack: Bool {
+        store.authError != nil
+            || !failedRefreshProviders.isEmpty
+            || showsDiscrepancyNotice
+            || showsBlockedNotice
+    }
+
+    @ViewBuilder
+    private var noticeStack: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let auth = store.authError {
+                panelNotice(
+                    title: auth,
+                    when: "just now",
+                    body: "Sign in again or paste a token in Settings."
+                )
+            } else if !failedRefreshProviders.isEmpty {
+                panelNotice(
+                    title: RefreshFailureNotice.title(cursorGrokMessage: store.refreshError),
+                    when: "just now",
+                    body: RefreshFailureNotice.body(providers: failedRefreshProviders)
+                )
+            }
+
+            if store.discrepancyDetectionEnabled,
+               let event = store.cursorDiscrepancyEvents.last {
+                panelNotice(
+                    title: "Cursor usage discrepancy",
+                    when: discrepancyWhen(for: event),
+                    body: discrepancyText(for: event)
+                )
+            }
+
+            if showsBlockedNotice {
+                panelNotice(
+                    title: "Included usage blocked",
+                    when: "just now",
+                    body: "Included usage is currently blocked by Codex."
+                )
+            }
+        }
+    }
+
+    private func panelNotice(title: String, when: String, body: String) -> some View {
         HStack(alignment: .top, spacing: 7) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
                 .padding(.top, 1)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("Cursor usage discrepancy")
+                    Text(title)
                         .font(.system(size: 11, weight: .semibold))
                     Spacer(minLength: 8)
-                    Text(discrepancyWhen(for: event))
+                    Text(when)
                         .font(.system(size: 11))
                         .foregroundStyle(secondaryText)
                         .multilineTextAlignment(.trailing)
                 }
-                Text(discrepancyText(for: event))
+                Text(body)
                     .font(.system(size: 11))
                     .foregroundStyle(secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -551,9 +634,7 @@ struct MenuBarWindowPanel: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "Cursor usage discrepancy. \(discrepancyWhen(for: event)). \(discrepancyText(for: event))"
-        )
+        .accessibilityLabel("\(title). \(when). \(body)")
     }
 
     private func discrepancyWhen(for event: CursorDiscrepancyEvent) -> String {
@@ -853,6 +934,7 @@ private struct PanelActionButtonStyle: ButtonStyle {
     var isHovered: Bool
     var idleForeground: Color? = nil
     var highlightWhileDisabled = false
+    var idleBackground: Color = .clear
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
 
@@ -873,7 +955,7 @@ private struct PanelActionButtonStyle: ButtonStyle {
             .foregroundStyle(highlighted ? Color.white : (idleForeground ?? normalText))
             .background(
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(highlighted ? highlightFill : Color.clear)
+                    .fill(highlighted ? highlightFill : idleBackground)
             )
     }
 }

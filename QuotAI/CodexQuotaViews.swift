@@ -25,6 +25,9 @@ struct CodexAccountSettings: View {
                     }
                 }
                 Toggle("Show Codex windows in menu bar", isOn: $store.showInMenuBar)
+                Toggle("Track Codex 5h→7d ratio (experimental)", isOn: $store.trackFiveHourWeeklyRatio)
+                Text("Records closed 5-hour periods forever. The list is under Advanced → Codex 5h→7d on the pace chart. Disconnect or turning the toggle off stops new records; history stays.")
+                    .font(.footnote).foregroundStyle(.secondary)
                 Text("Sign in in your browser. Credentials stay in QuotAI’s Keychain item; your existing Codex login is unchanged.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
@@ -50,7 +53,10 @@ struct CodexPanelSection: View {
                 if !store.requiresSignIn, !store.isRefreshing, store.windows.isEmpty {
                     Text("No quota windows available").font(.system(size: 11)).foregroundStyle(.secondary)
                 }
-                if let error = store.error { Text(error).font(.system(size: 11)).foregroundStyle(.orange) }
+                // Refresh failures surface once in the panel notice stack; keep sign-in errors here.
+                if store.requiresSignIn, let error = store.error {
+                    Text(error).font(.system(size: 11)).foregroundStyle(.orange)
+                }
             }
             .padding(.horizontal, 19)
         }

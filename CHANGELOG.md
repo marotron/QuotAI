@@ -1,5 +1,26 @@
 # Changelog
 
+## [Unreleased]
+
+## 0.24.0 — 2026-11-19
+
+### Added
+
+- Experimental opt-in Codex **5h→7d ratio** tracker: closed 5-hour periods are recorded forever and listed under chart Advanced → Codex 5h→7d.
+- Clicking a Codex 5h→7d Advanced row paints a teal band over that 5h slice on the pace chart when it falls inside the live Codex ≈7d window.
+
+### Changed
+
+- Pace-chart burn swatches use the same 16% corridor fills as the plot; Over / Under / Ideal / Discrepancies chips stay icon-only until hover.
+- Offline / refresh failures use one discrepancy-style notice below the chart that names who failed; top and mid orange strings are removed. Failed providers’ meters dim and their age badges (plus Refresh all) use amber warning chrome. The Codex blocked-usage line uses the same notice format.
+
+### Fixed
+
+- Pace-chart end Icons and Labels stagger vertically when tips sit close in plot space, so series markers no longer stack (tip dots stay on true data).
+- Pace-chart hover-expand legend chips hug their label width instead of stretching to a fixed 90pt.
+- Codex 5h→7d tracker ignores idle short windows (used % ≤ 0 / floating `resetsAt`) and opens only after first usage.
+- Existing idle `peak 0%` Codex 5h→7d junk rows are purged from disk on launch.
+
 ## 0.23.0 — 2026-11-16
 
 ### Added

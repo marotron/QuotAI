@@ -6,6 +6,8 @@ Last updated: 2026-11-14
 
 **0.21.0** implements optional direct-native Codex subscription quotas. The [Codex quota contract](codex-quota.md) records confirmed scope, credentials, per-window display, refresh rules and outstanding running-app verification.
 
+**0.24.0** ships the experimental opt-in Codex **5h→7d ratio** tracker (closed periods only; Advanced list with click-to-highlight band on the pace chart; idle peak-zero junk purged on load), unified below-chart refresh-failure notices, and pace-chart end-label stagger. See [codex-quota](codex-quota.md) and [`.scratch/codex-5h-weekly-ratio/spec.md`](../.scratch/codex-5h-weekly-ratio/spec.md).
+
 Locked target 2026-11-15: optional segmented menu-bar elapsed rings use the wider-gap prototype treatment. See the [segmented elapsed ring contract](segmented-elapsed-ring.md) for scope, open details and pending acceptance; implemented for 0.23.0; the supplied menu-bar appearance was approved, with remaining acceptance checks pending.
 
 ## Authority and status
@@ -40,7 +42,7 @@ macOS menu-bar app for understanding Cursor Spending quota, time to reset, and c
 - Fixed polling offers 5 / 10 / 15 / 30 / 60 minutes, default 10. Dynamic refresh applies one configurable schedule independently to Cursor (Models + Other) and Grok from each family's reset time. Fixed polling refreshes both together.
 - Manual family refreshes, refresh on wake, and panel-open refresh when stale are supported. Last successful refresh and freshness are shown per family in 24-hour time.
 - Successful updates append local history samples, not one sample per day. Each meter's series rolls when its reported period start changes.
-- The chart plots used % against elapsed %, with meter colors, corridor bands, hover details, series filters, and session-only X zoom up to ×10. Hover quota readings and used-% corridor boundaries show exactly two decimal places (for example `95.24% used`); main meter rows and axis ticks keep compact formatting. Closing the panel resets zoom; chart downsampling does not change stored samples.
+- The chart plots used % against elapsed %, with meter colors, corridor bands, hover details, series filters, and session-only X zoom up to ×10. End Icons and Labels stagger vertically when tips sit close in plot space so markers do not stack; tip dots stay on true data. Hover quota readings and used-% corridor boundaries show exactly two decimal places (for example `95.24% used`); main meter rows and axis ticks keep compact formatting. Closing the panel resets zoom; chart downsampling does not change stored samples.
 - Version 0.20.0 adds optional quiet hours and high-usage refresh rules; see [automatic refresh](automatic-refresh.md) for decisions and acceptance status. The highest applicable refresh rate (shortest interval) wins between the selected fixed/Dynamic cadence and an active usage rule: five minutes versus one minute means one minute. Quiet hours and error retry delays still apply. Running-app acceptance remains incomplete.
 
 ## Pace and corridor alerts — existing baseline
@@ -109,3 +111,5 @@ Decision 2026-11-15: refresh-button rotation is limited to the corresponding act
 Decision 2026-11-15: refresh indicators continue rotating for one second after completion and settle; provider badges return gently to age text and Refresh All rotates in place. This revises the earlier immediate-stop decision; see [automatic refresh](automatic-refresh.md). Seeded native busy, finishing and rest states were checked; live and Reduce Motion acceptance remains pending.
 
 Decision 2026-11-16: the Codex blocked-usage notice is suppressed when an ordinary Codex window is exhausted; otherwise it appears below the chart after any discrepancy notice. See [Codex quota contract](codex-quota.md). Seeded native notice states verified 2026-11-16; live account acceptance pending.
+
+Decision 2026-11-17: offline and other refresh failures show one below-chart notice (same chrome as discrepancy) naming who failed; dim failed meters and amber-tint only those providers’ age badges. See [Codex quota contract](codex-quota.md).

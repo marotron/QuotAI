@@ -293,8 +293,9 @@ Sample stride **0.02** in elapsed fraction.
 | Grok Bot | `--grok` `#c084fc` | same |
 
 - Path stroke width **1.75**, round caps/joins  
-- End labels: **Models** / **Other** / **Grok**, series-colored, ~8pt, halo; nudge when Models/Other share elapsed %  
-- Toggle via legend **Names** (eye / eye-slash)
+- End labels: **Models** / **Other** / **Grok**, series-colored, ~8pt, halo; Icons optional beside labels  
+- End Icons/Labels: vertical stagger from 2D plot proximity (min ~16pt); tip dots stay on true data — not Models/Other-only ±6 elapsed nudge  
+- Toggle via legend **Labels** / **Icons**
 
 ### Hover
 

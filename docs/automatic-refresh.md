@@ -18,6 +18,10 @@ Decision 2026-11-15: Codex window rules appear directly below Grok in “Refresh
 
 - [ ] Verify the shared section with Codex disabled, enabled with multiple windows, and with rules toggled and edited; confirm manual Codex refresh and errors remain available.
 
+## Panel failure chrome
+
+Decision 2026-11-17: the dropdown shows at most one refresh-failure notice below the chart, in discrepancy notice chrome, naming the providers that failed. Previous readings stay; failed meters dim; only those providers’ age badges (and Refresh all when any failed) use amber warning chrome. Auth / Codex sign-in errors stay with their controls. Live offline acceptance pending. Detail: [Codex quota](codex-quota.md).
+
 ## Settings placement
 
 Decision 2026-11-14: 0.20.0 places refresh status, manual actions, rate and Dynamic schedule, wake, quiet hours, and high-usage rules under Settings → Refresh. Account retains Cursor authentication and activity diagnostics. The split is implemented; running-app layout verification remains pending.

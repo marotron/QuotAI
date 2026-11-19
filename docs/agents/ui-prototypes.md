@@ -31,6 +31,8 @@ A baseline is an implementation reference, not a frozen promise that old behavio
 
 ## Current experiment
 
+`experiments/chart-end-label-collision/index.html?stagger=1` — end Icons/Labels 2D stagger when tips collide; approved 2026-11-17 and shipped in 0.24.0 (native dogfood pending).
+
 `experiments/codex-matrix/index.html?matrix=1` proposes adding Codex windows to the existing used ÷ elapsed = pace · status → reset matrix. `?matrix=0` shows the current separate block. The user approved variant B on 2026-11-15. The frozen copy is `locked/codex-matrix-2026-11-15/`; native light/dark preview comparison was completed and the dropdown baseline updated for rc.10; further state acceptance remains pending. It adds no live chart data or notifications. Preset status symbols are illustrative rather than a port of the full corridor evaluator. The original chart prototype supplies historical chart chrome, with seeded trajectories adjusted to the screenshot readings.
 
 
