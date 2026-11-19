@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 0.24.0 — 2026-11-19
+
 ### Added
 
 - Experimental opt-in Codex **5h→7d ratio** tracker: closed 5-hour periods are recorded forever and listed under chart Advanced → Codex 5h→7d.

@@ -6,7 +6,7 @@ Last updated: 2026-11-14
 
 **0.21.0** implements optional direct-native Codex subscription quotas. The [Codex quota contract](codex-quota.md) records confirmed scope, credentials, per-window display, refresh rules and outstanding running-app verification.
 
-Candidate **0.24.0**: experimental opt-in Codex **5h→7d ratio** tracker (closed periods only; Advanced list with click-to-highlight band on the pace chart; idle peak-zero junk purged on load). See [codex-quota](codex-quota.md) and [`.scratch/codex-5h-weekly-ratio/spec.md`](../.scratch/codex-5h-weekly-ratio/spec.md).
+**0.24.0** ships the experimental opt-in Codex **5h→7d ratio** tracker (closed periods only; Advanced list with click-to-highlight band on the pace chart; idle peak-zero junk purged on load), unified below-chart refresh-failure notices, and pace-chart end-label stagger. See [codex-quota](codex-quota.md) and [`.scratch/codex-5h-weekly-ratio/spec.md`](../.scratch/codex-5h-weekly-ratio/spec.md).
 
 Locked target 2026-11-15: optional segmented menu-bar elapsed rings use the wider-gap prototype treatment. See the [segmented elapsed ring contract](segmented-elapsed-ring.md) for scope, open details and pending acceptance; implemented for 0.23.0; the supplied menu-bar appearance was approved, with remaining acceptance checks pending.
 

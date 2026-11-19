@@ -140,4 +140,4 @@ Decision 2026-11-16: native refresh arrows use the prototype SVG geometry render
 
 Decision 2026-11-16: the Codex blocked-usage notice is suppressed when an ordinary Codex window is exhausted; otherwise it appears below the chart after any discrepancy notice. See [Codex quota contract](codex-quota.md). Seeded native notice states verified 2026-11-16; live account acceptance pending.
 
-Decision 2026-11-17: panel refresh failures use one below-chart discrepancy-style notice that names failed providers; failed meters dim and only those age badges (plus Refresh all) use amber warning chrome. Blocked-usage uses the same notice chrome. See [Codex quota contract](codex-quota.md). Candidate implementation; live offline acceptance pending.
+Decision 2026-11-17: panel refresh failures use one below-chart discrepancy-style notice that names failed providers; failed meters dim and only those age badges (plus Refresh all) use amber warning chrome. Blocked-usage uses the same notice chrome. See [Codex quota contract](codex-quota.md). Shipped in 0.24.0; live offline acceptance pending.

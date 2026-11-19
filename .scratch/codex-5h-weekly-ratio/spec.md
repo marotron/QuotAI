@@ -1,6 +1,6 @@
 # Codex 5h→7d ratio tracker (experimental)
 
-Decision: 2026-11-17. Status: **0.24.0-rc.5 implementation**.
+Decision: 2026-11-17. Status: **shipped in 0.24.0**.
 
 ## Locked
 
