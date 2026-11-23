@@ -8,6 +8,8 @@ Last updated: 2026-11-14
 
 **0.24.0** ships the experimental opt-in Codex **5h→7d ratio** tracker (closed periods only; Advanced list with click-to-highlight band on the pace chart; idle peak-zero junk purged on load), unified below-chart refresh-failure notices, and pace-chart end-label stagger. See [codex-quota](codex-quota.md) and [`.scratch/codex-5h-weekly-ratio/spec.md`](../.scratch/codex-5h-weekly-ratio/spec.md).
 
+**0.24.1** fixes pace-chart Advanced crashing when opened with no discrepancy clusters (`discrepancyClusters[0]` trap while measuring the popover).
+
 Locked target 2026-11-15: optional segmented menu-bar elapsed rings use the wider-gap prototype treatment. See the [segmented elapsed ring contract](segmented-elapsed-ring.md) for scope, open details and pending acceptance; implemented for 0.23.0; the supplied menu-bar appearance was approved, with remaining acceptance checks pending.
 
 ## Authority and status
