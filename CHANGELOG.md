@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## 0.24.1 — 2026-11-23
+
+### Fixed
+
+- Opening pace-chart Advanced with no discrepancy clusters no longer traps on an empty `discrepancyClusters[0]` (crash in 0.23.0 on newer macOS when measuring the popover).
+
 ## 0.24.0 — 2026-11-19
 
 ### Added

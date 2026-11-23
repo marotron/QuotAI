@@ -4,7 +4,7 @@ macOS menu-bar app for Cursor, Grok Bot, and optional Codex subscription quotas.
 
 ## Install
 
-**[Download QuotAI-0.24.0.dmg](https://github.com/marotron/QuotAI/releases/download/v0.24.0/QuotAI-0.24.0.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
+**[Download QuotAI-0.24.1.dmg](https://github.com/marotron/QuotAI/releases/download/v0.24.1/QuotAI-0.24.1.dmg)** · [latest release](https://github.com/marotron/QuotAI/releases/latest)
 
 1. Open the disk image (install steps are on the window background).
 2. Drag **QuotAI** → **Applications**, then double-click **Open QuotAI** (or open it from Applications). It lives in the menu bar.

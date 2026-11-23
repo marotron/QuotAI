@@ -1103,9 +1103,23 @@ struct PaceHistoryChart: View {
     // MARK: - Discrepancy strip
 
     private var discrepancyStrip: some View {
-        let cluster = selectedCluster
-        let idx = selectedClusterIndex
-        return VStack(alignment: .leading, spacing: 0) {
+        Group {
+            if let cluster = selectedCluster {
+                discrepancyStripBody(cluster: cluster, index: selectedClusterIndex)
+            } else {
+                Text("No discrepancies")
+                    .foregroundStyle(Self.tertiary)
+                    .padding(.vertical, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func discrepancyStripBody(
+        cluster: CursorDiscrepancyCluster,
+        index: Int
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             Button {
                 stripBodyOpen.toggle()
             } label: {
@@ -1143,7 +1157,7 @@ struct PaceHistoryChart: View {
                 HStack(spacing: 8) {
                     Button("←") { stepCluster(by: -1) }
                         .buttonStyle(.plain)
-                    Text("Cluster \(idx + 1) of \(discrepancyClusters.count)")
+                    Text("Cluster \(index + 1) of \(discrepancyClusters.count)")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                     Button("→") { stepCluster(by: 1) }
@@ -1193,16 +1207,18 @@ struct PaceHistoryChart: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var selectedCluster: CursorDiscrepancyCluster {
+    /// Never indexes an empty cluster list — 0.23.0 crashed Advanced on `discrepancyClusters[0]`.
+    private var selectedCluster: CursorDiscrepancyCluster? {
         if let id = resolvedSelectedClusterID,
            let match = discrepancyClusters.first(where: { $0.id == id }) {
             return match
         }
-        return discrepancyClusters[0]
+        return discrepancyClusters.first
     }
 
     private var selectedClusterIndex: Int {
-        discrepancyClusters.firstIndex(where: { $0.id == selectedCluster.id }) ?? 0
+        guard let selected = selectedCluster else { return 0 }
+        return discrepancyClusters.firstIndex(where: { $0.id == selected.id }) ?? 0
     }
 
     private var resolvedSelectedClusterID: String? {

@@ -6,7 +6,7 @@ alwaysApply: true
 
 # QuotAI versioning adapter
 
-Read `~/.codex/skills/release-versioning/SKILL.md` for the shared RC-first lifecycle. This replaces the previous bump-at-closeout-only policy.
+Read `~/.cursor/skills/release-versioning/SKILL.md` for the shared RC-first lifecycle. This replaces the previous bump-at-closeout-only policy.
 
 - Authority: `project.yml`: numeric `MARKETING_VERSION`, monotonic `CURRENT_PROJECT_VERSION`, `INFOPLIST_KEY_QuotAIReleaseCandidate` (0 final, N>0 RC). Regenerate with `make project`.
 - Label: core `ReleaseVersion.label` → `QuotAIAboutInfo.versionLabel` → About, panel and accessibility.
@@ -16,4 +16,4 @@ Read `~/.codex/skills/release-versioning/SKILL.md` for the shared RC-first lifec
 - Local packaging may build candidates with plain `QuotAI-X.Y.Z.dmg` filenames. Tagged packaging rejects candidate>0 and non-final tags. RC bookmark tags are skipped by Release CI; do not create them by default.
 - Preserve QuotAI's existing release channel; do not add MailGent alpha branding or prerelease policy.
 - Use feature/fix/hotfix branches and PRs. Keep changes uncommitted until authorized; “ship it” supplies authorization. Signed final tags only: `git tag -s vX.Y.Z -m "X.Y.Z"`, then `git verify-tag` before push. Prefer one-shot SSH signing options; do not change global Git settings or retag old releases unless asked.
-- After each version/RC/build bump run `python3 ~/dev/scripts/update-dev-index.py`.
+- After each version/RC/build bump run `python3 ~/dev/scripts/update-dev-index.py` if that script exists.
